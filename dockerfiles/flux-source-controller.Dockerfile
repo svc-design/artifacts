@@ -1,4 +1,4 @@
-FROM ghcr.io/fluxcd/source-controller:v0.24.0 as build
+FROM ghcr.io/fluxcd/source-controller:v0.25.9 as build
 
 FROM artifact.onwalk.net/k8s/alpine-ca:3.13 as prod
 

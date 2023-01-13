@@ -1,4 +1,4 @@
-FROM ghcr.io/fluxcd/image-automation-controller:v0.24.0 as build
+FROM ghcr.io/fluxcd/image-automation-controller:v0.23.4 as build
 
 FROM artifact.onwalk.net/k8s/alpine-ca:3.13 as prod
 ARG TARGETPLATFORM

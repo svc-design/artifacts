@@ -1,4 +1,4 @@
-FROM ghcr.io/fluxcd/image-reflector-controller:v0.24.0 as build
+FROM ghcr.io/fluxcd/image-reflector-controller:v0.19.2 as build
 
 FROM artifact.onwalk.net/k8s/alpine-ca:3.13 as prod
 

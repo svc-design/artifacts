@@ -23,6 +23,6 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           build_file: dockerfiles/flux-kustomize-controller.Dockerfile
           image: k8s/fluxcd/kustomize-controller
-          tag: v0.24.0
+          tag: v0.26.2
           cache: true
           cache_registry: cache
