@@ -13,7 +13,7 @@ on:
 jobs:
   base-image:
     runs-on: ubuntu-latest
-    name: Build docker image
+    name: Build alpine base image
     steps:
       - uses: actions/checkout@master
 
