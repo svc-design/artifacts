@@ -15,13 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push fluxcd/flux-cli image'
+      - name: 'Artifact: build && push fluxcd/helm-controller image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: dockerfiles/flux-cli.Dockerfile
+          build_file: dockerfiles/helm-controller.Dockerfile
           image: k8s/fluxcd/helm-controller
           tag: v0.22.1
           cache: true
