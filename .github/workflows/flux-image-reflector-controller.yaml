@@ -1,4 +1,4 @@
-name: Build & push flux-automation-controller image
+name: Build & push image-reflector-controller image
 on:
   pull_request:
   push:
@@ -41,7 +41,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: dockerfiles/flux-image-automation-controller.Dockerfile
+          build_file: dockerfiles/flux-image-reflector-controller.Dockerfile
           image: k8s/fluxcd/image-reflector-controller
           tag: v0.19.2
           cache: true
