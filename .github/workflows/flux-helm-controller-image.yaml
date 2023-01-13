@@ -21,7 +21,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: dockerfiles/helm-controller.Dockerfile
+          build_file: dockerfiles/flux-helm-controller.Dockerfile
           image: k8s/fluxcd/helm-controller
           tag: v0.22.1
           cache: true
