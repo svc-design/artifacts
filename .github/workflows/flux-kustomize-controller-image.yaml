@@ -3,6 +3,7 @@ on:
   pull_request:
   push:
     paths:
+      - '.github/workflows/alpine-image.yaml'
       - '.github/workflows/flux-kustomize-controller-image.yaml'
       - 'dockerfiles/flux-kustomize-controller.Dockerfile'
     branches:
