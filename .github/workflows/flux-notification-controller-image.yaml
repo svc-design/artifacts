@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/alpine-image.yaml'
+      - 'dockerfiles/alpine-with-ca.Dockerfile'
       - '.github/workflows/flux-notification-controller-image.yaml'
       - 'dockerfiles/flux-notification-controller.Dockerfile'
     branches:

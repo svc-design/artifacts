@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/alpine-image.yaml'
+      - 'dockerfiles/alpine-with-ca.Dockerfile'
       - '.github/workflows/flux-source-controller-image.yaml'
       - 'dockerfiles/flux-source-controller.Dockerfile'
     branches:

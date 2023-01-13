@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/alpine-image.yaml'
+      - 'dockerfiles/alpine-with-ca.Dockerfile'
       - 'dockerfiles/flux-image-reflector-controller.Dockerfile'
       - '.github/workflows/flux-image-reflector-controller.yaml'
     branches:
