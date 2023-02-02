@@ -1,11 +1,10 @@
 include:
   - local: 'gitlab-templates/base.yml'
-  - local: 'gitlab-templates/build-images.yml'
+  - local: 'gitlab-templates/build-and-push-image.yml'
 
 variables:
-  user: 'admin'
-  password: '${token}' 
-  dockefile: 'alpine-with-ca.Dockerfile' 
-  repository: 'artifact.onwalk.net/k8s' 
-  image: 'apline'
+  username: 'admin'
+  password: '${repo-passwd}'
+  repository: 'artifact.onwalk.net'
+  image: 'k8s/alpine'
   tag: '3.13'

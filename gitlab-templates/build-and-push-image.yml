@@ -1,0 +1,11 @@
+build-image-job:
+  stage: build
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{"https://${repository}":{\"auth\":\"$(printf "%s:%s" "${username}" "${password}" | base64 | tr -d '\n')\"}}}" > /kaniko/.docker/config.json
+    - cat /kaniko/.docker/config.json
+    - /kaniko/executor --context "${CI_PROJECT_DIR}" --dockerfile "Dockerfile" --destination "${repository}/${image}:${tag}"
+  tags:
+    - docker
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

@@ -1,0 +1,6 @@
+image:
+  name: artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug 
+  entrypoint: [""]
+
+stages:
+  - build
