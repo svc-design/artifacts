@@ -40,3 +40,7 @@ jobs:
         docker pull gcr.io/kaniko-project/executor:v1.9.1
         docker tag gcr.io/kaniko-project/executor:v1.9.1 artifact.onwalk.net/k8s/kaniko-executor:1.9.1
         docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1
+
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
+        docker tag gcr.io/kaniko-project/executor:v1.9.1-debug artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
+        docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
