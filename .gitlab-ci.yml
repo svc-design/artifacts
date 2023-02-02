@@ -1,0 +1,11 @@
+include:
+  - local: 'gitlab-templates/base.yml'
+  - local: 'gitlab-templates/build-images.yml'
+
+variables:
+  user: 'admin'
+  password: '${token}' 
+  dockefile: 'alpine-with-ca.Dockerfile' 
+  repository: 'artifact.onwalk.net/k8s' 
+  image: 'apline'
+  tag: '3.13'
