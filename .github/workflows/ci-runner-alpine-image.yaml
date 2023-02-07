@@ -14,7 +14,7 @@ on:
 jobs:
   base-image:
     runs-on: ubuntu-latest
-    name: Build terraform base image
+    name: build ci runner alpine base image
     steps:
       - uses: actions/checkout@master
 
