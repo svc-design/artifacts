@@ -1,12 +1,13 @@
-name: Build & push apline image
+name: Build & push ci runner apline base image
 on:
   pull_request:
   push:
     paths:
-      - 'terraform-iac-runner/main.tf'
-      - 'terraform-iac-runner/Dockerfile'
-      - 'terraform-iac-runner/.terraformrc'
-      - '.github/workflows/terraform-iac-runner-image.yaml'
+      - '.github/workflows/ci-runner-alpine-image.yaml'
+      - 'ci-runner/alpine/Dockerfile'
+      - 'ci-runner/alpine/Makefile'
+      - 'ci-runner/alpine/ca.crt'
+      - 'ci-runner/alpine/repositories'
     branches:
       - main
 
@@ -23,9 +24,9 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: './terraform-iac-runner'
+          path: './ci-runner/alpine'
           build_file: 'Dockerfile'
-          image: devops/iac-runner
+          image: devops/ci-runner-alpine
           tag: latest
           cache: true
           cache_registry: cache
