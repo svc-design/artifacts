@@ -1,0 +1,30 @@
+name: Build & push apline image
+on:
+  pull_request:
+  push:
+    paths:
+      - 'terraform-iac-runner/main.tf'
+      - 'terraform-iac-runner/Dockerfile'
+      - 'terraform-iac-runner/.terraformrc'
+      - '.github/workflows/terraform-iac-runner-image.yaml'
+    branches:
+      - main
+
+jobs:
+  base-image:
+    runs-on: ubuntu-latest
+    name: Build terraform base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          build_file: './terraform-iac-runner/Dockerfile'
+          image: devops/iac-runner
+          tag: latest
+          cache: true
+          cache_registry: cache
