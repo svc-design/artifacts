@@ -9,6 +9,7 @@ terraform {
     }
     aws = {
       source  = "hashicorp/aws"
+      version = "= 4.14.0"  
     }
     tls = {
       source  = "hashicorp/tls"
