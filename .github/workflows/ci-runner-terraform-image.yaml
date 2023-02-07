@@ -23,7 +23,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: './terraform-iac-runner'
+          path: './ci-runner/terraform'
           build_file: 'Dockerfile'
           image: devops/ci-runner-terraform
           tag: latest
