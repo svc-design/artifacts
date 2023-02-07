@@ -25,7 +25,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './terraform-iac-runner'
           build_file: 'Dockerfile'
-          image: devops/iac-runner
+          image: devops/ci-runner-terraform
           tag: latest
           cache: true
           cache_registry: cache
