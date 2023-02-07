@@ -1,4 +1,4 @@
-name: Build & push apline image
+name: Build & push  ci runner terraform base image
 on:
   pull_request:
   push:
