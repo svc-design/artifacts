@@ -18,7 +18,7 @@ RUN apk add --update --no-cache ca-certificates openssl openssh-client git bash 
            /usr/local/aws-cli/v2/current/dist/awscli/data/ac.index \
            /usr/local/aws-cli/v2/current/dist/awscli/examples \
            glibc-*.apk && \
-    find /usr/local/aws-cli/v2/current/dist/awscli/botocore/data -name examples-1.json -delete \
+    find /usr/local/aws-cli/v2/current/dist/awscli/botocore/data -name examples-1.json -delete && \
     mkdir -pv /root/.terraform.d/plugin-cache && \
     pip3 install jinja2 hvac python-hcl2      && \
     wget https://mirrors.onwalk.net/tools/linux-amd64/gauth.tar.gz && tar -xvpf gauth.tar.gz -C /usr/bin/ && chmod 755 /usr/bin/gauth && \
