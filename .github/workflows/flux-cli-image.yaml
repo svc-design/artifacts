@@ -3,8 +3,6 @@ on:
   pull_request:
   push:
     paths:
-      - 'base/alpine/Dockerfile'
-      - 'fluxcd/flux-cli.Dockerfile'
       - '.github/workflows/flux-cli-image.yaml'
       - '.github/workflows/alpine-with-custom-ca.yaml'
     branches:
@@ -14,7 +12,6 @@ jobs:
   docker:
     name: Build docker image
     runs-on: ubuntu-latest
-    needs: base-image
     steps:
       - uses: actions/checkout@master
 
@@ -27,22 +24,5 @@ jobs:
           build_file: fluxcd/flux-cli.Dockerfile
           image: k8s/fluxcd/flux-cli
           tag: v0.31.3
-          cache: true
-          cache_registry: cache
-  base-image:
-    runs-on: ubuntu-latest
-    name: Build alpine base image
-    steps:
-      - uses: actions/checkout@master
-
-      - name: 'Artifact: build && push alpine with custom ca image'
-        uses: aevea/action-kaniko@master
-        with:
-          registry: artifact.onwalk.net
-          username: admin 
-          password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: base/alpine/Dockerfile 
-          image: k8s/alpine-ca
-          tag: latest
           cache: true
           cache_registry: cache
