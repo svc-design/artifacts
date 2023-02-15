@@ -27,7 +27,7 @@ RUN apk add --update --no-cache ca-certificates openssl openssh-client git bash 
     rm -rf /var/cache/apk/*
 
 # add pre-cost tools 
-COPY --from=builder /usr/bin/terraform /usr/bin/
+COPY --from=builder /bin/terraform /bin/
 COPY --from=finops /usr/bin/terragrunt /usr/bin/
 COPY --from=finops /usr/bin/infracost /usr/bin/
 RUN mkdir -pv /root/.config/infracost/
