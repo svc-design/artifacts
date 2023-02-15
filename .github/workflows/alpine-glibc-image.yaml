@@ -21,7 +21,6 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: './base/alpine-glibc'
           build_file: 'base/alpine-glibc/Dockerfile'
           image: k8s/alpine-glibc
           tag: latest
