@@ -14,8 +14,9 @@ RUN apk add --update --no-cache curl binutils \
        glibc-${GLIBC_VERSION}.apk           \
        glibc-bin-${GLIBC_VERSION}.apk       \
        glibc-i18n-${GLIBC_VERSION}.apk      \
+    && apk fix --force-overwrite alpine-baselayout-data \
     && /usr/glibc-compat/bin/localedef -i en_US -f UTF-8 en_US.UTF-8 \
     && rm -rf glibc-*.apk \
-    && rm -rf /var/cache/apk/* \
+    && rm -rf /var/cache/apk/*
 
 ENTRYPOINT ["bash"]
