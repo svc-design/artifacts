@@ -24,6 +24,6 @@ jobs:
           path: './base/alpine-glibc'
           build_file: 'Dockerfile'
           image: k8s/alpine-glibc
-          tag: latest
+          tag: 2.34
           cache: true
           cache_registry: cache
