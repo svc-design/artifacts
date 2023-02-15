@@ -11,11 +11,11 @@ on:
 jobs:
   base-image:
     runs-on: ubuntu-latest
-    name: Build alpine base image
+    name: Build alpine-glibc base image
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push alpine image'
+      - name: 'Artifact: build && push alpine-glibc image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
