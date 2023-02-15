@@ -1,4 +1,4 @@
-name: Build & push apline image
+name: Build & push apline-glibc image
 on:
   pull_request:
   push:
