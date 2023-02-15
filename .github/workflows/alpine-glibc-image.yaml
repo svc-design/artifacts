@@ -1,0 +1,29 @@
+name: Build & push apline image
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/alpine-glibc-image.yaml'
+      - 'dockerfiles/base/alpine-glibc/Dockerfile'
+    branches:
+      - main
+
+jobs:
+  base-image:
+    runs-on: ubuntu-latest
+    name: Build alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: base/alpine-glibc/
+          build_file: Dockerfile'
+          image: k8s/alpine-glibc
+          tag: latest
+          cache: true
+          cache_registry: cache
