@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/alpine-glibc-image.yaml'
-      - 'dockerfiles/base/alpine-glibc/Dockerfile'
+      - 'base/alpine-glibc/Dockerfile'
     branches:
       - main
 
