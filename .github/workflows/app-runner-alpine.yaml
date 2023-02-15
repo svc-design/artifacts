@@ -1,9 +1,9 @@
-name: Build & push ci runner apline base image
+name: Build & push app runner apline base image
 on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/ci-runner-alpine-image.yaml'
+      - '.github/workflows/app-runner-alpine.yaml'
       - 'ci-runner/alpine/Dockerfile'
       - 'ci-runner/alpine/Makefile'
       - 'ci-runner/alpine/ca.crt'
@@ -14,11 +14,11 @@ on:
 jobs:
   base-image:
     runs-on: ubuntu-latest
-    name: build ci runner alpine base image
+    name: build app runner alpine base image
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push alpine image'
+      - name: 'Artifact: build && push app runner alpine image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net

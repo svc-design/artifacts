@@ -3,31 +3,14 @@ on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/alpine-image.yaml'
-      - 'dockerfiles/alpine-with-ca.Dockerfile'
-      - 'dockerfiles/flux-image-automation-controller.Dockerfile'
+      - 'base/alpine/Dockerfile'
+      - '.github/workflows/alpine-with-custom-ca.yaml'
+      - 'fluxcd/flux-image-automation-controller.Dockerfile'
       - '.github/workflows/flux-image-automation-controller.yaml'
     branches:
       - main
 
 jobs:
-  base-image:
-    runs-on: ubuntu-latest
-    name: Build alpine base image
-    steps:
-      - uses: actions/checkout@master
-
-      - name: 'Artifact: build && push alpine image'
-        uses: aevea/action-kaniko@master
-        with:
-          registry: artifact.onwalk.net
-          username: admin 
-          password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: ./dockerfiles/alpine-with-ca.Dockerfile
-          image: k8s/alpine-ca
-          tag: 3.13
-          cache: true
-          cache_registry: cache
   docker:
     needs: base-image
     runs-on: ubuntu-latest
@@ -41,8 +24,25 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: dockerfiles/flux-image-automation-controller.Dockerfile
+          build_file: fluxcd/flux-image-automation-controller.Dockerfile
           image: k8s/fluxcd/image-automation-controller
           tag: v0.23.4
+          cache: true
+          cache_registry: cache
+  base-image:
+    runs-on: ubuntu-latest
+    name: Build alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          build_file: base/alpine/Dockerfile 
+          image: k8s/alpine-ca
+          tag: latest
           cache: true
           cache_registry: cache

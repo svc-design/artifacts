@@ -6,7 +6,7 @@ on:
       - 'ci-runner/terraform/main.tf'
       - 'ci-runner/terraform/Dockerfile'
       - 'ci-runner/terraform/.terraformrc'
-      - '.github/workflows/ci-runner-terraform-image.yaml'
+      - '.github/workflows/iac-runner-terraform.yaml'
     branches:
       - main
 

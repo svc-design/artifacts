@@ -1,10 +1,10 @@
-name: Build & push apline image
+name: Build & push apline with custom ca image
 on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/alpine-image.yaml'
-      - 'dockerfiles/alpine-with-ca.Dockerfile'
+      - 'base/alpine/Dockerfile'
+      - '.github/workflows/alpine-with-custom-ca.yaml'
     branches:
       - main
 
@@ -15,14 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push alpine image'
+      - name: 'Artifact: build && push alpine with custom ca image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: ./dockerfiles/alpine-with-ca.Dockerfile
+          build_file: base/alpine/Dockerfile 
           image: k8s/alpine-ca
-          tag: 3.13
+          tag: latest
           cache: true
           cache_registry: cache
