@@ -2,7 +2,7 @@
 FROM alpine:latest 
 LABEL maintainer="Haitao Pan <manbuzhe2009@qq.com>"
 
-ARG GLIBC_VERSION=2.34-r0
+ARG GLIBC_VERSION=2.35-r0
 
 # install glibc compatibility for alpine
 RUN apk add --update --no-cache curl binutils \
