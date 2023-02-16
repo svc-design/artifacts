@@ -1,3 +1,5 @@
-git clone https://github.com/fluxcd/image-automation-controller.git --branch v0.24.0 && cd image-automation-controller && git switch -c main && rm -rvf .git*
+## Howto
 
-
+1. clone repo 
+2. create repo Actions secrets and variables: HELM_REPO_PASSWORD
+3. push your code will be tigger github ci pipeline
