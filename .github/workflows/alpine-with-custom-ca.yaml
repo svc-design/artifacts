@@ -21,6 +21,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/base/alpine'
           build_file: './oci/base/alpine/Dockerfile' 
           image: k8s/alpine-ca
           tag: latest
