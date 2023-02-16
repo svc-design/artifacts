@@ -3,9 +3,9 @@ on:
   pull_request:
   push:
     paths:
-      - 'ci-runner/terraform/main.tf'
-      - 'ci-runner/terraform/Dockerfile'
-      - 'ci-runner/terraform/.terraformrc'
+      - 'oci/ci-runner/terraform/main.tf'
+      - 'oci/ci-runner/terraform/Dockerfile'
+      - 'oci/ci-runner/terraform/.terraformrc'
       - '.github/workflows/iac-runner-terraform.yaml'
     branches:
       - main
@@ -23,7 +23,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: './ci-runner/terraform'
+          path: './oci/ci-runner/terraform'
           build_file: 'Dockerfile'
           image: devops/ci-runner-terraform
           tag: latest

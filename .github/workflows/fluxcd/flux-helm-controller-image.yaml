@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/alpine-with-custom-ca.yaml'
+      - 'oci/fluxcd/flux-helm-controller.Dockerfile'
       - '.github/workflows/flux-helm-controller-image.yaml'
     branches:
       - main

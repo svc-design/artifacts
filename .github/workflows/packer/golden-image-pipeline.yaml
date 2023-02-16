@@ -1,0 +1,28 @@
+name: Create AWS Golden AMI
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/packer/build.sh'
+      - '.github/workflows/packer/bootstrap.sh'
+      - '.github/workflows/packer/ubuntu-os-ami.json'
+      - '.github/workflows/packer/ubuntu-os-ami.json.pkr.hcl'
+      - '.github/workflows/packer/golden-image-pipeline.yaml'
+    branches:
+      - main
+
+jobs:
+  create-golden-ami:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Packer
+      run: sudo apt-get install -y zip unzip jq
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Download Packer
+      run: wget https://releases.hashicorp.com/packer/1.6.2/packer_1.6.2_linux_amd64.zip
+      shell: bash
+    - name: create image
+      run: build.sh
+      shell: bash

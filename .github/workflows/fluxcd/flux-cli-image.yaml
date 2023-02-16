@@ -3,8 +3,8 @@ on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/flux-cli-image.yaml'
-      - '.github/workflows/alpine-with-custom-ca.yaml'
+      - 'oci/fluxcd/flux-cli.Dockerfile'
+      - '.github/workflows/fluxcd/flux-cli-image.yaml'
     branches:
       - main
 

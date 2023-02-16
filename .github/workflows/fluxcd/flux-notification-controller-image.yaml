@@ -1,10 +1,10 @@
-name: Build & push image-reflector-controller image
+name: Build & push notification-controller image
 on:
   pull_request:
   push:
     paths:
-      - 'fluxcd/flux-image-reflector-controller.Dockerfile'
-      - '.github/workflows/flux-image-reflector-controller.yaml'
+      - '.github/workflows/fluxcd/flux-notification-controller-image.yaml'
+      - 'dockerfiles/flux-notification-controller.Dockerfile'
     branches:
       - main
 
@@ -15,14 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push fluxcd/image-reflector-controller image'
+      - name: 'Artifact: build && push fluxcd/notification-controller image'
         uses: aevea/action-kaniko@v0.10.0
         with:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: fluxcd/flux-image-reflector-controller.Dockerfile
-          image: k8s/fluxcd/image-reflector-controller
-          tag: v0.19.2
+          build_file: fluxcd/flux-notification-controller.Dockerfile
+          image: k8s/fluxcd/notification-controller
+          tag: v0.24.0
           cache: true
           cache_registry: cache

@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     paths:
-      - 'base/alpine/Dockerfile'
+      - 'oci/base/alpine/Dockerfile'
       - '.github/workflows/alpine-with-custom-ca.yaml'
     branches:
       - main
@@ -21,7 +21,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: base/alpine/Dockerfile 
+          build_file: './oci/base/alpine/Dockerfile' 
           image: k8s/alpine-ca
           tag: latest
           cache: true

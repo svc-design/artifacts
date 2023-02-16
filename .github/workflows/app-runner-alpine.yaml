@@ -4,10 +4,10 @@ on:
   push:
     paths:
       - '.github/workflows/app-runner-alpine.yaml'
-      - 'ci-runner/alpine/Dockerfile'
-      - 'ci-runner/alpine/Makefile'
-      - 'ci-runner/alpine/ca.crt'
-      - 'ci-runner/alpine/repositories'
+      - 'oci/ci-runner/alpine/Dockerfile'
+      - 'oci/ci-runner/alpine/Makefile'
+      - 'oci/ci-runner/alpine/ca.crt'
+      - 'oci/ci-runner/alpine/repositories'
     branches:
       - main
 
@@ -24,7 +24,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: './ci-runner/alpine'
+          path: './oci/ci-runner/alpine'
           build_file: 'Dockerfile'
           image: devops/ci-runner-alpine
           tag: latest

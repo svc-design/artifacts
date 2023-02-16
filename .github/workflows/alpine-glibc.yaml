@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/alpine-glibc-image.yaml'
-      - 'base/alpine-glibc/Dockerfile'
+      - 'oci/base/alpine-glibc/Dockerfile'
     branches:
       - main
 
@@ -21,7 +21,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: './base/alpine-glibc'
+          path: '.oci/base/alpine-glibc'
           build_file: 'Dockerfile'
           image: k8s/alpine-glibc
           tag: 2.34
