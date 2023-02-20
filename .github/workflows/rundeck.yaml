@@ -21,7 +21,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: '.oci/rundeck'
+          path: 'oci/rundeck/'
           build_file: 'Dockerfile'
           image: k8s/rundeck
           tag: 4.6
