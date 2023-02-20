@@ -1,4 +1,4 @@
-name: Build & push apline-glibc image
+name: Build & push rundeck image
 on:
   pull_request:
   push:
@@ -11,7 +11,7 @@ on:
 jobs:
   base-image:
     runs-on: ubuntu-latest
-    name: Build alpine-glibc base image
+    name: Build rundeck base image
     steps:
       - uses: actions/checkout@master
 
