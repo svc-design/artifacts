@@ -1,4 +1,4 @@
-name: Build & push app runner apline base image
+name: Build & push k8s app runner apline base image
 on:
   pull_request:
   push:
@@ -13,12 +13,12 @@ on:
 
 jobs:
   base-image:
-    runs-on: self-hosted
-    name: build app runner alpine base image
+    runs-on: ubuntu-latest
+    name: build k8s app runner alpine base image
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push app runner alpine image'
+      - name: 'Artifact: build && push k8s app runner alpine base image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
