@@ -10,7 +10,7 @@ on:
 
 jobs:
   base-image:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: Build alpine base image
     steps:
       - uses: actions/checkout@master

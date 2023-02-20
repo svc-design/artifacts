@@ -3,8 +3,8 @@ on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/alpine-glibc-image.yaml'
-      - 'oci/base/alpine-glibc/Dockerfile'
+      - '.github/workflows/rundeck.yaml'
+      - 'oci/rundeck/Dockerfile'
     branches:
       - main
 
@@ -15,15 +15,15 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push alpine-glibc image'
+      - name: 'Artifact: build && push rundeck image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: '.oci/base/alpine-glibc'
+          path: '.oci/rundeck'
           build_file: 'Dockerfile'
-          image: k8s/alpine-glibc
-          tag: 2.34
+          image: k8s/rundeck
+          tag: 4.6
           cache: true
           cache_registry: cache

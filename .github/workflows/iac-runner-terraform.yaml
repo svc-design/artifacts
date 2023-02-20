@@ -12,7 +12,7 @@ on:
 
 jobs:
   base-image:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     name: Build ci runner terraform base image
     steps:
       - uses: actions/checkout@master

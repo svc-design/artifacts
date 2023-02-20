@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rundeck
+  namespace: workflow
+  labels:
+    app: rundeck
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rundeck
+  template:
+    metadata:
+      labels:
+        app: rundeck
+    spec:
+      serviceAccountName: rundeck
+      securityContext:
+       fsGroup: 1000
+      containers:
+        - name: rundeck
+          image: rundeck/rundeck:4.6.0
+          ports:
+            - containerPort: 4440
+          env:
+            - name: "RUNDECK_SERVER_ADDRESS"
+              value: '0.0.0.0'
+            - name: "RUNDECK_GRAILS_URL"
+              value: 'https://rundeck.onwalk.net'
+            - name: "RUNDECK_DATABASE_URL"
+              value: 'jdbc:mysql://mysql.workflow.svc.cluster.local:3306/rundeck?autoReconnect=true&useSSL=false'
+            - name: "RUNDECK_DATABASE_DRIVER"
+              value: 'org.mariadb.jdbc.Driver'
+            - name: "RUNDECK_DATABASE_USERNAME"
+              value: 'rundeck'
+            - name: "RUNDECK_DATABASE_PASSWORD"
+              value: 'rundeck'
+            - name: "RUNDECK_SERVER_FORWARDED"
+              value: 'true'
+            - name: "RUNDECK_LOGGING_AUDIT_ENABLED"
+              value: 'true'
+            - name: "RUNDECK_LOGGING_STRATEGY"
+              value: "CONSOLE"
+          volumeMounts:
+            - name: aclpolicy
+              mountPath: /home/rundeck/etc/user.aclpolicy
+              subPath: user.aclpolicy
+            - name: rundeck-persistent-storage
+              mountPath: /home/rundeck/projects
+              subPath: projects
+            - name: rundeck-persistent-storage
+              mountPath: /home/rundeck/libext
+              subPath: libext    
+      volumes:
+        - name: aclpolicy
+          secret:
+            secretName: rundeck-adm-policy
+            items:
+            - key: rundeck-admin-role.yaml
+              path: user.aclpolicy
+        - name: rundeck-persistent-storage
+          persistentVolumeClaim: 
+            claimName: rundeck        
+    # securityContext:
+    # fsGroup: 775
+---
+### Service Expose
+apiVersion: v1
+kind: Service
+metadata:
+  name: rundeck-svc
+  namespace: workflow
+spec:
+  selector:
+    app: rundeck
+  type: ClusterIP
+  ports:
+    - protocol: TCP
+      port: 4440
+      targetPort: 4440
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rundeck
+  namespace: workflow
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: rundeck.onwalk.net
+    http:
+      paths:
+      - backend:
+          service:
+            name: rundeck-svc
+            port:
+              number: 4440
+        path: /
+        pathType: Prefix
+  tls:
+  - hosts:
+    - rundeck.onwalk.net
+    secretName: rundeck-tls
