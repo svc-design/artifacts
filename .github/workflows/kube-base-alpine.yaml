@@ -4,9 +4,9 @@ on:
   push:
     paths:
       - '.github/workflows/kube-base-alpine.yaml'
-      - 'oci/app-runner/kube-base-alpine/Dockerfile'
-      - 'oci/app-runner/kube-base-alpine/Makefile'
       - 'oci/app-runner/kube-base-alpine/ca.crt'
+      - 'oci/app-runner/kube-base-alpine/Makefile'
+      - 'oci/app-runner/kube-base-alpine/Dockerfile'
       - 'oci/app-runner/kube-base-alpine/repositories'
     branches:
       - main
@@ -28,5 +28,5 @@ jobs:
           build_file: 'Dockerfile'
           image: devops/kube-base-alpine
           tag: latest
-          cache: true
+          cache: false
           cache_registry: cache
