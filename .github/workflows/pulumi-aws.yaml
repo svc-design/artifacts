@@ -1,0 +1,31 @@
+name: Build & push ci runner pulumi for aws image
+on:
+  pull_request:
+  push:
+    paths:
+      - 'oci/iac-runner/pulumi-aws/main.tf'
+      - 'oci/iac-runner/pulumi-aws/Dockerfile'
+      - 'oci/iac-runner/pulumi-aws/.terraformrc'
+      - '.github/workflows/pulumi-aws.yaml'
+    branches:
+      - main
+
+jobs:
+  base-image:
+    runs-on: ubuntu-latest
+    name: Build ci runner pulumi for aws image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push pulumi for aws image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/iac-runner/pulumi-aws/'
+          build_file: 'Dockerfile'
+          image: devops/pulumi-aws
+          tag: latest
+          cache: true
+          cache_registry: cache
