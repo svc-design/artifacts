@@ -3,11 +3,11 @@ on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/kube-base-alpine.yaml'
-      - 'oci/app-runner/kube-base-alpine/ca.crt'
-      - 'oci/app-runner/kube-base-alpine/Makefile'
-      - 'oci/app-runner/kube-base-alpine/Dockerfile'
-      - 'oci/app-runner/kube-base-alpine/repositories'
+      - '.github/workflows/kube-tools-alpine.yaml'
+      - 'oci/app-runner/kube-tools-alpine/ca.crt'
+      - 'oci/app-runner/kube-tools-alpine/Makefile'
+      - 'oci/app-runner/kube-tools-alpine/Dockerfile'
+      - 'oci/app-runner/kube-tools-alpine/repositories'
     branches:
       - main
 
@@ -24,9 +24,9 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/app-runner/kube-base-alpine/'
+          path: 'oci/app-runner/kube-tools-alpine/'
           build_file: 'Dockerfile'
-          image: devops/kube-base-alpine
+          image: devops/kube-tools-alpine
           tag: latest
           cache: false
           cache_registry: cache

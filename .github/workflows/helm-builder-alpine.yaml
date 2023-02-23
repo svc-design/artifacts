@@ -1,0 +1,32 @@
+name: Build & push helm builder apline base image
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/helm-builder-alpine.yaml'
+      - 'oci/app-runner/helm-builder-alpine/ca.crt'
+      - 'oci/app-runner/helm-builder-alpine/Makefile'
+      - 'oci/app-runner/helm-builder-alpine/Dockerfile'
+      - 'oci/app-runner/helm-buidler-alpine/repositories'
+    branches:
+      - main
+
+jobs:
+  base-image:
+    runs-on: ubuntu-latest
+    name: build helm builder alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push helm builder alpine base image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/app-runner/helm-builder-alpine/'
+          build_file: 'Dockerfile'
+          image: devops/helm-builder-alpine
+          tag: latest
+          cache: false
+          cache_registry: cache
