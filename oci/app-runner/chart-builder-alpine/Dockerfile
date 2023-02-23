@@ -19,7 +19,7 @@ RUN case `uname -m` in \
     rm -rf linux-${ARCH} && \
     chmod 755 /usr//bin/helm && \
     helm plugin install https://github.com/chartmuseum/helm-push.git && \
-    helm plugin install https://github.com/belitre/helm-push-artifactory-plugin.git --version 1.0.1
+    helm plugin install https://github.com/belitre/helm-push-artifactory-plugin.git --version v1.0.2
 
 ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
 RUN echo "mozilla/Lets_Encrypt_ca.crt" >> /etc/ca-certificates.conf && update-ca-certificates
