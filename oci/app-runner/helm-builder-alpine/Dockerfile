@@ -4,9 +4,6 @@ MAINTAINER shenlan xz@onwalk.net
 ENV VERSION=3.11.1
 ENV BASE_URL="https://get.helm.sh"
 
-ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
-RUN echo "mozilla/Lets_Encrypt_ca.crt" >> /etc/ca-certificates.conf && update-ca-certificates
-
 RUN case `uname -m` in \
         armv7l) ARCH=arm; ;; \
         s390x) ARCH=s390x; ;; \
@@ -22,5 +19,8 @@ RUN case `uname -m` in \
     rm -rf linux-${ARCH} && \
     chmod 755 /usr//bin/helm && \
     helm plugin install https://github.com/chartmuseum/helm-push.git
+
+ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
+RUN echo "mozilla/Lets_Encrypt_ca.crt" >> /etc/ca-certificates.conf && update-ca-certificates
 
 CMD ["/bin/sh"]
