@@ -44,3 +44,7 @@ jobs:
         docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker tag gcr.io/kaniko-project/executor:v1.9.1-debug artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
         docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
+
+        docker pull hashicorp/terraform:latest
+        docker tag hashicorp/terraform:latest artifact.onwalk.net/devops/terraform:latest
+        docker push artifact.onwalk.net/devops/terraform:latest
