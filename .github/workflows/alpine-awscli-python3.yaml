@@ -1,29 +1,29 @@
-name: Build & push apline-glibc-awscli image
+name: Build & push apline-awscli-python3 image
 on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/alpine-glibc-awscli.yaml'
-      - 'oci/base/alpine-glibc-awscli/Dockerfile'
+      - '.github/workflows/alpine-awscli-python3.yaml'
+      - 'oci/base/alpine-awscli-python3/Dockerfile'
     branches:
       - main
 
 jobs:
   base-image:
     runs-on: ubuntu-latest
-    name: Build alpine-glibc-awscli base image
+    name: Build alpine-awscli-python3 base image
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push alpine-glibc-awscli image'
+      - name: 'Artifact: build && push alpine-awscli-python3 image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/base/alpine-glibc-awscli'
+          path: 'oci/base/alpine-awscli-python3'
           build_file: 'Dockerfile'
-          image: k8s/alpine-glibc-awscli
-          tag: 2.6.1
+          image: k8s/alpine-awscli-python3
+          tag: latest
           cache: true
           cache_registry: cache
