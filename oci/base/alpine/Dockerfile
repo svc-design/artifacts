@@ -1,7 +1,7 @@
 FROM alpine:latest
 MAINTAINER shenlan xz@onwalk.net
 
-RUN apk add --update --no-cache ca-certificates && \
+RUN apk add --update --no-cache ca-certificates curl && \
     cd /usr/share/ca-certificates/ && \
     curl http://certinfo.roche.com/rootcerts/Roche%20Root%20CA%201.cer -o RocheRootCA1.cer    && \
     curl http://certinfo.roche.com/rootcerts/RocheEnterpriseCA1.cer -o RocheEnterpriseCA1.cer && \
