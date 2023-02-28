@@ -1,6 +1,7 @@
-provider "aws" {
-  region     = "ap-east-1"
-}
+provider "aws" {}
+provider "tls" {}
+provider "null" {}
+provider "template" {}
 
 terraform {
   required_providers {
@@ -9,7 +10,6 @@ terraform {
     }
     aws = {
       source  = "hashicorp/aws"
-      version = "= 4.14.0"  
     }
     tls = {
       source  = "hashicorp/tls"
