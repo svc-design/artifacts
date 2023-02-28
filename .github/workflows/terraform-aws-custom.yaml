@@ -1,12 +1,10 @@
-name: Build & push ci runner terraform for aws image
+name: Build & push ci runner terraform for aws custom image
 on:
   pull_request:
   push:
     paths:
-      - 'oci/iac-runner/terraform-aws/main.tf'
-      - 'oci/iac-runner/terraform-aws/Dockerfile'
-      - 'oci/iac-runner/terraform-aws/.terraformrc'
       - '.github/workflows/terraform-aws-custom.yaml'
+      - 'oci/iac-runner/terraform-aws/Dockerfile.custom'
     branches:
       - main
 
@@ -17,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push terraform for aws image'
+      - name: 'Artifact: build && push terraform for aws custom image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
