@@ -1,4 +1,4 @@
-FROM gcr.io/kaniko-project/executor AS kaniko
+FROM gcr.io/kaniko-project/executor:debug AS kaniko
 
 FROM artifact.onwalk.net/k8s/alpine-glibc:2.34 AS prod
 MAINTAINER shenlan xz@onwalk.net
