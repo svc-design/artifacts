@@ -26,4 +26,3 @@ jobs:
           image: devops/image-builder-alpine
           tag: latest
           cache: false
-          cache_registry: cache
