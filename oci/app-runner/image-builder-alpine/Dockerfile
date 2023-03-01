@@ -6,8 +6,23 @@ MAINTAINER shenlan xz@onwalk.net
 ENV PATH $PATH:/usr/local/bin:/kaniko
 ENV DOCKER_CONFIG /kaniko/.docker/
 
+RUN apk --update add  \
+                 bash \
+                 curl \
+                 git  \
+                 jq   \
+                 npm
+
+# add kubectl 
+RUN curl -LO /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.21.4/bin/linux/amd64/kubectl && chmod u+x kubectl /usr/bin/kubectl
+
 # add kaniko tools
-COPY --from=kaniko /kaniko/ /kaniko/
+COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
+COPY --from=kaniko /kaniko/.docker /kaniko/.docker
+COPY --from=kaniko /kaniko/executor /kaniko/executor
+COPY --from=kaniko /kaniko/docker-credential-gcr /kaniko/docker-credential-gcr
+COPY --from=kaniko /kaniko/docker-credential-acr /kaniko/docker-credential-acr
+COPY --from=kaniko /kaniko/docker-credential-ecr-login /kaniko/docker-credential-ecr-login
 
 # add jfrog cli
 RUN curl -Lo /usr/bin/jf https://api.bintray.com/content/jfrog/jfrog-cli-go/\$latest/jfrog-cli-linux-amd64/jfrog?bt_package=jfrog-cli-linux-amd64
