@@ -13,9 +13,6 @@ RUN apk --update add  \
                  jq   \
                  npm
 
-# add kubectl 
-RUN curl -LO /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v1.21.4/bin/linux/amd64/kubectl && chmod u+x kubectl /usr/bin/kubectl
-
 # add kaniko tools
 COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
 COPY --from=kaniko /kaniko/.docker /kaniko/.docker
