@@ -18,7 +18,6 @@ COPY --from=kaniko /kaniko/executor /kaniko/executor
 
 
 # add jfrog cli
-RUN curl -Lo /usr/bin/jf https://api.bintray.com/content/jfrog/jfrog-cli-go/\$latest/jfrog-cli-linux-amd64/jfrog?bt_package=jfrog-cli-linux-amd64
-RUN chmod +x /usr/bin/jf
+RUN curl -Lo /usr/bin/jf https://mirrors.onwalk.net/tools/linux-amd64/jf && chmod +x /usr/bin/jf
 
 CMD ["/bin/sh"]
