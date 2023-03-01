@@ -11,6 +11,7 @@ RUN apk --update add  \
 
 # add kaniko tools
 COPY --from=kaniko /etc/nsswitch.conf /etc/nsswitch.conf
+RUN sync && sleep 3
 COPY --from=kaniko /kaniko/executor /kaniko/executor
 RUN sync && sleep 3
 COPY --from=kaniko /kaniko/.docker /kaniko/.docker
