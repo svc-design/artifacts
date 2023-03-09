@@ -1,0 +1,108 @@
+name: Build & push apline-awscli-python3 image
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/base-images.yaml'
+      - 'oci/base/debian/Dockerfile'
+      - 'oci/base/alpine/Dockerfile'
+      - 'oci/base/alpine-glibc/Dockerfile'
+      - 'oci/base/alpine-awscli/Dockerfile'
+      - 'oci/base/alpine-awscli-python3/Dockerfile'
+    branches:
+      - main
+
+jobs:
+  alpine-awscli-python3:
+    runs-on: ubuntu-latest
+    needs: [alpine-aws-cli]
+    name: Build alpine-awscli-python3 base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine-awscli-python3 image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/base/alpine-awscli-python3'
+          build_file: 'Dockerfile'
+          image: public/alpine-awscli-python3
+          tag: latest
+          cache: true
+          cache_registry: cache
+  alpine-awscli:
+    runs-on: ubuntu-latest
+    name: Build alpine-awscli base image
+    needs: [alpine-glibc]
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine-awscli image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/base/alpine-awscli'
+          build_file: 'Dockerfile'
+          image: public/alpine-awscli
+          tag: 2.6.1
+          cache: true
+          cache_registry: cache
+  alpine-glibc:
+    runs-on: ubuntu-latest
+    name: Build alpine-glibc base image
+    needs: [alpine-ca]
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine-glibc image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/base/alpine-glibc'
+          build_file: 'Dockerfile'
+          image: public/alpine-glibc
+          tag: 2.34
+          cache: true
+          cache_registry: cache
+  alpine-ca:
+    runs-on: ubuntu-latest
+    name: Build alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/alpine'
+          build_file: 'Dockerfile' 
+          image: public/alpine-ca
+          tag: latest
+          cache: true
+          cache_registry: cache
+  debian:
+    runs-on: ubuntu-latest
+    name: Build debian base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/debian'
+          build_file: 'Dockerfile' 
+          image: public/debian
+          tag: latest
+          cache: true
+          cache_registry: cache
