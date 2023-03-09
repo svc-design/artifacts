@@ -1,6 +1,6 @@
 FROM ghcr.io/fluxcd/notification-controller:v0.24.0 as build
 
-FROM artifact.onwalk.net/k8s/alpine-ca:3.13 as prod
+FROM artifact.onwalk.net/public/alpine-ca:3.13 as prod
 
 LABEL org.opencontainers.image.source="https://github.com/fluxcd/notification-controller"
 RUN apk add --no-cache ca-certificates tini

@@ -1,4 +1,4 @@
-FROM artifact.onwalk.net/k8s/alpine-glibc:2.34 as prod
+FROM artifact.onwalk.net/public/alpine-glibc:2.34 as prod
 
 ENV HUGO_VERSION 0.59.1
 ENV HUGO_BINARY hugo_extended_${HUGO_VERSION}_Linux-64bit.tar.gz

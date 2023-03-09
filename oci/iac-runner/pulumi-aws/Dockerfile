@@ -11,7 +11,7 @@ RUN apt-get update -y && \
 RUN curl -fsSL https://get.pulumi.com/ | bash -s -- --version $PULUMI_VERSION
 
 
-FROM artifact.onwalk.net/k8s/alpine-glibc:2.34 as prod
+FROM artifact.onwalk.net/public/alpine-glibc:2.34 as prod
 LABEL maintainer="Haitao Pan <xz@onwalk.net>"
 
 ENV PATH "/pulumi/bin:${PATH}"

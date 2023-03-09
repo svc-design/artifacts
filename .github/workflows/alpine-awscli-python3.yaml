@@ -23,7 +23,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/base/alpine-awscli-python3'
           build_file: 'Dockerfile'
-          image: k8s/alpine-awscli-python3
+          image: public/alpine-awscli-python3
           tag: latest
           cache: true
           cache_registry: cache

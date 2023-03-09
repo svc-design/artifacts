@@ -1,28 +1,28 @@
-name: Build & push flux-cli image
+name: Build & push flux-helm-controller image
 on:
   pull_request:
   push:
     paths:
-      - 'oci/fluxcd/flux-cli.Dockerfile'
-      - '.github/workflows/fluxcd/flux-cli-image.yaml'
+      - 'oci/fluxcd/flux-helm-controller.Dockerfile'
+      - '.github/workflows/flux-helm-controller-image.yaml'
     branches:
       - main
 
 jobs:
   docker:
-    name: Build docker image
     runs-on: ubuntu-latest
+    name: Build docker image
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push fluxcd/flux-cli image'
+      - name: 'Artifact: build && push fluxcd/helm-controller image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: fluxcd/flux-cli.Dockerfile
-          image: k8s/fluxcd/flux-cli
-          tag: v0.31.3
+          build_file: fluxcd/flux-helm-controller.Dockerfile
+          image: public/fluxcd/helm-controller
+          tag: v0.22.1
           cache: true
           cache_registry: cache

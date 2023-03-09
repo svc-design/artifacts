@@ -22,7 +22,7 @@ jobs:
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           build_file: fluxcd/flux-image-automation-controller.Dockerfile
-          image: k8s/fluxcd/image-automation-controller
+          image: public/fluxcd/image-automation-controller
           tag: v0.23.4
           cache: true
           cache_registry: cache

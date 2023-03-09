@@ -23,7 +23,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './oci/base/alpine'
           build_file: 'Dockerfile' 
-          image: k8s/alpine-ca
+          image: public/alpine-ca
           tag: latest
           cache: true
           cache_registry: cache

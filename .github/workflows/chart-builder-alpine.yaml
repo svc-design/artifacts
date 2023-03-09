@@ -26,7 +26,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/app-runner/chart-builder-alpine/'
           build_file: 'Dockerfile'
-          image: devops/chart-builder-alpine
+          image: public/chart-builder-alpine
           tag: latest
           cache: false
           cache_registry: cache

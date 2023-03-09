@@ -3,7 +3,7 @@ FROM infracost/infracost:latest as finops
 FROM hashicorp/terraform:latest as builder
 
 # Build IAC Runner
-FROM artifact.onwalk.net/k8s/alpine-glibc:2.34 as prod
+FROM artifact.onwalk.net/public/alpine-glibc:2.34 as prod
 LABEL maintainer="Haitao Pan <xz@onwalk.net>"
 
 ARG AWSCLI_VERSION=2.6.1

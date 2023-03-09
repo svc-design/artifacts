@@ -1,38 +1,32 @@
-FROM hashicorp/terraform:latest as builder
-FROM infracost/infracost:latest as finops
+#FROM infracost/infracost:latest as finops
+FROM artifact.onwalk.net/public/terraform:latest as builder
 
 # Build IAC Runner
-FROM artifact.onwalk.net/k8s/alpine-awscli:2.6.1 as prod
-LABEL maintainer="Haitao Pan <xz@onwalk.net>"
+ROM artifact.onwalk.net/public/alpine-awscli-python3:latest as prod
 
 ENV KUBECTL_VERSION=1.19.3
 
-RUN apk add --update --no-cache ca-certificates openssl openssh-client git bash wget make curl jq unzip zip python3 py3-pip && \
-    pip3 install --upgrade pip --user && \
-    pip3 install jinja2 hvac python-hcl2 pyyaml && \
-    wget https://mirrors.onwalk.net/tools/linux-amd64/gauth.tar.gz && tar -xvpf gauth.tar.gz -C /usr/bin/ && chmod 755 /usr/bin/gauth && \
-    wget -O /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl & chmod +x /usr/bin/kubectl && \
-    wget https://mirrors.onwalk.net/tools/linux-amd64/gitleaks_8.8.5_linux_x64.tar.gz && tar -xvpf gitleaks_8.8.5_linux_x64.tar.gz && cp gitleaks /usr/bin/ && chmod 755 /usr/bin/gitleaks && \
-    apk --no-cache del binutils make && \
-    rm -rf /var/cache/apk/*
-    mkdir -pv /root/.terraform.d/plugin-cache && \
-
-# add iac tools 
 COPY --from=builder /bin/terraform /bin/
 
-# add pre-cost tools 
-COPY --from=finops /usr/bin/terragrunt /usr/bin/
-COPY --from=finops /usr/bin/infracost /usr/bin/
+# install kubectl in apline
+RUN wget -O /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl &&   chmod +x /usr/local/bin/kubectl
 
-# config pre-cost tools 
-RUN mkdir -pv /root/.config/infracost/
-COPY credentials.yml /root/.config/infracost/
-RUN infracost configure get api_key
+# make terraform plugin cache
+RUN mkdir -p $HOME/.terraform.d/plugins
+RUN echo $'\
+provider "aws" {} \n\
+provider "tls" {}\n\
+provider "null" {}\n\
+provider "template" {}' >> /tmp/provider-cache.tf
+RUN cd /tmp && terraform init && mv .terraform/providers/* $HOME/.terraform.d/plugins && rm -rf .terraform && rm -rf provider-cache.tf
+# config terraform cli
+# ENV TF_CLI_ARGS_init="-plugin-dir=$HOME/.terraform.d/plugins"
 
-# init terraform provider cache
-COPY main.tf .
-RUN mkdir -pv /data/terraform/
-RUN terraform providers mirror /data/terraform/ && rm -f main.tf .terraform.lock.hcl
-COPY .terraformrc /root/
+# install python3 
+# RUN apk --no-cache add python3 py3-pip
+
+# packages for eks-environment/kubernetes/addon.sh
+RUN pip install --upgrade pip --user && \
+    pip install pyyaml
 
 ENTRYPOINT ["/bin/sh", "-c"]

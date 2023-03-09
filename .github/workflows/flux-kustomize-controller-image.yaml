@@ -1,10 +1,10 @@
-name: Build & push image-reflector-controller image
+name: Build & push flux-kustomize-controller image
 on:
   pull_request:
   push:
     paths:
-      - 'fluxcd/flux-image-reflector-controller.Dockerfile'
-      - '.github/workflows/fluxcd/flux-image-reflector-controller.yaml'
+      - 'fluxcd/flux-kustomize-controller.Dockerfile'
+      - '.github/workflows/fluxcd/flux-kustomize-controller-image.yaml'
     branches:
       - main
 
@@ -15,14 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push fluxcd/image-reflector-controller image'
+      - name: 'Artifact: build && push fluxcd/kustomize-controller image'
         uses: aevea/action-kaniko@v0.10.0
         with:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: fluxcd/flux-image-reflector-controller.Dockerfile
-          image: k8s/fluxcd/image-reflector-controller
-          tag: v0.19.2
+          build_file: fluxcd/flux-kustomize-controller.Dockerfile
+          image: public/fluxcd/kustomize-controller
+          tag: v0.26.2
           cache: true
           cache_registry: cache
