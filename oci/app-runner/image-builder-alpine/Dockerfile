@@ -1,5 +1,5 @@
 FROM gcr.io/kaniko-project/executor:debug AS kaniko
-FROM artifact.onwalk.net/k8s/alpine-glibc:2.34 AS prod
+FROM artifact.onwalk.net/public/alpine-glibc:2.34 AS prod
 
 ENV PATH $PATH:/usr/local/bin:/kaniko
 ENV DOCKER_CONFIG /kaniko/.docker/

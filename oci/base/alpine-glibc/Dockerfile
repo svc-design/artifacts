@@ -1,5 +1,5 @@
 # Build IAC Runner
-FROM artifact.onwalk.net/k8s/alpine-ca:latest 
+FROM artifact.onwalk.net/public/alpine-ca:latest 
 LABEL maintainer="Haitao Pan <manbuzhe2009@qq.com>"
 
 ARG GLIBC_VERSION=2.34-r0

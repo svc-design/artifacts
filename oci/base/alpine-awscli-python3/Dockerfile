@@ -1,5 +1,5 @@
 # Build AWS Cli image for alpine
-FROM artifact.onwalk.net/k8s/alpine-awscli:2.6.1
+FROM artifact.onwalk.net/public/alpine-awscli:2.6.1
 LABEL maintainer="Haitao Pan <manbuzhe2009@qq.com>"
 
 # install python3
