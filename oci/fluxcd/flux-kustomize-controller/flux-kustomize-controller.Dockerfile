@@ -1,6 +1,6 @@
 FROM ghcr.io/fluxcd/kustomize-controller:v0.26.2 as build
 
-FROM artifact.onwalk.net/public/alpine-ca:3.13 as prod
+FROM artifact.onwalk.net/public/alpine-ca:latest as prod
 
 RUN apk add --no-cache ca-certificates tini git openssh-client && apk add --no-cache gnupg --repository=https://dl-cdn.alpinelinux.org/alpine/edge/main
 

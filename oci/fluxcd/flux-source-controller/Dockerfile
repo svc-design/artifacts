@@ -1,6 +1,6 @@
 FROM ghcr.io/fluxcd/source-controller:v0.25.9 as build
 
-FROM artifact.onwalk.net/public/alpine-ca:3.13 as prod
+FROM artifact.onwalk.net/public/alpine-ca:latest as prod
 
 ARG TARGETPLATFORM
 RUN apk --no-cache add ca-certificates && update-ca-certificates

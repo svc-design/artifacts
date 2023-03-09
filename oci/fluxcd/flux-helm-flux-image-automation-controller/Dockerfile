@@ -72,7 +72,7 @@ RUN export LIBRARY_PATH="/usr/local/$(xx-info triple)" && \
 # Ensure that the binary was cross-compiled correctly to the target platform.
 RUN xx-verify --static /image-automation-controller
 
-FROM artifact.onwalk.net/public/alpine-ca:3.13
+FROM artifact.onwalk.net/public/alpine-ca:latest
 
 ARG TARGETPLATFORM
 RUN apk --no-cache add ca-certificates \
