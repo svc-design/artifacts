@@ -95,7 +95,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: oci/fluxcd/flux-kustomize-controller/
+          path: 'oci/fluxcd/flux-kustomize-controller/'
           image: public/fluxcd/kustomize-controller
           tag: v0.26.2
           cache: true
