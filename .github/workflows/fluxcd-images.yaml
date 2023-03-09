@@ -70,7 +70,7 @@ jobs:
           cache: true
           cache_registry: cache
   fluxcd-image-automation-controller:
-    name: Build fluxcd-image-automation-controller image:
+    name: Build fluxcd-image-automation-controller image
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
