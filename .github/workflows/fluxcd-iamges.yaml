@@ -1,0 +1,136 @@
+name: Build & push flux-cd images
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/fluxcd/fluxcd-images.yaml'
+      - 'oci/fluxcd/flux-cli/Dockerfile'
+      - 'oci/fluxcd/flux-helm-controller/Dockerfile'
+      - 'oci/fluxcd/flux-image-automation-controller/Dockerfile'
+      - 'oci/fluxcd/flux-image-reflector-controller/Dockerfile'
+      - 'oci/fluxcd/flux-kustomize-controller/Dockerfile'
+      - 'oci/fluxcd/flux-notification-controller/Dockerfile'
+      - 'oci/fluxcd/flux-source-controller/Dockerfile'
+    branches:
+      - main
+
+jobs:
+  flux-cli:
+    name: Build docker image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push fluxcd/flux-cli image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: oci/fluxcd/flux-cli/
+          image: public/fluxcd/flux-cli
+          tag: v0.31.3
+          cache: true
+          cache_registry: cache
+  fluxcd-helm-controller:
+    runs-on: ubuntu-latest
+    name: Build docker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push fluxcd/helm-controller image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: oci/fluxcd/flux-helm-controller/
+          image: public/fluxcd/helm-controller
+          tag: v0.22.1
+          cache: true
+          cache_registry: cache
+  fluxcd-image-automation-controller:
+    runs-on: ubuntu-latest
+    name: Build docker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push fluxcd/image-automation-controller image'
+        uses: aevea/action-kaniko@v0.10.0
+        with:
+          registry: artifact.onwalk.net
+          username: admin
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: oci/fluxcd/flux-image-automation-controller/
+          image: public/fluxcd/image-automation-controller
+          tag: v0.23.4
+          cache: true
+          cache_registry: cache
+  flux-image-reflector-controller:
+    runs-on: ubuntu-latest
+    name: Build docker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push fluxcd/image-reflector-controller image'
+        uses: aevea/action-kaniko@v0.10.0
+        with:
+          registry: artifact.onwalk.net
+          username: admin
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: oci/fluxcd/flux-image-reflector-controller/
+          image: public/fluxcd/image-reflector-controller
+          tag: v0.19.2
+          cache: true
+          cache_registry: cache
+  flux-kustomize-controller:
+    runs-on: ubuntu-latest
+    name: Build docker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push fluxcd/kustomize-controller image'
+        uses: aevea/action-kaniko@v0.10.0
+        with:
+          registry: artifact.onwalk.net
+          username: admin
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: oci/fluxcd/flux-kustomize-controller/
+          image: public/fluxcd/kustomize-controller
+          tag: v0.26.2
+          cache: true
+          cache_registry: cache
+  flux-notification-controller:
+    runs-on: ubuntu-latest
+    name: Build docker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push fluxcd/notification-controller image'
+        uses: aevea/action-kaniko@v0.10.0
+        with:
+          registry: artifact.onwalk.net
+          username: admin
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: oci/fluxcd/flux-notification-controller/
+          image: public/fluxcd/notification-controller
+          tag: v0.24.0
+          cache: true
+          cache_registry: cache
+  flux-source-controller:
+    runs-on: ubuntu-latest
+    name: Build docker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push fluxcd/source-controller image'
+        uses: aevea/action-kaniko@v0.10.0
+        with:
+          registry: artifact.onwalk.net
+          username: admin
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: oci/fluxcd/flux-source-controller/
+          image: public/fluxcd/source-controller
+          tag: v0.25.9
+          cache: true
+          cache_registry: cache
