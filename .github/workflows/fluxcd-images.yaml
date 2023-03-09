@@ -34,7 +34,7 @@ jobs:
           cache: true
           cache_registry: cache
   flux-cli:
-    name: Build docker image
+    name: Build flux-cli image
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
@@ -52,7 +52,7 @@ jobs:
           cache: true
           cache_registry: cache
   fluxcd-helm-controller:
-    name: Build docker image
+    name: Build fluxcd-helm-controller image
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
@@ -70,7 +70,7 @@ jobs:
           cache: true
           cache_registry: cache
   fluxcd-image-automation-controller:
-    name: Build docker image
+    name: Build fluxcd-image-automation-controller image:
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
@@ -88,7 +88,7 @@ jobs:
           cache: true
           cache_registry: cache
   flux-image-reflector-controller:
-    name: Build docker image
+    name: Build flux-image-reflector-controller image
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
@@ -106,7 +106,7 @@ jobs:
           cache: true
           cache_registry: cache
   flux-kustomize-controller:
-    name: Build docker image
+    name: Build flux-kustomize-controller image
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
@@ -124,7 +124,7 @@ jobs:
           cache: true
           cache_registry: cache
   flux-notification-controller:
-    name: Build docker image
+    name: Build flux-notification-controller image
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
@@ -142,7 +142,7 @@ jobs:
           cache: true
           cache_registry: cache
   flux-source-controller:
-    name: Build docker image
+    name: Build flux-source-controller image
     runs-on: ubuntu-latest
     needs: [base-image]
     steps:
