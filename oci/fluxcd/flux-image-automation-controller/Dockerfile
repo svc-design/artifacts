@@ -6,4 +6,4 @@ RUN [ ! -e /etc/nsswitch.conf ] && echo 'hosts: files dns' > /etc/nsswitch.conf
 COPY --from=build /usr/local/bin/image-automation-controller /usr/local/bin/
 
 USER 65534:65534
-NTRYPOINT [ "image-automation-controller" ]
+ENTRYPOINT [ "image-automation-controller" ]
