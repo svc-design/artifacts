@@ -1,6 +1,6 @@
 FROM ghcr.io/fluxcd/image-reflector-controller:v0.19.2 as build
 
-FROM artifact.onwalk.net/k8s/alpine-ca:3.13 as prod
+FROM artifact.onwalk.net/public/alpine-ca:3.13 as prod
 
 RUN apk add --no-cache ca-certificates tini
 COPY --from=builder /usr/local/bin/image-reflector-controller /usr/local/bin/
