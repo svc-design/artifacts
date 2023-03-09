@@ -21,7 +21,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: fluxcd/flux-kustomize-controller.Dockerfile
+          build_file: oci/fluxcd/flux-kustomize-controller.Dockerfile
           image: public/fluxcd/kustomize-controller
           tag: v0.26.2
           cache: true

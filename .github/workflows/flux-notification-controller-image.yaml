@@ -21,8 +21,8 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: fluxcd/flux-notification-controller.Dockerfile
-          image: k8s/fluxcd/notification-controller
+          build_file: oci/fluxcd/flux-notification-controller.Dockerfile
+          image: public/fluxcd/notification-controller
           tag: v0.24.0
           cache: true
           cache_registry: cache

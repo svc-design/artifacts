@@ -21,7 +21,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: fluxcd/flux-image-reflector-controller.Dockerfile
+          build_file: oci/fluxcd/flux-image-reflector-controller.Dockerfile
           image: public/fluxcd/image-reflector-controller
           tag: v0.19.2
           cache: true

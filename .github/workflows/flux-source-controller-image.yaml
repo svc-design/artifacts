@@ -21,8 +21,8 @@ jobs:
           registry: artifact.onwalk.net
           username: admin
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          build_file: fluxcd/flux-source-controller.Dockerfile
-          image: k8s/fluxcd/source-controller
+          build_file: oci/fluxcd/flux-source-controller.Dockerfile
+          image: public/fluxcd/source-controller
           tag: v0.25.9
           cache: true
           cache_registry: cache
