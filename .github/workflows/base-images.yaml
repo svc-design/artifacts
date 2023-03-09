@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/base-images.yaml'
       - 'oci/base/debian/Dockerfile'
+      - 'oci/base/debian-slim/Dockerfile'
       - 'oci/base/alpine/Dockerfile'
       - 'oci/base/alpine-glibc/Dockerfile'
       - 'oci/base/alpine-awscli/Dockerfile'
@@ -103,6 +104,24 @@ jobs:
           path: './oci/base/debian'
           build_file: 'Dockerfile' 
           image: public/debian
+          tag: latest
+          cache: true
+          cache_registry: cache
+  debian-slim:
+    runs-on: ubuntu-latest
+    name: Build debian-slim base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/base/debian-slim'
+          build_file: 'Dockerfile' 
+          image: public/debian-slim
           tag: latest
           cache: true
           cache_registry: cache
