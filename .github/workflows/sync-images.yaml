@@ -52,3 +52,7 @@ jobs:
         docker pull datadog/cluster-agent:latest
         docker tag datadog/cluster-agent:latest artifact.onwalk.net/k8s/datadog/cluster-agent:latest
         docker push artifact.onwalk.net/k8s/datadog/cluster-agent:latest
+
+        docker pull datadog/cluster-agent:7.43.1
+        docker tag datadog/cluster-agent:7.43.1 artifact.onwalk.net/k8s/datadog/cluster-agent:7.43.1
+        docker push artifact.onwalk.net/k8s/datadog/cluster-agent:7.43.1
