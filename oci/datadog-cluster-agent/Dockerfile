@@ -1,7 +1,29 @@
+########################################
 # Preparation stage: layout and chmods #
 ########################################
 
-FROM artifact.onwalk.net/k8s/datadog/cluster-agent:latest as builder
+FROM artifact.onwalk.net/public/ubuntu:22.04 as builder
+
+ARG TARGETARCH
+LABEL baseimage.os "ubuntu jammy LTS"
+LABEL baseimage.name "ubuntu:22.04"
+
+WORKDIR /output
+
+COPY datadog-cluster-agent.$TARGETARCH opt/datadog-agent/bin/datadog-cluster-agent
+COPY ./conf.d etc/datadog-agent/conf.d
+COPY ./datadog-cluster.yaml etc/datadog-agent/datadog-cluster.yaml
+COPY ./security-agent-policies/compliance/containers/ etc/datadog-agent/compliance.d
+COPY ./install_info etc/datadog-agent/install_info
+COPY entrypoint.sh .
+COPY readsecret.sh readsecret_multiple_providers.sh ./
+
+RUN chmod 755 entrypoint.sh \
+    && chown root:root readsecret.sh readsecret_multiple_providers.sh \
+    && chmod 550 readsecret.sh readsecret_multiple_providers.sh \
+    && chmod g+r,g+w,g+X -R etc/datadog-agent/ \
+    && chmod +x opt/datadog-agent/bin/datadog-cluster-agent \
+    && ln -s /opt/datadog-agent/bin/datadog-cluster-agent opt/datadog-agent/bin/agent
 
 FROM builder AS nosys-seccomp
 COPY nosys-seccomp/nosys.c   /tmp/nosys.c
@@ -9,6 +31,7 @@ COPY nosys-seccomp/nosys.sym /tmp/nosys.sym
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt update && apt install --no-install-recommends -y gcc libc6-dev libseccomp-dev
 RUN gcc -pipe -Wall -Wextra -O2 -shared -fPIC -Wl,--version-script=/tmp/nosys.sym -o /tmp/nosys.so /tmp/nosys.c -lseccomp
+
 
 ####################################
 # Actual docker image construction #
