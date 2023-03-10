@@ -2,7 +2,7 @@
 # Preparation stage: layout and chmods #
 ########################################
 
-FROM datadog/cluster-agent:latest as builder
+FROM gcr.io/datadoghq/cluster-agent:latest as builder
 
 ####################################
 # Actual docker image construction #
