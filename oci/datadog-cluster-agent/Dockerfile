@@ -1,8 +1,15 @@
-########################################
+oci/datadog-cluster-agent/Dockerfile########################################
 # Preparation stage: layout and chmods #
 ########################################
 
 FROM artifact.onwalk.net/k8s/datadog/cluster-agent:latest as builder
+
+FROM builder AS nosys-seccomp
+COPY nosys-seccomp/nosys.c   /tmp/nosys.c
+COPY nosys-seccomp/nosys.sym /tmp/nosys.sym
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt update && apt install --no-install-recommends -y gcc libc6-dev libseccomp-dev
+RUN gcc -pipe -Wall -Wextra -O2 -shared -fPIC -Wl,--version-script=/tmp/nosys.sym -o /tmp/nosys.so /tmp/nosys.c -lseccomp
 
 ####################################
 # Actual docker image construction #
@@ -13,19 +20,6 @@ FROM artifact.onwalk.net/public/ubuntu:22.04
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
 ARG CIBUILD
-# NOTE about APT mirrorlists:
-# It seems that this feature could use some improvement. If you just get mirrorlist
-# from mirrors.ubuntu.com/mirrors.txt, it might contain faulty mirrors that either
-# cause `apt update` to fail with exit code 100 or make it hang on `0% [Working]`
-# indefinitely. Therefore we create a mirrorlist with the 2 mirrors that we know
-# should be reliable enough in combination and also well maintained.
-RUN if [ "$CIBUILD" = "true" ]; then \
-  echo "http://us-east-1.ec2.archive.ubuntu.com/ubuntu\tpriority:1\nhttp://archive.ubuntu.com/ubuntu" > /etc/apt/mirrorlist.main && \
-  echo "http://us-east-1.ec2.ports.ubuntu.com/ubuntu-ports\tpriority:1\nhttp://ports.ubuntu.com/ubuntu-ports" > /etc/apt/mirrorlist.ports && \
-  sed -i -e 's#http://archive.ubuntu.com\S*#mirror+file:/etc/apt/mirrorlist.main#g' \
-         -e 's#http://security.ubuntu.com\S*#mirror+file:/etc/apt/mirrorlist.main#g' \
-         -e 's#http://ports.ubuntu.com\S*#mirror+file:/etc/apt/mirrorlist.ports#g' /etc/apt/sources.list; \
-  fi
 
 ENV PATH="/opt/datadog-agent/bin/:$PATH" \
     DOCKER_DD_AGENT="true" \
@@ -39,13 +33,6 @@ RUN apt-get update \
 
 COPY --from=builder /output /
 
-# Allow running as an unprivileged user:
-# - General case is the dd-agent user
-# - OpenShift uses a random UID in the root group
-#
-# Containerd does not preserve permissions when mounting a volume on top
-# of an empty folder. Creating .placeholder files as a workaround.
-#
 RUN adduser --system --no-create-home --disabled-password --ingroup root dd-agent \
     && mkdir -p /var/log/datadog/ /conf.d \
     && touch /var/log/datadog/.placeholder \
