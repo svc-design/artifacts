@@ -24,7 +24,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/datadog/cluster-agent/'
           build_file: 'Dockerfile'
-          image: public/cluster-agent
+          image: public/datadog/cluster-agent
           tag: 7.43.1
           cache: false
           cache_registry: cache
@@ -42,7 +42,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/datadog/agent/'
           build_file: 'Dockerfile'
-          image: public/agent
+          image: public/datadog/agent
           tag: 7.43.1
           cache: false
           cache_registry: cache
