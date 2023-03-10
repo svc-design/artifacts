@@ -1,0 +1,71 @@
+name: Build & push ci runner terraform for aws image
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/iac-runner-images.yaml'
+      - 'oci/iac-runner/terraform-aws-finops/main.tf'
+      - 'oci/iac-runner/terraform-aws-finops/Dockerfile'
+      - 'oci/iac-runner/terraform-aws-finops/.terraformrc'
+      - 'oci/iac-runner/terraform-aws/Dockerfile'
+      - 'oci/iac-runner/pulumi-aws/main.tf'
+      - 'oci/iac-runner/pulumi-aws/Dockerfile'
+      - 'oci/iac-runner/pulumi-aws/.terraformrc'
+    branches:
+      - main
+
+jobs:
+  terraform-aws-finops:
+    runs-on: ubuntu-latest
+    name: Build ci runner terraform for aws image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push terraform for aws image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/iac-runner/terraform-aws-finops/'
+          build_file: 'Dockerfile'
+          image: public/terraform-aws
+          tag: latest
+          cache: true
+          cache_registry: cache
+  terraform-aws:
+    runs-on: ubuntu-latest
+    name: Build ci runner terraform for aws image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push terraform for aws custom image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/iac-runner/terraform-aws/'
+          build_file: 'Dockerfile'
+          image: public/terraform-aws
+          tag: latest
+          cache: true
+          cache_registry: cache
+  pulumi-aws:
+    runs-on: ubuntu-latest
+    name: Build ci runner pulumi for aws image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push pulumi for aws image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/iac-runner/pulumi-aws/'
+          build_file: 'Dockerfile'
+          image: devops/pulumi-aws
+          tag: latest
+          cache: true
+          cache_registry: cache

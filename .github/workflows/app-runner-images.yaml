@@ -1,0 +1,72 @@
+name: Build & push chart builder apline base image
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/app-runner-images.yaml'
+      - 'oci/app-runner/kube-tools-alpine/ca.crt'
+      - 'oci/app-runner/kube-tools-alpine/Makefile'
+      - 'oci/app-runner/kube-tools-alpine/Dockerfile'
+      - 'oci/app-runner/kube-tools-alpine/repositories'
+      - 'oci/app-runner/chart-builder-alpine/ca.crt'
+      - 'oci/app-runner/chart-builder-alpine/Makefile'
+      - 'oci/app-runner/chart-builder-alpine/Dockerfile'
+      - 'oci/app-runner/chart-builder-alpine/repositories'
+      - 'oci/app-runner/image-builder-alpine/Dockerfile'
+    branches:
+      - main
+
+jobs:
+  chart-builder-alpine:
+    runs-on: ubuntu-latest
+    name: build chart builder alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push chart builder alpine base image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/app-runner/chart-builder-alpine/'
+          build_file: 'Dockerfile'
+          image: public/chart-builder-alpine
+          tag: latest
+          cache: false
+          cache_registry: cache
+  image-buider-alpine:
+    runs-on: ubuntu-latest
+    name: build chart builder alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push image builder alpine base image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/app-runner/image-builder-alpine/'
+          build_file: 'Dockerfile'
+          image: devops/image-builder-alpine
+          tag: latest
+          cache: false
+  kube-tools-alpine:
+    runs-on: ubuntu-latest
+    name: build k8s app runner alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push k8s app runner alpine base image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/app-runner/kube-tools-alpine/'
+          build_file: 'Dockerfile'
+          image: devops/kube-tools-alpine
+          tag: latest
+          cache: false
+          cache_registry: cache
