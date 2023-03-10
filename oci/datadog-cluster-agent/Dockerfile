@@ -2,7 +2,7 @@
 # Preparation stage: layout and chmods #
 ########################################
 
-FROM datadog/cluster-agent:latest as builder
+FROM artifact.onwalk.net/k8s/datadog/cluster-agent:latest as builder
 
 ####################################
 # Actual docker image construction #
