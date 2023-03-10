@@ -2,8 +2,8 @@ FROM artifact.onwalk.net/k8s/datadog/agent:7.43.1
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
-ADD 99DpkgForceConf /etc/apt/apt.conf.d/99DpkgForceConf
-ADD 00InstallRecommends /etc/apt/apt.conf.d/00InstallRecommends
+ADD 99DpkgForceConf /etc/apt/apt.conf.d/
+ADD 00InstallRecommends /etc/apt/apt.conf.d/
 RUN apt update && export DEBIAN_FRONTEND=noninteractive && apt install ca-certificates curl -y
 RUN apt install -f && dpkg --configure -a 
 RUN cd /usr/local/share/ca-certificates/ && curl http://certinfo.roche.com/rootcerts/Roche%20Root%20CA%201.cer -o RocheRootCA1.cer && \
