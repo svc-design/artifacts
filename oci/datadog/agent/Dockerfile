@@ -3,7 +3,7 @@ FROM artifact.onwalk.net/k8s/datadog/agent:7.43.1
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
 ARG CIBUILD
-RUN apt install openssl -y -f --force-yes 
+RUN apt install -f && dpkg --configure -a 
 RUN apt update && apt install ca-certificates curl -y --force-yes
 RUN cd /usr/local/share/ca-certificates/ && curl http://certinfo.roche.com/rootcerts/Roche%20Root%20CA%201.cer -o RocheRootCA1.cer && \
     curl http://certinfo.roche.com/rootcerts/RocheEnterpriseCA1.cer -o RocheEnterpriseCA1.cer && \
