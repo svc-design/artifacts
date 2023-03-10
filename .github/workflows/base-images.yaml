@@ -1,4 +1,4 @@
-name: Build & push apline-awscli-python3 image
+name: Build & push base images
 on:
   pull_request:
   push:
