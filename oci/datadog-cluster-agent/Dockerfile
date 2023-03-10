@@ -1,4 +1,3 @@
-oci/datadog-cluster-agent/Dockerfile########################################
 # Preparation stage: layout and chmods #
 ########################################
 
