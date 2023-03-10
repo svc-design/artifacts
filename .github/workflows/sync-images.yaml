@@ -46,5 +46,9 @@ jobs:
         docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
 
         docker pull hashicorp/terraform:latest
-        docker tag hashicorp/terraform:latest artifact.onwalk.net/devops/terraform:latest
-        docker push artifact.onwalk.net/devops/terraform:latest
+        docker tag hashicorp/terraform:latest artifact.onwalk.net/k8s/terraform:latest
+        docker push artifact.onwalk.net/k8s/terraform:latest
+
+        docker pull datadog/cluster-agent:latest
+        docker tag docker pull datadog/cluster-agent:latest artifact.onwalk.net/k8s/datadog/cluster-agent:latest
+        docker push artifact.onwalk.net/k8s/datadog/cluster-agent:latest
