@@ -1,4 +1,4 @@
-name: Build & push datadog cluster agent image
+name: Build & push datadog agent images
 on:
   pull_request:
   push:
@@ -30,11 +30,11 @@ jobs:
           cache_registry: cache
   datadog-agent:
     runs-on: ubuntu-latest
-    name: build chart builder datadog-cluster-agent image
+    name: build chart builder datadog-agent image
     steps:
       - uses: actions/checkout@master
 
-      - name: 'Artifact: build && push datadog-cluster-agent image'
+      - name: 'Artifact: build && push datadog-agent image'
         uses: aevea/action-kaniko@master
         with:
           registry: artifact.onwalk.net
