@@ -3,7 +3,7 @@ FROM artifact.onwalk.net/k8s/datadog/agent:7.43.1
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
 ARG CIBUILD
-RUN apt update && DEBIAN_FRONTEND=noninteractive apt install ca-certificates curl -y --force-confnew
+RUN apt update && export DEBIAN_FRONTEND=noninteractive | apt install ca-certificates curl -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" 
 RUN apt install -f && dpkg --configure -a 
 RUN cd /usr/local/share/ca-certificates/ && curl http://certinfo.roche.com/rootcerts/Roche%20Root%20CA%201.cer -o RocheRootCA1.cer && \
     curl http://certinfo.roche.com/rootcerts/RocheEnterpriseCA1.cer -o RocheEnterpriseCA1.cer && \
