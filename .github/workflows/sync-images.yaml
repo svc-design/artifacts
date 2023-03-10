@@ -50,5 +50,5 @@ jobs:
         docker push artifact.onwalk.net/k8s/terraform:latest
 
         docker pull datadog/cluster-agent:latest
-        docker tag docker pull datadog/cluster-agent:latest artifact.onwalk.net/k8s/datadog/cluster-agent:latest
+        docker tag datadog/cluster-agent:latest artifact.onwalk.net/k8s/datadog/cluster-agent:latest
         docker push artifact.onwalk.net/k8s/datadog/cluster-agent:latest
