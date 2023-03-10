@@ -1,4 +1,4 @@
-name: Build & push chart builder apline base image
+name: Build & push datadog cluster agent image
 on:
   pull_request:
   push:

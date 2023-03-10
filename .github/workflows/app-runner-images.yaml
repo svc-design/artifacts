@@ -1,4 +1,4 @@
-name: Build & push chart builder apline base image
+name: Build & push app ci runner images
 on:
   pull_request:
   push:
