@@ -3,12 +3,31 @@ on:
   pull_request:
   push:
     paths:
+      - 'oci/datadog/agent/Dockerfile'
+      - 'oci/datadog/cluster-agent/Dockerfile'
       - '.github/workflows/datadog-agent.yaml'
-      - 'oci/datadog-cluster-agent/Dockerfile'
     branches:
       - main
 
 jobs:
+  datadog-cluster-agent:
+    runs-on: ubuntu-latest
+    name: build chart builder datadog-cluster-agent image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push datadog-cluster-agent image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/datadog/cluster-agent/'
+          build_file: 'Dockerfile'
+          image: public/cluster-agent
+          tag: 7.43.1
+          cache: false
+          cache_registry: cache
   datadog-agent:
     runs-on: ubuntu-latest
     name: build chart builder datadog-cluster-agent image
@@ -21,9 +40,9 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/datadog-cluster-agent/'
+          path: 'oci/datadog/agent/'
           build_file: 'Dockerfile'
-          image: public/cluster-agent
+          image: public/agent
           tag: 7.43.1
           cache: false
           cache_registry: cache
