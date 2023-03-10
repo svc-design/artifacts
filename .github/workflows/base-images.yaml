@@ -141,6 +141,6 @@ jobs:
           path: './oci/base/ubuntu'
           build_file: 'Dockerfile' 
           image: public/ubuntu
-          tag: latest
+          tag: 22.04
           cache: true
           cache_registry: cache
