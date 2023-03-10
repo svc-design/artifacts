@@ -1,46 +1,23 @@
-########################################
-# Preparation stage: layout and chmods #
-########################################
-
-FROM artifact.onwalk.net/k8s/datadog/cluster-agent:latest AS builder
-FROM artifact.onwalk.net/k8s/datadog/cluster-agent:latest AS nosys-seccomp
-
-####################################
-# Actual docker image construction #
-####################################
-
-FROM artifact.onwalk.net/public/ubuntu:22.04
+FROM artifact.onwalk.net/k8s/datadog/cluster-agent:latest
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
 ARG CIBUILD
-
+RUN apt update && apt install ca-certificates curl -y
+RUN cd /usr/local/share/ca-certificates/ && curl http://certinfo.roche.com/rootcerts/Roche%20Root%20CA%201.cer -o RocheRootCA1.cer && \
+    curl http://certinfo.roche.com/rootcerts/RocheEnterpriseCA1.cer -o RocheEnterpriseCA1.cer && \
+    curl http://certinfo.roche.com/rootcerts/RocheEnterpriseCA2.cer \
+                                                                    -o RocheEnterpriseCA2.cer && curl http://certinfo.roche.com/rootcerts/Roche%20Root%20CA%201%20-%20G2.crt \
+                                                                    -o RocheRootCA1-G2.crt && curl http://certinfo.roche.com/rootcerts/Roche%20Enterprise%20CA%201%20-%20G2.crt \
+                                                                    -o RocheEnterpriseCA1-G2.crt && curl http://certinfo.roche.com/rootcerts/Roche%20G3%20Root%20CA.crt \
+                                                                    -o RocheG3RootCA.crt && curl http://certinfo.roche.com/rootcerts/Roche%20G3%20Issuing%20CA%201.crt \
+                                                                    -o RocheG3IssuingCA1.crt && curl http://certinfo.roche.com/rootcerts/Roche%20G3%20Issuing%20CA%202.crt \
+                                                                    -o RocheG3IssuingCA2.crt && curl http://certinfo.roche.com/rootcerts/Roche%20G3%20Issuing%20CA%203.crt \
+                                                                    -o RocheG3IssuingCA3.crt && curl http://certinfo.roche.com/rootcerts/Roche%20G3%20Issuing%20CA%204.crt \
+                                                                    -o RocheG3IssuingCA4.crt && update-ca-certificates
 ENV PATH="/opt/datadog-agent/bin/:$PATH" \
     DOCKER_DD_AGENT="true" \
-    # Allow User Group to exec the secret backend script.
     DD_SECRET_BACKEND_COMMAND_ALLOW_GROUP_EXEC_PERM="true"
-
-RUN apt-get update \
-    && apt full-upgrade -y \
-    && apt-get install --no-install-recommends -y ca-certificates curl libseccomp2 tzdata \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-COPY --from=builder /output /
-
-RUN adduser --system --no-create-home --disabled-password --ingroup root dd-agent \
-    && mkdir -p /var/log/datadog/ /conf.d \
-    && touch /var/log/datadog/.placeholder \
-    && touch /tmp/.placeholder \
-    && chown -R dd-agent:root /etc/datadog-agent/ /var/log/datadog/ /conf.d /tmp/ \
-    && chmod g+r,g+w,g+X -R /etc/datadog-agent/ /var/log/datadog/ /conf.d /tmp/
-
-# Ensure the glibc doesn't try to call syscalls that may not be supported
-COPY --from=nosys-seccomp /tmp/nosys.so /lib/x86_64-linux-gnu/nosys.so
-ENV LD_PRELOAD=/lib/x86_64-linux-gnu/nosys.so
-
-# Incompatible with the custom metrics API on port 443
-# Set DD_EXTERNAL_METRICS_PROVIDER_PORT to a higher value to run as non-root
-# USER dd-agent
 
 # Leave following directories RW to allow use of readonly rootfs
 VOLUME ["/etc/datadog-agent", "/var/log/datadog", "/tmp"]
