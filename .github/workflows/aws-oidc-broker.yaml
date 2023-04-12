@@ -1,0 +1,48 @@
+name: Build & push datadog agent images
+on:
+  pull_request:
+  push:
+    paths:
+      - 'oci/aws-cn-oidc-broker/Dockerfile'
+      - 'oci/aws-global-oidc-broker/Dockerfile'
+      - '.github/workflows/aws-oidc-broker.yaml'
+    branches:
+      - main
+
+jobs:
+  aws-global-oidc-broker:
+    runs-on: ubuntu-latest
+    name: build aws-global-oidc-broker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push datadog-cluster-agent image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/aws-global-oidc-broker/'
+          build_file: 'Dockerfile'
+          image: public/aws-global-oidc-broker
+          tag: 1.2.0
+          cache: false
+          cache_registry: cache
+  aws-cn-oidc-broker:
+    runs-on: ubuntu-latest
+    name: build aws-cn-oidc-broker image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push datadog-agent image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/aws-cn-oidc-broker'
+          build_file: 'Dockerfile'
+          image: public/aws-cn-oidc-broker
+          tag: 1.2.0
+          cache: false
+          cache_registry: cache
