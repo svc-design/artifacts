@@ -1,4 +1,4 @@
-name: Build & push datadog agent images
+name: Build & push aws-cn-oidc-broker images
 on:
   pull_request:
   push:
