@@ -1,0 +1,47 @@
+name: Sync Chart
+
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/charts.yaml'
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@main
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: Initialization environment
+      env:
+        DEBIAN_FRONTEND: noninteractive
+        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update 
+        sudo apt install git -y
+        sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        helm plugin install https://github.com/chartmuseum/helm-push.git
+        helm repo add neo4j https://helm.neo4j.com/neo4j
+        helm repo add bitnami https://charts.bitnami.com/bitnami
+        helm repo add grafana https://grafana.github.io/helm-charts
+        helm repo add deepflow https://deepflowio.github.io/deepflow
+        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+        helm repo add alerta-web https://hayk96.github.io/alerta-web
+        helm repo add openldap https://jp-gouin.github.io/helm-openldap/
+        echo "$REPO_PASSWORD" | helm repo add sync --username=admin --password-stdin https://artifact.onwalk.net/chartrepo/public/
+        helm repo up
+
+    - name: Build and Push chart
+      shell: bash
+      run: |
+        helm fetch openldap/openldap-stack-ha --version=4.1.1
+        helm cm-push openldap-stack-ha-4.1.1.tgz sync
+
+        helm fetch bitnami/keycloak --version=14.2
+        helm cm-push keycloak-14.2.0.tgz sync
