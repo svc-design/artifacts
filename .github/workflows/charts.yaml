@@ -35,7 +35,7 @@ jobs:
         helm repo add alerta-web https://hayk96.github.io/alerta-web
         helm repo add openldap https://jp-gouin.github.io/helm-openldap/
         helm repo add datadog https://helm.datadoghq.com
-        helm repo add fluxcd-community https://fluxcd-community.github.io/helm-charts
+        helm repo add fluxcd https://fluxcd-community.github.io/helm-charts
         echo "$REPO_PASSWORD" | helm repo add sync --username=admin --password-stdin https://artifact.onwalk.net/chartrepo/public/
         helm repo up
 
