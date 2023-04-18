@@ -35,6 +35,7 @@ jobs:
         helm repo add alerta-web https://hayk96.github.io/alerta-web
         helm repo add openldap https://jp-gouin.github.io/helm-openldap/
         helm repo add datadog https://helm.datadoghq.com
+        helm repo add fluxcd-community https://fluxcd-community.github.io/helm-charts
         echo "$REPO_PASSWORD" | helm repo add sync --username=admin --password-stdin https://artifact.onwalk.net/chartrepo/public/
         helm repo up
 
@@ -49,3 +50,6 @@ jobs:
 
         helm fetch datadog/datadog --version=3.25.5
         helm cm-push datadog-3.25.5.tgz sync
+
+        helm fetch  fluxcd/flux2 --version=1.0.0
+        helm cm-push flux2-1.0.0.tgz sync
