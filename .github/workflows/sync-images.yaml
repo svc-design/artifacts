@@ -62,58 +62,58 @@ jobs:
         docker push artifact.onwalk.net/k8s/datadog/agent:7.43.1
 
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/checkoutservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/checkoutservice:0.3.7  artifact.onwalk.net/pubilc/checkoutservice:latest
-        docker pull artifact.onwalk.net/pubilc/checkoutservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/checkoutservice:0.3.7  artifact.onwalk.net/public/checkoutservice:latest
+        docker pull artifact.onwalk.net/public/checkoutservice:latest
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/frontend:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/frontend:0.3.7  artifact.onwalk.net/pubilc/frontend:latest
-        docker pull artifact.onwalk.net/pubilc/frontend:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/frontend:0.3.7  artifact.onwalk.net/public/frontend:latest
+        docker pull artifact.onwalk.net/public/frontend:latest
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/paymentservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/paymentservice:0.3.7  artifact.onwalk.net/pubilc/paymentservice:latest
-        docker pull artifact.onwalk.net/pubilc/paymentservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/paymentservice:0.3.7  artifact.onwalk.net/public/paymentservice:latest
+        docker pull artifact.onwalk.net/public/paymentservice:latest
         
         docker pull redis:alpine
-        docker tag redis:alpine  artifact.onwalk.net/pubilc/redis:alpine
-        docker pull artifact.onwalk.net/pubilc/redis:alpine
+        docker tag redis:alpine  artifact.onwalk.net/public/redis:alpine
+        docker pull artifact.onwalk.net/public/redis:alpine
         
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/adservice:0.3.7
-        docker tag adservice:latest  artifact.onwalk.net/pubilc/adservice:latest
-        docker pull artifact.onwalk.net/pubilc/adservice:latest
+        docker tag adservice:latest  artifact.onwalk.net/public/adservice:latest
+        docker pull artifact.onwalk.net/public/adservice:latest
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/currencyservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/currencyservice:0.3.7  artifact.onwalk.net/pubilc/currencyservice:latest
-        docker pull artifact.onwalk.net/pubilc/currencyservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/currencyservice:0.3.7  artifact.onwalk.net/public/currencyservice:latest
+        docker pull artifact.onwalk.net/public/currencyservice:latest
         
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/productcatalogservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/productcatalogservice:0.3.7  artifact.onwalk.net/pubilc/productcatalogservice:latest
-        docker pull artifact.onwalk.net/pubilc/productcatalogservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/productcatalogservice:0.3.7  artifact.onwalk.net/public/productcatalogservice:latest
+        docker pull artifact.onwalk.net/public/productcatalogservice:latest
         
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/shippingservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/shippingservice:0.3.7  artifact.onwalk.net/pubilc/shippingservice:latest
-        docker pull artifact.onwalk.net/pubilc/shippingservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/shippingservice:0.3.7  artifact.onwalk.net/public/shippingservice:latest
+        docker pull artifact.onwalk.net/public/shippingservice:latest
 
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/cartservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/cartservice:0.3.7  artifact.onwalk.net/pubilc/cartservice:latest
-        docker pull artifact.onwalk.net/pubilc/cartservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/cartservice:0.3.7  artifact.onwalk.net/public/cartservice:latest
+        docker pull artifact.onwalk.net/public/cartservice:latest
         
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/emailservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/emailservice:0.3.7  artifact.onwalk.net/pubilc/emailservice:latest
-        docker pull artifact.onwalk.net/pubilc/emailservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/emailservice:0.3.7  artifact.onwalk.net/public/emailservice:latest
+        docker pull artifact.onwalk.net/public/emailservice:latest
         
         docker pull busybox
-        docker tag busybox:latest  artifact.onwalk.net/pubilc/busybox:latest
-        docker pull artifact.onwalk.net/pubilc/busybox:latest
+        docker tag busybox:latest  artifact.onwalk.net/public/busybox:latest
+        docker pull artifact.onwalk.net/public/busybox:latest
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/loadgenerator:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/loadgenerator:0.3.7  artifact.onwalk.net/pubilc/loadgenerator:latest
-        docker pull artifact.onwalk.net/pubilc/loadgenerator:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/loadgenerator:0.3.7  artifact.onwalk.net/public/loadgenerator:latest
+        docker pull artifact.onwalk.net/public/loadgenerator:latest
         
         
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7 artifact.onwalk.net/pubilc/recommendationservice:latest
-        docker pull artifact.onwalk.net/pubilc/recommendationservice:latest
+        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7 artifact.onwalk.net/public/recommendationservice:latest
+        docker pull artifact.onwalk.net/public/recommendationservice:latest
