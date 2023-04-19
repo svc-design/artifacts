@@ -60,3 +60,51 @@ jobs:
         docker pull datadog/agent:7.43.1
         docker tag datadog/agent:7.43.1 artifact.onwalk.net/k8s/datadog/agent:7.43.1
         docker push artifact.onwalk.net/k8s/datadog/agent:7.43.1
+
+        docker pull checkoutservice:latest
+        docker tag checkoutservice:latest  artifact.onwalk.net/pubilc/checkoutservice:latest
+        docker pull artifact.onwalk.net/pubilc/checkoutservice:latest
+
+        docker pull frontend:latest
+        docker tag  frontend:latest  artifact.onwalk.net/pubilc/frontend:latest
+        docker pull artifact.onwalk.net/pubilc/frontend:latest
+
+        docker pull paymentservice:latest
+        docker tag paymentservice:latest  artifact.onwalk.net/pubilc/paymentservice:latest
+        docker pull artifact.onwalk.net/pubilc/paymentservice:latest
+
+        docker pull redis:alpine
+        docker tag redis:alpine  artifact.onwalk.net/pubilc/redis:alpine
+        docker pull artifact.onwalk.net/pubilc/redis:alpine
+
+        docker pull adservice
+        docker tag adservice:latest  artifact.onwalk.net/pubilc/adservice:latest
+        docker pull artifact.onwalk.net/pubilc/adservice:latest
+
+        docker pull currencyservice
+        docker tag currencyservice:latest  artifact.onwalk.net/pubilc/currencyservice:latest
+        docker pull artifact.onwalk.net/pubilc/currencyservice:latest
+
+        docker pull productcatalogservice
+        docker tag productcatalogservice:latest  artifact.onwalk.net/pubilc/productcatalogservice:latest
+        docker pull artifact.onwalk.net/pubilc/productcatalogservice:latest
+
+        docker pull shippingservice
+        docker tag shippingservice:latest  artifact.onwalk.net/pubilc/shippingservice:latest
+        docker pull artifact.onwalk.net/pubilc/shippingservice:latest
+
+        docker pull cartservice
+        docker tag cartservice:latest  artifact.onwalk.net/pubilc/cartservice:latest
+        docker pull artifact.onwalk.net/pubilc/cartservice:latest
+
+        docker pull emailservice
+        docker tag emailservice:latest  artifact.onwalk.net/pubilc/emailservice:latest
+        docker pull artifact.onwalk.net/pubilc/emailservice:latest
+
+        docker pull busybox
+        docker tag busybox:latest  artifact.onwalk.net/pubilc/busybox:latest
+        docker pull artifact.onwalk.net/pubilc/busybox:latest
+
+        docker pull loadgenerator
+        docker tag loadgenerator:latest  artifact.onwalk.net/pubilc/loadgenerator:latest
+        docker pull artifact.onwalk.net/pubilc/loadgenerator:latest
