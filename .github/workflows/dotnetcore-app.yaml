@@ -1,0 +1,29 @@
+name: Build & push dotnetcore-app images
+on:
+  pull_request:
+  push:
+    paths:
+      - 'oci/dotnetcore-app/Dockerfile'
+      - '.github/workflows/dotnetcore-app.yaml'
+    branches:
+      - main
+
+jobs:
+  dotnetcore-app:
+    runs-on: ubuntu-latest
+    name: Build dotnetcore-app image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine-awscli-python3 image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/dotnetcore-app/'
+          build_file: 'Dockerfile'
+          image: public/dotnetcore-app/
+          tag: latest
+          cache: true
+          cache_registry: cache
