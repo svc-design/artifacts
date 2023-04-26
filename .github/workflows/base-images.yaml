@@ -35,7 +35,6 @@ jobs:
           tag: latest
           cache: true
           cache_registry: cache
-  alpine-glibc:
   alpine-awscli-python3:
     runs-on: ubuntu-latest
     needs: [alpine-awscli]
