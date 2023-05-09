@@ -3,7 +3,6 @@ on:
   pull_request:
   push:
     paths:
-      - '.github/workflows/base-images.yaml'
       - 'oci/base/ubuntu/Dockerfile'
       - 'oci/base/debian/Dockerfile'
       - 'oci/base/debian-slim/Dockerfile'
@@ -12,6 +11,7 @@ on:
       - 'oci/base/alpine-glibc/Dockerfile'
       - 'oci/base/alpine-awscli/Dockerfile'
       - 'oci/base/alpine-awscli-python3/Dockerfile'
+      - '.github/workflows/base-images.yaml'
     branches:
       - main
 
