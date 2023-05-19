@@ -1,0 +1,29 @@
+name: Build & push chat-with-gpt images
+on:
+  pull_request:
+  push:
+    paths:
+      - 'oci/chat-with-gpt/Dockerfile'
+      - '.github/workflows/chat-with-gpt.yaml'
+    branches:
+      - main
+
+jobs:
+  chat-with-gpt:
+    runs-on: ubuntu-latest
+    name: build chat-with-gpt image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push chat-with-gpt image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: 'oci/chat-with-gpt/'
+          build_file: 'Dockerfile'
+          image: public/chatwithgpt
+          tag: latest
+          cache: true
+          cache_registry: cache
