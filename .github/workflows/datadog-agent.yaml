@@ -1,4 +1,5 @@
 name: Build & push datadog agent images
+
 on:
   pull_request:
   push:
@@ -6,8 +7,8 @@ on:
       - 'oci/datadog/agent/Dockerfile'
       - 'oci/datadog/cluster-agent/Dockerfile'
       - '.github/workflows/datadog-agent.yaml'
-    branches:
-      - main
+  workflow_dispatch:
+    branches: [ 'main' ]
 
 jobs:
   datadog-cluster-agent:
