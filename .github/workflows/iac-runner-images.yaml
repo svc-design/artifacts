@@ -1,5 +1,7 @@
 name: Build & push iac ci runner images
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
@@ -11,6 +13,7 @@ on:
       - 'oci/iac-runner/pulumi-aws/main.tf'
       - 'oci/iac-runner/pulumi-aws/Dockerfile'
       - 'oci/iac-runner/pulumi-aws/.terraformrc'
+  workflow_dispatch:
     branches:
       - main
 

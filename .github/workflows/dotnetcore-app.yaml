@@ -1,10 +1,13 @@
 name: Build & push dotnetcore-app images
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
       - 'oci/dotnetcore-app/Dockerfile'
       - '.github/workflows/dotnetcore-app.yaml'
+  workflow_dispatch:
     branches:
       - main
 

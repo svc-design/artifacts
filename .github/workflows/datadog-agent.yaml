@@ -1,6 +1,8 @@
 name: Build & push datadog agent images
 
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
@@ -26,7 +28,7 @@ jobs:
           path: 'oci/datadog/cluster-agent/'
           build_file: 'Dockerfile'
           image: public/datadog/cluster-agent
-          tag: 7.43.1
+          tag: 7.44.1
           cache: false
           cache_registry: cache
   datadog-agent:
@@ -44,6 +46,6 @@ jobs:
           path: 'oci/datadog/agent/'
           build_file: 'Dockerfile'
           image: public/datadog/agent
-          tag: 7.43.1
+          tag: 7.44.1
           cache: false
           cache_registry: cache

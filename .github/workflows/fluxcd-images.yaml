@@ -1,5 +1,7 @@
 name: Build & push flux-cd images
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
@@ -11,6 +13,7 @@ on:
       - 'oci/fluxcd/flux-kustomize-controller/Dockerfile'
       - 'oci/fluxcd/flux-notification-controller/Dockerfile'
       - 'oci/fluxcd/flux-source-controller/Dockerfile'
+  workflow_dispatch:
     branches:
       - main
 
