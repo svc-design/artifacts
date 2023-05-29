@@ -1,10 +1,13 @@
 name: Build & push chat-with-gpt images
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
       - 'oci/chat-with-gpt/Dockerfile'
       - '.github/workflows/chat-with-gpt.yaml'
+  workflow_dispatch:
     branches:
       - main
 

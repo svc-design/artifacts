@@ -1,5 +1,7 @@
 name: Build & push base images
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
@@ -12,6 +14,7 @@ on:
       - 'oci/base/alpine-awscli/Dockerfile'
       - 'oci/base/alpine-awscli-python3/Dockerfile'
       - '.github/workflows/base-images.yaml'
+  workflow_dispatch:
     branches:
       - main
 

@@ -1,4 +1,7 @@
 name: Create AWS Golden AMI
+on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
@@ -7,6 +10,7 @@ name: Create AWS Golden AMI
       - '.github/workflows/packer/ubuntu-os-ami.json'
       - '.github/workflows/packer/ubuntu-os-ami.json.pkr.hcl'
       - '.github/workflows/packer/golden-image-pipeline.yaml'
+  workflow_dispatch:
     branches:
       - main
 

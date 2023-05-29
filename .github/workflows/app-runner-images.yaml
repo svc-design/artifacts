@@ -1,5 +1,8 @@
 name: Build & push app ci runner images
+
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
@@ -13,6 +16,7 @@ on:
       - 'oci/app-runner/chart-builder-alpine/Dockerfile'
       - 'oci/app-runner/chart-builder-alpine/repositories'
       - 'oci/app-runner/image-builder-alpine/Dockerfile'
+  workflow_dispatch:
     branches:
       - main
 

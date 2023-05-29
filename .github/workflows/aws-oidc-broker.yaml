@@ -1,11 +1,14 @@
 name: Build & push aws-cn-oidc-broker images
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
       - 'oci/aws-cn-oidc-broker/Dockerfile'
       - 'oci/aws-global-oidc-broker/Dockerfile'
       - '.github/workflows/aws-oidc-broker.yaml'
+  workflow_dispatch:
     branches:
       - main
 
