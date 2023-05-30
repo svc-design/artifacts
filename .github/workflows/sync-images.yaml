@@ -37,83 +37,148 @@ jobs:
         docker tag gcr.io/kaniko-project/executor:debug artifact.onwalk.net/k8s/kaniko-executor:debug
         docker push artifact.onwalk.net/k8s/kaniko-executor:debug
 
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull gcr.io/kaniko-project/executor:v1.9.1
         docker tag gcr.io/kaniko-project/executor:v1.9.1 artifact.onwalk.net/k8s/kaniko-executor:1.9.1
         docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1
 
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker tag gcr.io/kaniko-project/executor:v1.9.1-debug artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
         docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
 
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull hashicorp/terraform:latest
         docker tag hashicorp/terraform:latest artifact.onwalk.net/k8s/terraform:latest
         docker push artifact.onwalk.net/k8s/terraform:latest
 
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull datadog/cluster-agent:latest
         docker tag datadog/cluster-agent:latest artifact.onwalk.net/k8s/datadog/cluster-agent:latest
         docker push artifact.onwalk.net/k8s/datadog/cluster-agent:latest
 
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull datadog/cluster-agent:7.43.1
         docker tag datadog/cluster-agent:7.43.1 artifact.onwalk.net/k8s/datadog/cluster-agent:7.43.1
         docker push artifact.onwalk.net/k8s/datadog/cluster-agent:7.43.1
 
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull datadog/agent:7.43.1
         docker tag datadog/agent:7.43.1 artifact.onwalk.net/k8s/datadog/agent:7.43.1
         docker push artifact.onwalk.net/k8s/datadog/agent:7.43.1
 
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/checkoutservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/checkoutservice:0.3.7  artifact.onwalk.net/public/checkoutservice:latest
         docker pull artifact.onwalk.net/public/checkoutservice:latest
         
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/frontend:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/frontend:0.3.7  artifact.onwalk.net/public/frontend:latest
         docker pull artifact.onwalk.net/public/frontend:latest
         
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/paymentservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/paymentservice:0.3.7  artifact.onwalk.net/public/paymentservice:latest
         docker pull artifact.onwalk.net/public/paymentservice:latest
         
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull redis:alpine
         docker tag redis:alpine  artifact.onwalk.net/public/redis:alpine
         docker pull artifact.onwalk.net/public/redis:alpine
         
-        
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/adservice:0.3.7
         docker tag adservice:latest  artifact.onwalk.net/public/adservice:latest
         docker pull artifact.onwalk.net/public/adservice:latest
         
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/currencyservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/currencyservice:0.3.7  artifact.onwalk.net/public/currencyservice:latest
         docker pull artifact.onwalk.net/public/currencyservice:latest
         
         
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/productcatalogservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/productcatalogservice:0.3.7  artifact.onwalk.net/public/productcatalogservice:latest
         docker pull artifact.onwalk.net/public/productcatalogservice:latest
         
         
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/shippingservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/shippingservice:0.3.7  artifact.onwalk.net/public/shippingservice:latest
         docker pull artifact.onwalk.net/public/shippingservice:latest
 
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/cartservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/cartservice:0.3.7  artifact.onwalk.net/public/cartservice:latest
         docker pull artifact.onwalk.net/public/cartservice:latest
         
         
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/emailservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/emailservice:0.3.7  artifact.onwalk.net/public/emailservice:latest
         docker pull artifact.onwalk.net/public/emailservice:latest
         
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull busybox
         docker tag busybox:latest  artifact.onwalk.net/public/busybox:latest
         docker pull artifact.onwalk.net/public/busybox:latest
         
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/loadgenerator:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/loadgenerator:0.3.7  artifact.onwalk.net/public/loadgenerator:latest
         docker pull artifact.onwalk.net/public/loadgenerator:latest
         
         
+    - name: Sync images
+      shell: bash
+      run: |
         docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7 artifact.onwalk.net/public/recommendationservice:latest
         docker pull artifact.onwalk.net/public/recommendationservice:latest
