@@ -1,4 +1,4 @@
-FROM artifact.onwalk.net/k8s/datadog/agent:7.44.1
+FROM artifact.onwalk.net/public/datadog/agent:7.44.1
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
