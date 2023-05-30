@@ -1,4 +1,4 @@
-FROM artifact.onwalk.net/k8s/datadog/cluster-agent:7.43.1
+FROM artifact.onwalk.net/public/datadog/cluster-agent:7.43.1
 
 LABEL maintainer "Datadog <package@datadoghq.com>"
 
