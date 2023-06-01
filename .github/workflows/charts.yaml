@@ -56,3 +56,6 @@ jobs:
 
         helm fetch  fluxcd/flux2 --version=1.0.0
         helm cm-push flux2-1.0.0.tgz sync
+        
+        helm fetch  fluxcd/flux2 --version=2.7.0
+        helm cm-push flux2-2.7.0.tgz sync
