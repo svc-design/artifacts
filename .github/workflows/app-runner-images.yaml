@@ -41,7 +41,7 @@ jobs:
           cache_registry: cache
   image-buider-alpine:
     runs-on: ubuntu-latest
-    name: build chart builder alpine base image
+    name: build image builder alpine base image
     steps:
       - uses: actions/checkout@master
 
