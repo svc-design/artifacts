@@ -79,7 +79,7 @@ jobs:
   alpine-glibc:
     runs-on: ubuntu-latest
     name: Build alpine-glibc base image
-    needs: [alpine-ca]
+    needs: [alpine]
     steps:
       - uses: actions/checkout@master
 
