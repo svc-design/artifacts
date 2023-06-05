@@ -1,0 +1,47 @@
+name: Sync Images
+
+on:
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/sync-fluxcd-images.yaml'
+    branches:
+      - main
+
+env:
+  TZ: Asia/Shanghai
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@main
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: Initialization environment
+      env:
+        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        sudo timedatectl set-timezone "$TZ"
+        echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+
+    - name: Sync images
+      shell: bash
+      run: |
+        LIST="helm-controller:v0.31.1             \
+              image-automation-controller:v0.31.0 \
+              source-controller:v0.36.0           \ 
+              notification-controller:v0.33.0     \ 
+              kustomize-controller:v0.35.0        \
+              image-reflector-controller:v0.26.0"
+        for IMG in $LIST
+        do
+          docker pull gcr.io/fluxcd/$IMG
+          docker tag gcr.io/fluxcd/$IMG artifact.onwalk.net/fluxcd/$IMG
+          docker push artifact.onwalk.net/public/fluxcd/$IMG
+        done
