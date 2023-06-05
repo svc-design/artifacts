@@ -19,7 +19,7 @@ on:
       - main
 
 jobs:
-  alpine-cli:
+  alpine-awscli:
     runs-on: ubuntu-latest
     name: Build alpine-cli base image
     needs: [alpine]
@@ -32,7 +32,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/base/alpine-cli'
+          path: 'oci/base/alpine-awscli'
           build_file: 'Dockerfile'
           image: public/alpine-cli
           tag: latest
@@ -57,7 +57,7 @@ jobs:
           tag: latest
           cache: true
           cache_registry: cache
-  alpine-awscli:
+  alpine-cli:
     runs-on: ubuntu-latest
     name: Build alpine-awscli base image
     needs: [alpine-glibc]
@@ -70,9 +70,9 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/base/alpine-awscli'
+          path: 'oci/base/alpine-cli'
           build_file: 'Dockerfile'
-          image: public/alpine-awscli
+          image: public/alpine-cli
           tag: 2.6.1
           cache: true
           cache_registry: cache
