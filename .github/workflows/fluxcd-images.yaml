@@ -32,7 +32,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './oci/base/alpine'
           build_file: 'Dockerfile'
-          image: public/alpine-ca
+          image: public/alpine
           tag: latest
           cache: true
           cache_registry: cache
@@ -69,7 +69,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: oci/fluxcd/flux-helm-controller/
           image: public/fluxcd/helm-controller
-          tag: v0.22.1
+          tag: v0.31.1
           cache: true
           cache_registry: cache
   fluxcd-image-automation-controller:
@@ -87,7 +87,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: oci/fluxcd/flux-image-automation-controller/
           image: public/fluxcd/image-automation-controller
-          tag: v0.23.4
+          tag: v0.31.0
           cache: true
           cache_registry: cache
   flux-image-reflector-controller:
@@ -105,7 +105,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: oci/fluxcd/flux-image-reflector-controller/
           image: public/fluxcd/image-reflector-controller
-          tag: v0.19.2
+          tag: v0.26.0
           cache: true
           cache_registry: cache
   flux-kustomize-controller:
@@ -123,7 +123,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/fluxcd/flux-kustomize-controller/'
           image: public/fluxcd/kustomize-controller
-          tag: v0.26.2
+          tag: v0.35.0
           cache: true
           cache_registry: cache
   flux-notification-controller:
@@ -141,7 +141,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: oci/fluxcd/flux-notification-controller/
           image: public/fluxcd/notification-controller
-          tag: v0.24.0
+          tag: v0.33.0
           cache: true
           cache_registry: cache
   flux-source-controller:
@@ -159,6 +159,6 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: oci/fluxcd/flux-source-controller/
           image: public/fluxcd/source-controller
-          tag: v0.25.9
+          tag: v0.36.0
           cache: true
           cache_registry: cache
