@@ -1,5 +1,5 @@
-FROM alpine:latest
-MAINTAINER shenlan xz@onwalk.net
+FROM artifact.onwalk.net/public/alpine:latest
+MAINTAINER shenlan cloudsvcdesign@gmail.com
 
 ENV VERSION=3.11.1
 ENV BASE_URL="https://get.helm.sh"
