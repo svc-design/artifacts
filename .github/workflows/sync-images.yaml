@@ -183,6 +183,7 @@ jobs:
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7 artifact.onwalk.net/public/recommendationservice:latest
         docker pull artifact.onwalk.net/public/recommendationservice:latest
 
+jobs:
   sync-terraform-images:
     runs-on: ubuntu-latest
 
@@ -201,7 +202,7 @@ jobs:
         sudo timedatectl set-timezone "$TZ"
         echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
 
-    - name: Sync images
+    - name: Sync terraform images
       shell: bash
       run: |
         docker pull hashicorp/terraform:latest 
