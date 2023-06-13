@@ -12,6 +12,30 @@ env:
   TZ: Asia/Shanghai
 
 jobs:
+  sync-terraform-images:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@main
+      with:
+        ref: ${{ github.head_ref }}
+
+    - name: Initialization environment
+      env:
+        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        sudo timedatectl set-timezone "$TZ"
+        echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+
+    - name: Sync terraform images
+      shell: bash
+      run: |
+        docker pull hashicorp/terraform:latest 
+        docker tag hashicorp/terraform:latest artifact.onwalk.net/devops/terraform:latest
+        docker pull artifact.onwalk.net/devops/terraform:latest
   build:
     runs-on: ubuntu-latest
 
@@ -29,6 +53,13 @@ jobs:
         sudo apt install git -y
         sudo timedatectl set-timezone "$TZ"
         echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:debug
+        docker tag gcr.io/kaniko-project/executor:debug artifact.onwalk.net/k8s/kaniko-executor:debug
+        docker push artifact.onwalk.net/k8s/kaniko-executor:debug
 
     - name: Sync images
       shell: bash
@@ -183,36 +214,3 @@ jobs:
         docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7 artifact.onwalk.net/public/recommendationservice:latest
         docker pull artifact.onwalk.net/public/recommendationservice:latest
 
-jobs:
-  sync-terraform-images:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@main
-      with:
-        ref: ${{ github.head_ref }}
-
-    - name: Initialization environment
-      env:
-        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install git -y
-        sudo timedatectl set-timezone "$TZ"
-        echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:debug
-        docker tag gcr.io/kaniko-project/executor:debug artifact.onwalk.net/k8s/kaniko-executor:debug
-        docker push artifact.onwalk.net/k8s/kaniko-executor:debug
-
-    - name: Sync images
-    - name: Sync terraform images
-      shell: bash
-      run: |
-        docker pull hashicorp/terraform:latest 
-        docker tag hashicorp/terraform:latest artifact.onwalk.net/devops/terraform:latest
-        docker pull artifact.onwalk.net/devops/terraform:latest
