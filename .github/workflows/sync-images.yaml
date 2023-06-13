@@ -202,6 +202,14 @@ jobs:
         sudo timedatectl set-timezone "$TZ"
         echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
 
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull gcr.io/kaniko-project/executor:debug
+        docker tag gcr.io/kaniko-project/executor:debug artifact.onwalk.net/k8s/kaniko-executor:debug
+        docker push artifact.onwalk.net/k8s/kaniko-executor:debug
+
+    - name: Sync images
     - name: Sync terraform images
       shell: bash
       run: |
