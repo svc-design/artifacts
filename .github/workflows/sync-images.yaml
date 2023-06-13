@@ -35,7 +35,7 @@ jobs:
       run: |
         docker pull hashicorp/terraform:latest 
         docker tag hashicorp/terraform:latest artifact.onwalk.net/devops/terraform:latest
-        docker pull artifact.onwalk.net/devops/terraform:latest
+        docker push artifact.onwalk.net/devops/terraform:latest
   build:
     runs-on: ubuntu-latest
 
