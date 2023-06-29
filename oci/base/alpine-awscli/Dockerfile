@@ -1,5 +1,5 @@
 # Build AWS Cli image for alpine
-FROM artifact.onwalk.net/public/alpine-glibc:2.34
+FROM artifact.onwalk.net/base/alpine-glibc:2.34
 LABEL maintainer="Haitao Pan <manbuzhe2009@qq.com>"
 
 ARG AWSCLI_VERSION=2.6.1
