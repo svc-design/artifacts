@@ -171,4 +171,5 @@ jobs:
           build_file: 'Dockerfile'
           image: base/alpine-awscli-python3
           tag: latest
-          cache: false
+          cache: true
+          cache_registry: cache
