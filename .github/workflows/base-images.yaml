@@ -173,4 +173,3 @@ jobs:
           image: base/alpine-awscli-python3
           tag: latest
           cache: false
-          cache_registry: cache
