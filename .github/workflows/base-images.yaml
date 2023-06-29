@@ -97,7 +97,9 @@ jobs:
   alpine-awscli:
     runs-on: ubuntu-latest
     name: Build alpine-cli base image
-    needs: [alpine]
+    needs:
+      - alpine
+      - alpine-glibc
     steps:
       - uses: actions/checkout@master
 
