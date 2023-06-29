@@ -94,12 +94,11 @@ jobs:
           tag: 22.04
           cache: true
           cache_registry: cache
-  alpine-awscli:
-    runs-on: ubuntu-latest
+  alpine-cli:
+    runs-on: ubuntu-lates
     name: Build alpine-cli base image
     needs:
       - alpine
-      - alpine-glibc
     steps:
       - uses: actions/checkout@master
 
@@ -109,7 +108,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/base/alpine-awscli'
+          path: 'oci/base/alpine-cli'
           build_file: 'Dockerfile'
           image: base/alpine-cli
           tag: latest
@@ -148,7 +147,7 @@ jobs:
           registry: artifact.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/base/alpine-cli'
+          path: 'oci/base/alpine-awscli'
           build_file: 'Dockerfile'
           image: base/alpine-awscli
           tag: 2.6.1
