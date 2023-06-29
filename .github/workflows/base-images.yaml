@@ -95,7 +95,7 @@ jobs:
           cache: true
           cache_registry: cache
   alpine-cli:
-    runs-on: ubuntu-lates
+    runs-on: ubuntu-latest
     name: Build alpine-cli base image
     needs:
       - alpine
