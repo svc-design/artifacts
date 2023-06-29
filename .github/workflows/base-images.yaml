@@ -34,7 +34,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/base/alpine-awscli'
           build_file: 'Dockerfile'
-          image: public/alpine-cli
+          image: base/alpine-cli
           tag: latest
           cache: true
           cache_registry: cache
@@ -53,7 +53,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/base/alpine-awscli-python3'
           build_file: 'Dockerfile'
-          image: public/alpine-awscli-python3
+          image: base/alpine-awscli-python3
           tag: latest
           cache: true
           cache_registry: cache
@@ -72,7 +72,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/base/alpine-cli'
           build_file: 'Dockerfile'
-          image: public/alpine-cli
+          image: base/alpine-cli
           tag: 2.6.1
           cache: true
           cache_registry: cache
@@ -91,7 +91,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/base/alpine-glibc'
           build_file: 'Dockerfile'
-          image: public/alpine-glibc
+          image: base/alpine-glibc
           tag: 2.34
           cache: true
           cache_registry: cache
@@ -109,7 +109,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './oci/base/alpine'
           build_file: 'Dockerfile' 
-          image: public/alpine
+          image: base/alpine
           tag: latest
           cache: true
           cache_registry: cache
@@ -127,7 +127,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './oci/base/debian'
           build_file: 'Dockerfile' 
-          image: public/debian
+          image: base/debian
           tag: latest
           cache: true
           cache_registry: cache
@@ -145,7 +145,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/base/debian-slim'
           build_file: 'Dockerfile' 
-          image: public/debian-slim
+          image: base/debian-slim
           tag: latest
           cache: true
           cache_registry: cache
@@ -163,7 +163,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './oci/base/ubuntu'
           build_file: 'Dockerfile' 
-          image: public/ubuntu
+          image: base/ubuntu
           tag: 22.04
           cache: true
           cache_registry: cache
