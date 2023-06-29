@@ -135,7 +135,7 @@ jobs:
           cache: true
           cache_registry: cache
             
-  alpine-cli:
+  alpine-awscli:
     runs-on: ubuntu-latest
     name: Build alpine-awscli base image
     needs: [alpine-glibc]
@@ -150,7 +150,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: 'oci/base/alpine-cli'
           build_file: 'Dockerfile'
-          image: base/alpine-cli
+          image: base/alpine-awscli
           tag: 2.6.1
           cache: true
           cache_registry: cache
