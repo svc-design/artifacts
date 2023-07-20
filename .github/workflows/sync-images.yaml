@@ -235,6 +235,6 @@ jobs:
     - name: Sync terraform images
       shell: bash
       run: |
-        docker pull docker-terragrunt:aws-tf-1.5.3-tg-0.48.3
-        docker tag docker-terragrunt:aws-tf-1.5.3-tg-0.48.3 artifact.onwalk.net/devops/terragrunt:0.48.3
-        docker push artifact.onwalk.net/devops/terragrunt:0.48.3
+        docker pull alpine/terragrunt:latest
+        docker tag alpine/terragrunt:latest artifact.onwalk.net/devops/terragrunt:latest
+        docker push artifact.onwalk.net/devops/terragrunt:latest
