@@ -10,6 +10,8 @@ on:
       - 'oci/iac-runner/terraform-aws-finops/Dockerfile'
       - 'oci/iac-runner/terraform-aws-finops/.terraformrc'
       - 'oci/iac-runner/terraform-aws/Dockerfile'
+      - 'oci/iac-runner/terraform-aws/provider.tf'
+      - 'oci/iac-runner/terraform-aws/.terraformrc'
       - 'oci/iac-runner/pulumi-aws/main.tf'
       - 'oci/iac-runner/pulumi-aws/Dockerfile'
       - 'oci/iac-runner/pulumi-aws/.terraformrc'
