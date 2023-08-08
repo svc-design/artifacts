@@ -6,6 +6,12 @@ on:
   push:
     paths:
       - 'oci/base/alpine/Dockerfile'
+      - 'oci/base/alpine/Dockerfile.version-3.13'
+      - 'oci/base/alpine/Dockerfile.version-3.14'
+      - 'oci/base/alpine/Dockerfile.version-3.15'
+      - 'oci/base/alpine/Dockerfile.version-3.16'
+      - 'oci/base/alpine/Dockerfile.version-3.17'
+      - 'oci/base/alpine/Dockerfile.version-3.18'
       - 'oci/base/alpine-cli/Dockerfile'
       - 'oci/base/alpine-glibc/Dockerfile'
       - 'oci/base/alpine-awscli/Dockerfile'
@@ -173,3 +179,105 @@ jobs:
           tag: latest
           cache: true
           cache_registry: cache
+  alpine-3.13:
+    runs-on: ubuntu-latest
+    name: Build alpine base image 3.14
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/alpine'
+          build_file: 'Dockerfile.version-3.13'
+          image: base/alpine
+          tag: 3.13
+          cache: true
+  alpine-3.14:
+    runs-on: ubuntu-latest
+    name: Build alpine base image 3.14
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/alpine'
+          build_file: 'Dockerfile.version-3.14'
+          image: base/alpine
+          tag: 3.14
+          cache: true
+  alpine-3.15:
+    runs-on: ubuntu-latest
+    name: Build alpine base image 3.15
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/alpine'
+          build_file: 'Dockerfile.version-3.15'
+          image: base/alpine
+          tag: 3.15
+          cache: true
+  alpine-3.16:
+    runs-on: ubuntu-latest
+    name: Build alpine base image 3.16
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/alpine'
+          build_file: 'Dockerfile.version-3.16'
+          image: base/alpine
+          tag: 3.16
+          cache: true
+  alpine-3.17:
+    runs-on: ubuntu-latest
+    name: Build alpine base image 3.17
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/alpine'
+          build_file: 'Dockerfile.version-3.17'
+          image: base/alpine
+          tag: 3.17
+          cache: true
+  alpine-3.18:
+    runs-on: ubuntu-latest
+    name: Build alpine base image 3.18
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/base/alpine'
+          build_file: 'Dockerfile.version-3.18'
+          image: base/alpine
+          tag: 3.18
+          cache: true

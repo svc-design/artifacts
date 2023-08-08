@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM alpine:3.16.7
 MAINTAINER shenlan manbuzhe2009@qq.com
 
 ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
