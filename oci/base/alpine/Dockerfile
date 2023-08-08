@@ -1,6 +1,8 @@
 FROM alpine:3.18.3
 MAINTAINER shenlan manbuzhe2009@qq.com
 
+USER root
+
 ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
 RUN echo "mozilla/Lets_Encrypt_ca.crt" >> /etc/ca-certificates.conf
 
