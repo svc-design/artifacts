@@ -6,7 +6,6 @@ on:
   push:
     paths:
       - 'oci/base/alpine/Dockerfile'
-      - 'oci/base/alpine-cli/Dockerfile'
       - 'oci/base/alpine-glibc/Dockerfile'
       - 'oci/base/alpine-awscli/Dockerfile'
       - 'oci/base/alpine-awscli-python3/Dockerfile'
@@ -92,26 +91,6 @@ jobs:
           build_file: 'Dockerfile' 
           image: base/ubuntu
           tag: 22.04
-          cache: true
-          cache_registry: cache
-  alpine-cli:
-    runs-on: ubuntu-latest
-    name: Build alpine-cli base image
-    needs:
-      - alpine
-    steps:
-      - uses: actions/checkout@master
-
-      - name: 'Artifact: build && push alpine-cli image'
-        uses: aevea/action-kaniko@master
-        with:
-          registry: artifact.onwalk.net
-          username: admin 
-          password: ${{ secrets.HELM_REPO_PASSWORD }}
-          path: 'oci/base/alpine-cli'
-          build_file: 'Dockerfile'
-          image: base/alpine-cli
-          tag: latest
           cache: true
           cache_registry: cache
   alpine-glibc:
