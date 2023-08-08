@@ -17,6 +17,5 @@ RUN cd /usr/local/share/ca-certificates/ && \
     curl http://certinfo.roche.com/rootcerts/Roche%20G3%20Issuing%20CA%203.crt -o RocheG3IssuingCA3.crt            && \
     curl http://certinfo.roche.com/rootcerts/Roche%20G3%20Issuing%20CA%204.crt -o RocheG3IssuingCA4.crt            && \
     update-ca-certificates
-ENTRYPOINT [ "/bin/sh" ]
 
 ENTRYPOINT [ "/bin/sh" ]
