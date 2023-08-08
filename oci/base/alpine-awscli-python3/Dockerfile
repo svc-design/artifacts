@@ -21,9 +21,9 @@ RUN apk add --update --no-cache curl binutils \
 
 # Install AWS CLI v2 for alpine
 RUN apk add --update --no-cache ca-certificates curl bash py3-pip unzip && \
-    curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VERSION}.zip -o awscliv2.zip \
-    && unzip awscliv2.zip && \
-    aws/install && \
+    curl -sL https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VERSION}.zip -o awscliv2.zip && \
+    unzip awscliv2.zip && \
+    aws/install        && \
     rm -rf awscliv2.zip \
            aws \
            /usr/local/aws-cli/v2/current/dist/aws_completer \
@@ -35,8 +35,8 @@ RUN apk add --update --no-cache ca-certificates curl bash py3-pip unzip && \
 
 # install python3
 RUN apk add --update --no-cache curl bash curl wget make jq git openssh python3 py3-pip zip unzip ca-certificates && \
-    && pip install --upgrade pip --user && pip install pyyaml boto3 Jinja2 \
-    && rm -rf /var/cache/apk/*
+    pip install --upgrade pip --user && pip install pyyaml boto3 Jinja2 && \
+    rm -rf /var/cache/apk/*
 
 # Add Roche ca certs
 RUN cd /usr/local/share/ca-certificates/ && \
