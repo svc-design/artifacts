@@ -8,11 +8,11 @@ on:
       - '.github/workflows/fluxcd-images.yaml'
       - 'oci/fluxcd/flux-cli/Dockerfile'
       - 'oci/fluxcd/flux-helm-controller/Dockerfile'
-      - 'oci/fluxcd/flux-image-automation-controller/Dockerfile'
-      - 'oci/fluxcd/flux-image-reflector-controller/Dockerfile'
+      - 'oci/fluxcd/flux-source-controller/Dockerfile'
       - 'oci/fluxcd/flux-kustomize-controller/Dockerfile'
       - 'oci/fluxcd/flux-notification-controller/Dockerfile'
-      - 'oci/fluxcd/flux-source-controller/Dockerfile'
+      - 'oci/fluxcd/flux-image-automation-controller/Dockerfile'
+      - 'oci/fluxcd/flux-image-reflector-controller/Dockerfile'
   workflow_dispatch:
     branches:
       - main
@@ -32,7 +32,7 @@ jobs:
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './oci/base/alpine'
           build_file: 'Dockerfile'
-          image: public/alpine
+          image: base/alpine
           tag: latest
           cache: true
           cache_registry: cache
