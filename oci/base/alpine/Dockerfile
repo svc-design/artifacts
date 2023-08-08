@@ -1,4 +1,4 @@
-FROM ghcr.io/jitesoft/alpine:3.18.2
+FROM alpine:3.18.3
 MAINTAINER shenlan manbuzhe2009@qq.com
 
 ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
