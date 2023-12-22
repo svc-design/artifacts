@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@master
 
       - name: get /usr/share/zoneinfo/Asia/Shanghai
-        shell: cp /usr/share/zoneinfo/Asia/Shanghai zoneinfo-Shanghai
+        run: cp /usr/share/zoneinfo/Asia/Shanghai zoneinfo-Shanghai
         working-directory: oci/prometheus/
 
       - name: 'Artifact: build && push -> artifact.onwalk.net/public/prometheus'
