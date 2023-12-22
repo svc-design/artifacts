@@ -41,12 +41,8 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Initialization environment
-      env:
-        PASSWORD: ${{ secrets.IAMGE_REPO_PASSWORD }}
       shell: bash
-      run: |
-        sudo apt update
-        echo "$PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+      run: docker login --username=admin --password=${{ secrets.IAMGE_REPO_PASSWORD }} artifact.onwalk.net
 
     - name: Sync images
       shell: bash
