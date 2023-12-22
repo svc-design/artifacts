@@ -1,0 +1,66 @@
+name: Build & push base images
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+  push:
+    paths:
+      - 'oci/prometheus/Dockerfile'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  alpine:
+    runs-on: ubuntu-latest
+    name: Build alpine base image
+    steps:
+      - uses: actions/checkout@master
+
+      - name: 'Artifact: build && push alpine with custom ca image'
+        uses: aevea/action-kaniko@master
+        with:
+          registry: artifact.onwalk.net
+          username: admin 
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+          path: './oci/prometheus/'
+          build_file: 'Dockerfile'
+          image: public/prometheus
+          tag: v2.48.1
+          cache: true
+          cache_registry: cache
+
+  sync-images:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      env:
+        PASSWORD: ${{ secrets.IAMGE_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        sudo timedatectl set-timezone "$TZ"
+        echo "$PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+
+    - name: Sync images
+      shell: bash
+      run: |
+        docker pull quay.io/prometheus-operator/prometheus-config-reloader:v0.70.0
+        docker tag  quay.io/prometheus-operator/prometheus-config-reloader:v0.70.0 artifact.onwalk.net/public/prometheus-config-reloader:v0.70.0
+        docker push artifact.onwalk.net/public/prometheus-config-reloader:v0.70.0
+
+        docker pull quay.io/prometheus-operator/prometheus-operator:v0.70.0 
+        docker tag  quay.io/prometheus-operator/prometheus-operator:v0.70.0 artifact.onwalk.net/public/prometheus-operator:v0.70.0
+        docker push artifact.onwalk.net/public/prometheus-operator:v0.70.0
+
+        docker pull registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.1 
+        docker tag  registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.1 artifact.onwalk.net/public/kube-state-metrics:v2.10.1
+        docker push artifact.onwalk.net/public/kube-state-metrics:v2.10.1
+
+        docker pull quay.io/prometheus/node-exporter:v1.7.0 
+        docker tag  quay.io/prometheus/node-exporter:v1.7.0 artifact.onwalk.net/node-exporter:v1.7.0
+        docker push artifact.onwalk.net/public/node-exporter:v1.7.0
