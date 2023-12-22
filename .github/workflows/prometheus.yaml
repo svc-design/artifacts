@@ -42,7 +42,9 @@ jobs:
 
     - name: Initialization environment
       shell: bash
-      run: docker login --username=admin --password=${{ secrets.IAMGE_REPO_PASSWORD }} artifact.onwalk.net
+      env:
+        PASSEORD=${{ secrets.HELM_REPO_PASSWORD }}
+      run: docker login --username=admin --password=${PASSWORD} artifact.onwalk.net
 
     - name: Sync images
       shell: bash
