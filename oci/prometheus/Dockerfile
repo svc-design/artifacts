@@ -1,6 +1,6 @@
 FROM quay.io/prometheus/prometheus:v2.48.1
 
-cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+COPY /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 USER       nobody
 EXPOSE     9090
