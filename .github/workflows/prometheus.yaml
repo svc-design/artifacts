@@ -46,8 +46,6 @@ jobs:
       shell: bash
       run: |
         sudo apt update
-        sudo apt install git -y
-        sudo timedatectl set-timezone "$TZ"
         echo "$PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
 
     - name: Sync images
