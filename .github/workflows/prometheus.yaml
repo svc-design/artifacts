@@ -21,10 +21,10 @@ jobs:
         run: cp /usr/share/zoneinfo/Asia/Shanghai zoneinfo-Shanghai
         working-directory: oci/prometheus/
 
-      - name: 'Artifact: build && push -> artifact.onwalk.net/base/prometheus'
+      - name: 'Artifact: build && push -> harbor.onwalk.net/base/prometheus'
         uses: aevea/action-kaniko@master
         with:
-          registry: artifact.onwalk.net
+          registry: harbor.onwalk.net
           username: admin 
           password: ${{ secrets.HELM_REPO_PASSWORD }}
           path: './oci/prometheus/'
@@ -44,27 +44,27 @@ jobs:
       shell: bash
       env:
         PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
-      run: docker login --username=admin --password=${PASSWORD} artifact.onwalk.net
+      run: docker login --username=admin --password=${PASSWORD} harbor.onwalk.net
 
     - name: Sync images
       shell: bash
       run: |
         docker pull quay.io/prometheus-operator/prometheus-config-reloader:v0.70.0
-        docker tag  quay.io/prometheus-operator/prometheus-config-reloader:v0.70.0 artifact.onwalk.net/base/prometheus-operator/prometheus-config-reloader:v0.70.0
-        docker push artifact.onwalk.net/base/prometheus-operator/prometheus-config-reloader:v0.70.0
+        docker tag  quay.io/prometheus-operator/prometheus-config-reloader:v0.70.0 harbor.onwalk.net/base/prometheus-operator/prometheus-config-reloader:v0.70.0
+        docker push harbor.onwalk.net/base/prometheus-operator/prometheus-config-reloader:v0.70.0
 
         docker pull quay.io/prometheus/node-exporter:v1.7.0 
-        docker tag  quay.io/prometheus/node-exporter:v1.7.0 artifact.onwalk.net/base/prometheus/node-exporter:v1.7.0
-        docker push artifact.onwalk.net/base/prometheus/node-exporter:v1.7.0
+        docker tag  quay.io/prometheus/node-exporter:v1.7.0 harbor.onwalk.net/base/prometheus/node-exporter:v1.7.0
+        docker push harbor.onwalk.net/base/prometheus/node-exporter:v1.7.0
 
         docker pull quay.io/prometheus-operator/prometheus-operator:v0.70.0 
-        docker tag  quay.io/prometheus-operator/prometheus-operator:v0.70.0 artifact.onwalk.net/base/prometheus-operator/prometheus-operator:v0.70.0
-        docker push artifact.onwalk.net/base/prometheus-operator/prometheus-operator:v0.70.0
+        docker tag  quay.io/prometheus-operator/prometheus-operator:v0.70.0 harbor.onwalk.net/base/prometheus-operator/prometheus-operator:v0.70.0
+        docker push harbor.onwalk.net/base/prometheus-operator/prometheus-operator:v0.70.0
 
         docker pull registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.1 
-        docker tag  registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.1 artifact.onwalk.net/base/kube-state-metrics/kube-state-metrics:v2.10.1
-        docker push artifact.onwalk.net/base/kube-state-metrics/kube-state-metrics:v2.10.1
+        docker tag  registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.10.1 harbor.onwalk.net/base/kube-state-metrics/kube-state-metrics:v2.10.1
+        docker push harbor.onwalk.net/base/kube-state-metrics/kube-state-metrics:v2.10.1
 
         docker pull registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6
-        docker tag  registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6 artifact.onwalk.net/base/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6
-        docker push artifact.onwalk.net/base/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6
+        docker tag  registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6 harbor.onwalk.net/base/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6
+        docker push harbor.onwalk.net/base/ingress-nginx/kube-webhook-certgen:v20221220-controller-v1.5.1-58-g787ea74b6
