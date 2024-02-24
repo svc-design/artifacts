@@ -1,264 +1,54 @@
-name: Sync Images
+name: SYNC Images
 
 on:
+  schedule:
+    - cron: "0 0 * * *"
   pull_request:
   push:
     paths:
+      - 'charts'
       - '.github/workflows/sync-images.yaml'
+  workflow_dispatch:
     branches:
       - main
 
 env:
+  REPO_URL: https://github.com/open-source-solution-design/MicroService.git 
+  REPO_BRANCH: main
   TZ: Asia/Shanghai
+  TAG: 0.1.4 
 
 jobs:
-  sync-terraform-images:
+  sync-fluxcd-images:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@main
-      with:
-        ref: ${{ github.head_ref }}
+    - uses: actions/checkout@v2
 
     - name: Initialization environment
       env:
-        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
+        PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
       shell: bash
       run: |
         sudo apt update
         sudo apt install git -y
-        sudo timedatectl set-timezone "$TZ"
-        echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
-
-    - name: Sync terraform images
-      shell: bash
-      run: |
-        docker pull hashicorp/terraform:latest 
-        docker tag hashicorp/terraform:latest artifact.onwalk.net/devops/terraform:latest
-        docker push artifact.onwalk.net/devops/terraform:latest
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@main
-      with:
-        ref: ${{ github.head_ref }}
-
-    - name: Initialization environment
-      env:
-        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install git -y
-        sudo timedatectl set-timezone "$TZ"
-        echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+        echo "$PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
 
     - name: Sync images
       shell: bash
       run: |
-        docker pull gcr.io/kaniko-project/executor:debug
-        docker tag gcr.io/kaniko-project/executor:debug artifact.onwalk.net/k8s/kaniko-executor:debug
-        docker push artifact.onwalk.net/k8s/kaniko-executor:debug
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:debug
-        docker tag gcr.io/kaniko-project/executor:debug artifact.onwalk.net/k8s/kaniko-executor:debug
-        docker push artifact.onwalk.net/k8s/kaniko-executor:debug
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1
-        docker tag gcr.io/kaniko-project/executor:v1.9.1 artifact.onwalk.net/k8s/kaniko-executor:1.9.1
-        docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker tag gcr.io/kaniko-project/executor:v1.9.1-debug artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
-        docker push artifact.onwalk.net/k8s/kaniko-executor:1.9.1-debug
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull hashicorp/terraform:latest
-        docker tag hashicorp/terraform:latest artifact.onwalk.net/k8s/terraform:latest
-        docker push artifact.onwalk.net/k8s/terraform:latest
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull datadog/cluster-agent:latest
-        docker tag datadog/cluster-agent:latest artifact.onwalk.net/k8s/datadog/cluster-agent:latest
-        docker push artifact.onwalk.net/k8s/datadog/cluster-agent:latest
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull datadog/cluster-agent:7.43.1
-        docker tag datadog/cluster-agent:7.43.1 artifact.onwalk.net/k8s/datadog/cluster-agent:7.43.1
-        docker push artifact.onwalk.net/k8s/datadog/cluster-agent:7.43.1
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull datadog/agent:7.43.1
-        docker tag datadog/agent:7.43.1 artifact.onwalk.net/k8s/datadog/agent:7.43.1
-        docker push artifact.onwalk.net/k8s/datadog/agent:7.43.1
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/checkoutservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/checkoutservice:0.3.7  artifact.onwalk.net/public/checkoutservice:latest
-        docker pull artifact.onwalk.net/public/checkoutservice:latest
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/frontend:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/frontend:0.3.7  artifact.onwalk.net/public/frontend:latest
-        docker pull artifact.onwalk.net/public/frontend:latest
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/paymentservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/paymentservice:0.3.7  artifact.onwalk.net/public/paymentservice:latest
-        docker pull artifact.onwalk.net/public/paymentservice:latest
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull redis:alpine
-        docker tag redis:alpine  artifact.onwalk.net/public/redis:alpine
-        docker pull artifact.onwalk.net/public/redis:alpine
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull gcr.io/kaniko-project/executor:v1.9.1-debug
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/adservice:0.3.7
-        docker tag adservice:latest  artifact.onwalk.net/public/adservice:latest
-        docker pull artifact.onwalk.net/public/adservice:latest
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/currencyservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/currencyservice:0.3.7  artifact.onwalk.net/public/currencyservice:latest
-        docker pull artifact.onwalk.net/public/currencyservice:latest
-        
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/productcatalogservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/productcatalogservice:0.3.7  artifact.onwalk.net/public/productcatalogservice:latest
-        docker pull artifact.onwalk.net/public/productcatalogservice:latest
-        
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/shippingservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/shippingservice:0.3.7  artifact.onwalk.net/public/shippingservice:latest
-        docker pull artifact.onwalk.net/public/shippingservice:latest
-
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/cartservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/cartservice:0.3.7  artifact.onwalk.net/public/cartservice:latest
-        docker pull artifact.onwalk.net/public/cartservice:latest
-        
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/emailservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/emailservice:0.3.7  artifact.onwalk.net/public/emailservice:latest
-        docker pull artifact.onwalk.net/public/emailservice:latest
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull busybox
-        docker tag busybox:latest  artifact.onwalk.net/public/busybox:latest
-        docker pull artifact.onwalk.net/public/busybox:latest
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/loadgenerator:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/loadgenerator:0.3.7  artifact.onwalk.net/public/loadgenerator:latest
-        docker pull artifact.onwalk.net/public/loadgenerator:latest
-        
-        
-    - name: Sync images
-      shell: bash
-      run: |
-        docker pull registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7
-        docker tag registry.cn-hangzhou.aliyuncs.com/lusilin/recommendationservice:0.3.7 artifact.onwalk.net/public/recommendationservice:latest
-        docker pull artifact.onwalk.net/public/recommendationservice:latest
-
-  sync-terragrunt-images:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@main
-      with:
-        ref: ${{ github.head_ref }}
-
-    - name: Initialization environment
-      env:
-        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install git -y
-        sudo timedatectl set-timezone "$TZ"
-        echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
-
-    - name: Sync terraform images
-      shell: bash
-      run: |
-        docker pull alpine/terragrunt:latest
-        docker tag alpine/terragrunt:latest artifact.onwalk.net/devops/terragrunt:latest
-        docker push artifact.onwalk.net/devops/terragrunt:latest
-  sync-eksctl-images:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@main
-      with:
-        ref: ${{ github.head_ref }}
-
-    - name: Initialization environment
-      env:
-        REPO_PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install git -y
-        sudo timedatectl set-timezone "$TZ"
-        echo "$REPO_PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
-
-    - name: Sync eksctl images
-      shell: bash
-      run: |
-        docker pull chatwork/eksctl:latest
-        docker tag chatwork/eksctl:latest artifact.onwalk.net/devops/eksctl:latest
-        docker push artifact.onwalk.net/devops/eksctl:latest
+        function sync_image()
+        {
+          local src_image=$1
+          local dest_image=$2
+          docker pull $src_image
+          docker tag  $src_image $dest_image
+          docker push $dest_image
+        }
+        sync_image "ghcr.io/fluxcd/flux-cli:v2.2.0" "artifact.onwalk.net/public/fluxcd/flux-cli:v2.2.0"
+        sync_image "ghcr.io/fluxcd/helm-controller:v0.37.0" "artifact.onwalk.net/public/fluxcd/helm-controller:v0.37.0"
+        sync_image "ghcr.io/fluxcd/image-automation-controller:v0.37.0" "artifact.onwalk.net/public/fluxcd/image-automation-controller:v0.37.0"
+        sync_image "ghcr.io/fluxcd/image-reflector-controller:v0.31.1" "artifact.onwalk.net/public/fluxcd/image-reflector-controller:v0.31.1"
+        sync_image "ghcr.io/fluxcd/kustomize-controller:v1.2.0" "artifact.onwalk.net/public/fluxcd/kustomize-controller:v1.2.0"
+        sync_image "ghcr.io/fluxcd/notification-controller:v1.2.2" "artifact.onwalk.net/public/fluxcd/notification-controller:v1.2.2"
+        sync_image "ghcr.io/fluxcd/source-controller:v1.2.2" "artifact.onwalk.net/public/fluxcd/source-controller:v1.2.2"

@@ -1,0 +1,128 @@
+name: Sync Chart From Upstream Repo
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+  push:
+    paths:
+      - '.github/workflows/sync-charts.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  REPO_URL: https://github.com/open-source-solution-design/MicroService.git 
+  REPO_BRANCH: main
+  TZ: Asia/Shanghai
+  TAG: 0.1.4 
+
+jobs:
+  sync-charts-fluxcd:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        helm plugin install https://github.com/chartmuseum/helm-push.git
+        helm repo add sync https://charts.onwalk.net
+        helm repo add fluxcd https://fluxcd-community.github.io/helm-charts
+        helm repo up
+
+    - name: Fetch & push charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf flux2
+        helm fetch fluxcd/flux2 --version 2.12.1 --untar
+        cd flux2 && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+  sync-ldap-datadog-charts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        helm plugin install https://github.com/chartmuseum/helm-push.git
+        helm repo add sync https://charts.onwalk.net
+        helm repo add datadog https://helm.datadoghq.com
+        helm repo add openldap https://jp-gouin.github.io/helm-openldap/
+        helm repo up
+
+    - name: Fetch & push openldap-stack charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf datadog
+        helm fetch datadog/datadog --version 3.25.5 --untar
+        cd datadog && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+
+  sync-databases-charts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+        helm plugin install https://github.com/chartmuseum/helm-push.git
+        helm repo add sync https://charts.onwalk.net
+        helm repo add bitnami https://charts.bitnami.com/bitnami 
+        helm repo up
+
+    - name: Fetch & push redis charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf redis
+        helm fetch bitnami/redis --version 18.12.1 --untar
+        cd redis && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+
+    - name: Fetch & push mongodb charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf mongodb
+        helm fetch bitnami/mongodb --version 14.8.3 --untar
+        cd mongodb && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+
+    - name: Fetch & push keycloak charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf keycloak
+        helm fetch bitnami/keycloak --version 14.2.0 --untar
+        cd keycloak && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+
+    - name: Fetch & push openldap-stack charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf openldap-stack-ha
+        helm fetch bitnami/openldap-stack-ha --version 4.1.1 --untar
+        cd openldap-stack-ha && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+
+    - name: Fetch & push minio charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        helm repo add minio https://charts.min.io
+        helm repo update
+        rm -rvf minio
+        helm fetch minio/minio --version 5.0.15 --untar
+        cd minio && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
