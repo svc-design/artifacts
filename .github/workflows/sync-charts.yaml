@@ -64,13 +64,21 @@ jobs:
         helm repo add openldap https://jp-gouin.github.io/helm-openldap/
         helm repo up
 
-    - name: Fetch & push openldap-stack charts
+    - name: Fetch & push datadog charts
       shell: bash
       run: |
         cd ${GITHUB_WORKSPACE}/
         rm -rvf datadog
         helm fetch datadog/datadog --version 3.25.5 --untar
         cd datadog && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+
+    - name: Fetch & push openldap-stack charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf openldap-stack-ha
+        helm fetch openldap/openldap-stack-ha --version 4.1.1 --untar
+        cd openldap-stack-ha && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
 
   sync-databases-charts:
     runs-on: ubuntu-latest
