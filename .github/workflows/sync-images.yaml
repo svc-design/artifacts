@@ -91,3 +91,30 @@ jobs:
         sync_image "ghcr.io/windmill-labs/windmill:1.258.4" "artifact.onwalk.net/public/windmill-labs/windmill:1.258.4"
         sync_image "ghcr.io/windmill-labs/windmill-lsp:latest" "artifact.onwalk.net/public/windmill-labs/windmill-lsp:latest"
         sync_image "docker.io/bitnami/etcd:3.5.7-debian-11-r14" "artifact.onwalk.net/public/bitnami/etcd:3.5.7-debian-11-r14"
+  sync-mysql-images:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      env:
+        PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        echo "$PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+
+    - name: Sync images
+      shell: bash
+      run: |
+        function sync_image()
+        {
+          local src_image=$1
+          local dest_image=$2
+          docker pull $src_image
+          docker tag  $src_image $dest_image
+          docker push $dest_image
+        }
+        sync_image "docker.io/bitnami/mysql:8.0.36-debian-12-r8" "artifact.onwalk.net/public/bitnami/mysql:8.0.36-debian-12-r8"
