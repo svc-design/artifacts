@@ -29,6 +29,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt install git -y
+        git config user.name shenlan
+        git config user.email manbuzhe2009@qq.com
         sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
         helm plugin install https://github.com/chartmuseum/helm-push.git
         helm repo add sync https://charts.onwalk.net
@@ -53,6 +55,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt install git -y
+        git config user.name shenlan
+        git config user.email manbuzhe2009@qq.com
         sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
         helm plugin install https://github.com/chartmuseum/helm-push.git
         helm repo add sync https://charts.onwalk.net
@@ -79,6 +83,8 @@ jobs:
       run: |
         sudo apt update
         sudo apt install git -y
+        git config user.name shenlan
+        git config user.email manbuzhe2009@qq.com
         sudo curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
         helm plugin install https://github.com/chartmuseum/helm-push.git
         helm repo add sync https://charts.onwalk.net
