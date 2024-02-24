@@ -52,3 +52,42 @@ jobs:
         sync_image "ghcr.io/fluxcd/kustomize-controller:v1.2.0" "artifact.onwalk.net/public/fluxcd/kustomize-controller:v1.2.0"
         sync_image "ghcr.io/fluxcd/notification-controller:v1.2.2" "artifact.onwalk.net/public/fluxcd/notification-controller:v1.2.2"
         sync_image "ghcr.io/fluxcd/source-controller:v1.2.2" "artifact.onwalk.net/public/fluxcd/source-controller:v1.2.2"
+  sync-itsm-images:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      env:
+        PASSWORD: ${{ secrets.HELM_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        echo "$PASSWORD" | docker login --username=admin --password-stdin artifact.onwalk.net
+
+    - name: Sync images
+      shell: bash
+      run: |
+        function sync_image()
+        {
+          local src_image=$1
+          local dest_image=$2
+          docker pull $src_image
+          docker tag  $src_image $dest_image
+          docker push $dest_image
+        }
+        sync_image "nginx:1.16.0" "artifact.onwalk.net/public/nginx:1.16.0"
+        sync_image "busybox:1.28" "artifact.onwalk.net/public/busybox:1.28"
+        sync_image "apache/apisix:3.8.0-debian" "artifact.onwalk.net/public/apache/apisix:3.8.0-debian"
+        sync_image "apache/apisix-dashboard:3.0.0-alpine" "artifact.onwalk.net/public/apache/apisix-dashboard:3.0.0-alpine"
+        sync_image "docker.io/bitnami/etcd:3.5.7-debian-11-r14" "artifact.onwalk.net/public/bitnami/etcd:3.5.7-debian-11-r14"
+        sync_image "docker.io/bitnami/postgresql:15.2.0-debian-11-r24" "artifact.onwalk.net/public/bitnami/postgresql:15.2.0-debian-11-r24"
+        sync_image "ghcr.io/novuhq/novu/ws:0.15.0" "artifact.onwalk.net/public/novuhq/novu/ws:0.15.0"
+        sync_image "ghcr.io/novuhq/novu/api:0.15.0" "artifact.onwalk.net/public/novuhq/novu/api:0.15.0"
+        sync_image "ghcr.io/novuhq/novu/web:0.15.0" "artifact.onwalk.net/public/novuhq/novu/web:0.15.0"
+        sync_image "ghcr.io/novuhq/novu/worker:0.15.0" "artifact.onwalk.net/public/novuhq/novu/worker:0.15.0"
+        sync_image "ghcr.io/windmill-labs/windmill:1.258.4" "artifact.onwalk.net/public/windmill-labs/windmill:1.258.4"
+        sync_image "ghcr.io/windmill-labs/windmill-lsp:latest" "artifact.onwalk.net/public/windmill-labs/windmill-lsp:latest"
+        sync_image "docker.io/bitnami/etcd:3.5.7-debian-11-r14" "artifact.onwalk.net/public/bitnami/etcd:3.5.7-debian-11-r14"
