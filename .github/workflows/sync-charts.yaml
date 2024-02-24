@@ -115,13 +115,13 @@ jobs:
         helm fetch bitnami/keycloak --version 14.2.0 --untar
         cd keycloak && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
 
-    - name: Fetch & push openldap-stack charts
+    - name: Fetch & push mysql charts
       shell: bash
       run: |
         cd ${GITHUB_WORKSPACE}/
-        rm -rvf openldap-stack-ha
-        helm fetch bitnami/openldap-stack-ha --version 4.1.1 --untar
-        cd openldap-stack-ha && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+        rm -rvf mysql
+        helm fetch bitnami/mysql --version 9.21.2 --untar
+        cd mysql && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
 
     - name: Fetch & push minio charts
       shell: bash
