@@ -80,7 +80,7 @@ jobs:
         helm fetch openldap/openldap-stack-ha --version 4.1.1 --untar
         cd openldap-stack-ha && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
 
-  sync-databases-charts:
+  sync-charts-from-bitnami-repo:
     runs-on: ubuntu-latest
 
     steps:
@@ -98,6 +98,14 @@ jobs:
         helm repo add sync https://charts.onwalk.net
         helm repo add bitnami https://charts.bitnami.com/bitnami 
         helm repo up
+
+    - name: Fetch & push keycloak charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        rm -rvf keycloak
+        helm fetch bitnami/keycloak --version 18.4.0 --untar
+        cd keycloak && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
 
     - name: Fetch & push redis charts
       shell: bash
