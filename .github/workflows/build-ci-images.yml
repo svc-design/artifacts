@@ -1,0 +1,45 @@
+name: build & push ci base images
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+    paths:
+      - '.github/workflows/build-ci-images.yml'
+  pull_request:
+    branches:
+      - dev
+      - main
+    paths:
+      - '.github/workflows/build-ci-images.yml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  IMAGE_REPO: "artifact.onwalk.net"
+  IMAGE_PATH: "public/base/code-lint"
+  IMAGE_TAG: "0.0.1"
+
+
+jobs:
+  build-images:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to Artifactory
+        uses: actions/login-action@v1
+        with:
+          registry: ${{ env.IMAGE_REPO }}
+          username: ${{ secrets.REPO_USER }}
+          password: ${{ secrets.HELM_REPO_PASSWORD }}
+
+      - name: Build & push code-lint images
+        working-directory: oci/base/debian-code-lint/
+        run: |
+          docker build --network host -t "${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }}" -f Dockerfile .
+          docker push "${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }}"
+          docker rmi ${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }} || true
