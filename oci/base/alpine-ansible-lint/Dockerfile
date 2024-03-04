@@ -1,4 +1,4 @@
-FROM alpine:3.18.3 
+FROM alpine:3.18.3
 LABEL maintainer="Haitao Pan <manbuzhe2009@qq.com>"
 
 ARG GLIBC_VERSION=2.34-r0
@@ -18,6 +18,14 @@ RUN apk add --update --no-cache curl binutils \
     && rm -rf glibc-*.apk \
     && rm -rf /var/cache/apk/*
 
-#RUN cd /usr/local/share/ca-certificates/ && curl -k https://extra-ca.crt -o ca.cer && update-ca-certificates
+# Install system dependencies
+RUN apk add --no-cache git python3 py3-pip
 
-ENTRYPOINT ["bash"]
+# Install ansible-lint
+RUN pip3 install --upgrade pip && pip3 install ansible-lint
+
+# Set work directory
+WORKDIR /src
+
+# Define an entrypoint
+ENTRYPOINT ["/bin/sh"]
