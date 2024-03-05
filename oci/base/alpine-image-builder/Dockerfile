@@ -14,8 +14,7 @@ FROM alpine:latest AS prod
 WORKDIR /src/
 
 COPY --from=builder /src/go/bin/executor /kaniko/
-COPY setup-kaniko-auth.sh /kaniko/setup-kaniko-auth.sh
-RUN  apk --no-cache add ca-certificates git && \
-     chmod +x /kaniko/setup-kaniko-auth.sh
+COPY setup-kaniko-auth.sh /kaniko/
+RUN  apk --no-cache add ca-certificates git && chmod +x /kaniko/setup-kaniko-auth.sh
 
 ENTRYPOINT ["/bin/sh"]
