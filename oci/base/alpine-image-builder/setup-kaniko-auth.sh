@@ -21,7 +21,7 @@ AUTH=$(echo -n "${REGISTRY_REPO_USER}:${REGISTRY_REPO_PASSWORD}" | base64)
 cat > /kaniko/.docker/config.json << EOF
 {
   "auths": {
-    "https://${REGISTRY_ADDR}/v2/": {
+    "https://${REGISTRY_ADDR}": {
       "auth": "${AUTH}"
     }
   }
