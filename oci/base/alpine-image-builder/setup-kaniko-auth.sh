@@ -18,7 +18,15 @@ check_non_empty "$REGISTRY_REPO_PASSWORD" "Registry password"
 
 mkdir -p /kaniko/.docker
 AUTH=$(echo -n "${REGISTRY_REPO_USER}:${REGISTRY_REPO_PASSWORD}" | base64)
-echo "{\"auths\":{\"https://${REGISTRY_ADDR}/v1/\":{\"auth\":\"${AUTH}\"}}}" > /kaniko/.docker/config.json
+cat > /kaniko/.docker/config.json << EOF
+{
+  "auths": {
+    "https://${REGISTRY_ADDR}/v2/": {
+      "auth": "${AUTH}"
+    }
+  }
+}
+EOF
 
 if [ "$DEBUG" = "true" ]; then
     cat /kaniko/.docker/config.json
