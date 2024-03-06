@@ -22,32 +22,35 @@ env:
 jobs:
   build-ansible-lint-image:
     name: Build ansible lint image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
+      dockerfile_path: 'oci/base/alpine-ansible-lint'
       image_name: 'public/base/alpine-ansible-lint'
       image_tag: 'latest'
-      dockerfile_path: 'oci/base/alpine-ansible-lint'
     secrets:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
 
   build-alpine-glibc-image:
     name: Build alpine glibc image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
+      dockerfile_path: 'oci/base/alpine-glibc'
       image_name: 'public/base/alpine-glibc'
       image_tag: 'latest'
-      dockerfile_path: 'oci/base/alpine-glibc'
     secrets:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
 
   build-go-lint-image:
     name: Build go lint image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-go-lint'
       image_tag: 'latest'
@@ -58,8 +61,9 @@ jobs:
 
   build-python-lint-image:
     name: Build python lint image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-python-lint'
       image_tag: 'latest'
@@ -70,8 +74,9 @@ jobs:
 
   build-yaml-lint-image:
     name: Build yaml lint image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-yaml-lint'
       image_tag: 'latest'
@@ -82,8 +87,9 @@ jobs:
 
   build-eslint-image:
     name: Build es lint image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-eslint'
       image_tag: 'latest'
@@ -92,10 +98,11 @@ jobs:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
 
-  build-chart-image:
+  build-chart-builder:
     name: Build chart builder image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-chart-builder'
       image_tag: 'latest'
@@ -104,10 +111,11 @@ jobs:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
 
-  build-image-image:
+  build-image-builder:
     name: Build image builder image
-    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-image-builder'
       image_tag: 'latest'
