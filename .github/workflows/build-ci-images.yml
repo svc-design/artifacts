@@ -41,6 +41,7 @@ jobs:
       registry_addr: "artifact.onwalk.net"
       dockerfile_path: 'oci/base/alpine-glibc'
       image_name: 'public/base/alpine-glibc'
+      image_tag: 'latest'
     secrets:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
