@@ -1,4 +1,4 @@
-alpine:latest
+FROM alpine:latest
 MAINTAINER Haitao Pan manbuzhe2008@gmail.com
 
 ENV VERSION=3.11.1
