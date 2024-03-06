@@ -24,6 +24,7 @@ jobs:
     name: Build ansible lint image
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       dockerfile_path: 'oci/base/alpine-ansible-lint'
       image_name: 'public/base/alpine-ansible-lint'
@@ -48,6 +49,7 @@ jobs:
     name: Build go lint image
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-go-lint'
       image_tag: 'latest'
@@ -60,6 +62,7 @@ jobs:
     name: Build python lint image
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-python-lint'
       image_tag: 'latest'
@@ -72,6 +75,7 @@ jobs:
     name: Build yaml lint image
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-yaml-lint'
       image_tag: 'latest'
@@ -84,6 +88,7 @@ jobs:
     name: Build es lint image
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-eslint'
       image_tag: 'latest'
@@ -96,6 +101,7 @@ jobs:
     name: Build chart builder image
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-chart-builder'
       image_tag: 'latest'
@@ -108,6 +114,7 @@ jobs:
     name: Build image builder image
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
+      method: 'docker/node'
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-image-builder'
       image_tag: 'latest'
