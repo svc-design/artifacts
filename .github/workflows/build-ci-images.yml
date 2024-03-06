@@ -18,41 +18,11 @@ on:
       - main
 env:
   IMAGE_REPO: "artifact.onwalk.net"
-  IMAGE_PATH: "public/base/alpine-image-builder"
-  IMAGE_TAG: "latest"
 
 jobs:
-  build-kaniko-image:
-    runs-on: ubuntu-latest
-    name: Build kaniko image
-    steps:
-      - uses: actions/checkout@master
-
-      - name: Build & push kaniko images
-        working-directory: oci/base/alpine-image-builder
-        run: |
-          docker login ${{ env.IMAGE_REPO }} -u ${{ secrets.REPO_USER }} -p ${{ secrets.HELM_REPO_PASSWORD }}
-          docker build --network host -t "${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }}" -f Dockerfile .
-          docker push "${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }}"
-          docker rmi ${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }} || true
-
-#      - name: 'Artifact: build && push kaniko image'
-#        uses: aevea/action-kaniko@master
-#        with:
-#          registry: ${{ env.IMAGE_REPO }}
-#          username: ${{ secrets.REPO_USER }}
-#          password: ${{ secrets.HELM_REPO_PASSWORD }}
-#          path: 'oci/base/alpine-image-builder/'
-#          build_file: 'Dockerfile'
-#          image: public/base/alpine-image-builder
-#          tag: latest
-#          cache: false
-#          cache_registry: false
-
   build-ansible-lint-image:
     name: Build ansible lint image
-    uses: svc-design/actions/.github/workflows/build-images-with-kaniko.yaml@main
-    needs: [build-kaniko-image]
+    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
     with:
       registry_addr: "artifact.onwalk.net"
       image_name: 'public/base/alpine-ansible-lint'
@@ -61,94 +31,3 @@ jobs:
     secrets:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
-
-#jobs:
-#  build-images:
-#    runs-on: ubuntu-latest
-#    name: Build code-lint image
-#    steps:
-#      - uses: actions/checkout@master
-#
-#      - name: 'Artifact: build && push ansible-lint image'
-#        uses: aevea/action-kaniko@master
-#        with:
-#          registry: ${{ env.IMAGE_REPO }}
-#          username: ${{ secrets.REPO_USER }}
-#          password: ${{ secrets.HELM_REPO_PASSWORD }}
-#          path: 'oci/base/alpine-ansible-lint/'
-#          build_file: 'Dockerfile'
-#          image: public/base/alpine-ansible-lint
-#          tag: latest
-#          cache: true
-#          cache_registry: cache
-#
-#      - name: 'Artifact: build && push python-lint image'
-#        uses: aevea/action-kaniko@master
-#        with:
-#          registry: ${{ env.IMAGE_REPO }}
-#          username: ${{ secrets.REPO_USER }}
-#          password: ${{ secrets.HELM_REPO_PASSWORD }}
-#          path: 'oci/base/alpine-python-lint/'
-#          build_file: 'Dockerfile'
-#          image: public/base/alpine-python-lint
-#          tag: latest
-#          cache: true
-#          cache_registry: cache
-#
-#
-#      - name: 'Artifact: build && push go-lint image'
-#        uses: aevea/action-kaniko@master
-#        with:
-#          registry: ${{ env.IMAGE_REPO }}
-#          username: ${{ secrets.REPO_USER }}
-#          password: ${{ secrets.HELM_REPO_PASSWORD }}
-#          path: 'oci/base/alpine-go-lint/'
-#          build_file: 'Dockerfile'
-#          image: public/base/alpine-go-lint
-#          tag: latest
-#          cache: true
-#          cache_registry: cache
-#
-#      - name: 'Artifact: build && push es-lint image'
-#        uses: aevea/action-kaniko@master
-#        with:
-#          registry: ${{ env.IMAGE_REPO }}
-#          username: ${{ secrets.REPO_USER }}
-#          password: ${{ secrets.HELM_REPO_PASSWORD }}
-#          path: 'oci/base/alpine-es-lint/'
-#          build_file: 'Dockerfile'
-#          image: public/base/alpine-es-lint
-#          tag: latest
-#          cache: true
-#          cache_registry: cache
-#
-#      - name: 'Artifact: build && push yam-lint image'
-#        uses: aevea/action-kaniko@master
-#        with:
-#          registry: ${{ env.IMAGE_REPO }}
-#          username: ${{ secrets.REPO_USER }}
-#          password: ${{ secrets.HELM_REPO_PASSWORD }}
-#          path: 'oci/base/alpine-yaml-lint/'
-#          build_file: 'Dockerfile'
-#          image: public/base/alpine-yaml-lint
-#          tag: latest
-#          cache: true
-#          cache_registry: cache
-#
-#
-##    steps:
-##      - uses: actions/checkout@v3
-##
-##      - name: Login to Artifactory
-##        uses: actions/login-action@v1
-##        with:
-##          registry: ${{ env.IMAGE_REPO }}
-##          username: ${{ secrets.REPO_USER }}
-##          password: ${{ secrets.HELM_REPO_PASSWORD }}
-##
-##      - name: Build & push code-lint images
-##        working-directory: oci/base/debian-code-lint/
-##        run: |
-##          docker build --network host -t "${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }}" -f Dockerfile .
-##          docker push "${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }}"
-##          docker rmi ${{ env.IMAGE_REPO }}/${{ env.IMAGE_PATH }}:${{ env.IMAGE_TAG }} || true
