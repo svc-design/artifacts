@@ -43,3 +43,75 @@ jobs:
     secrets:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+
+  build-go-lint-image:
+    name: Build go lint image
+    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    with:
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/alpine-go-lint'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/alpine-go-lint'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+
+  build-python-lint-image:
+    name: Build python lint image
+    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    with:
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/alpine-python-lint'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/alpine-python-lint'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+
+  build-yaml-lint-image:
+    name: Build yaml lint image
+    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    with:
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/alpine-yaml-lint'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/alpine-yaml-lint'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+
+  build-eslint-image:
+    name: Build es lint image
+    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    with:
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/alpine-eslint'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/apline-eslint'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+
+  build-chart-image:
+    name: Build chart builder image
+    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    with:
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/alpine-chart-builder'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/alpine-chart-builder'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+
+  build-image-image:
+    name: Build image builder image
+    uses: svc-design/actions/.github/workflows/build-images-with-host-docker.yaml@main
+    with:
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/alpine-image-builder'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/alpine-image-builder'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
