@@ -5,7 +5,8 @@ FROM alpine:latest
 ENV VERSION=3.11.1
 ENV BASE_URL="https://get.helm.sh"
 ENV KUBECTL_VERSION="v1.21.0"
-ENV HELMFILE_VERSION="v0.139.9"
+ENV HELMFILE_BASE_URL="https://github.com/helmfile/helmfile/releases/download/"
+ENV HELMFILE_VERSION="0.162.0"
 
 RUN apk add --update --no-cache openssh bash wget make curl jq unzip zip git ca-certificates
 RUN case `uname -m` in \
@@ -17,8 +18,8 @@ RUN case `uname -m` in \
     helm plugin install https://github.com/databus23/helm-diff                                                                 ; \
     helm plugin install https://github.com/chartmuseum/helm-push.git                                                           ; \
     helm plugin install https://github.com/belitre/helm-push-artifactory-plugin.git --version v1.0.2                           ; \
-    wget -qO /usr/bin/helmfile https://github.com/roboll/helmfile/releases/download/${HELMFILE_VERSION}/helmfile_linux_${ARCH} && chmod +x /usr/bin/helmfile; \
-    helmfile init --force ; \
+    wget https://github.com/helmfile/helmfile/releases/download/v0.162.0/helmfile_0.162.0_linux_amd64.tar.gz && tar -xvpf helmfile_0.162.0_linux_amd64.tar.gz && mv helmfile /usr/bin/helmfile && chmod +x /usr/bin/helmfile ; \
+    helmfile init --force         ; \
     rm -rf *.tar.gz || true
 
 #ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
