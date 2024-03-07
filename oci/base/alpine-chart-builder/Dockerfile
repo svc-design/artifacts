@@ -1,12 +1,13 @@
 FROM alpine:latest
 MAINTAINER <manbuzhe2008@gmail.com>
 
-FROM alpine:latest
-ENV VERSION=3.11.1
+ENV VERSION=3.13.3
 ENV BASE_URL="https://get.helm.sh"
 ENV KUBECTL_VERSION="v1.21.0"
 ENV HELMFILE_BASE_URL="https://github.com/helmfile/helmfile/releases/download/"
 ENV HELMFILE_VERSION="0.162.0"
+
+USER root
 
 RUN apk add --update --no-cache openssh bash wget make curl jq unzip zip git ca-certificates
 RUN case `uname -m` in \
