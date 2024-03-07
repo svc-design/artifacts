@@ -1,0 +1,32 @@
+name: build & push ci base images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/build-chart-builder.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/build-chart-builder.yml'
+  workflow_dispatch:
+    branches:
+      - main
+env:
+  IMAGE_REPO: "artifact.onwalk.net"
+
+jobs:
+  build-chart-builder:
+    name: Build chart builder image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker/node'
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/alpine-chart-builder'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/alpine-chart-builder'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
