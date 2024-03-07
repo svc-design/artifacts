@@ -25,7 +25,7 @@ RUN case `uname -m` in \
     chmod +x /usr/bin/kubectl && \
     wget -qO /usr/bin/helmfile https://github.com/roboll/helmfile/releases/download/${HELMFILE_VERSION}/helmfile_linux_${ARCH} && \
     chmod +x /usr/bin/helmfile && \
-    helmfile init -q
+    helmfile init --force
 
 #ADD ca.crt /usr/share/ca-certificates/mozilla/Lets_Encrypt_ca.crt
 #RUN echo "mozilla/Lets_Encrypt_ca.crt" >> /etc/ca-certificates.conf && update-ca-certificates
