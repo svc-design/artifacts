@@ -148,3 +148,13 @@ jobs:
         rm -rvf minio
         helm fetch minio/minio --version 5.0.15 --untar
         cd minio && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
+
+    - name: Fetch & push argo-cd charts
+      shell: bash
+      run: |
+        cd ${GITHUB_WORKSPACE}/
+        helm repo add argo https://argoproj.github.io/argo-helm
+        helm repo update
+        rm -rvf argo
+        helm fetch argo/argo-cd --version 6.7.3 --untar
+        cd argo-cd && helm cm-push -u admin -p "${{ secrets.HELM_REPO_PASSWORD }}" --force ./ sync
