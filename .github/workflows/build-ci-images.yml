@@ -123,3 +123,15 @@ jobs:
     secrets:
       artifactory_sa: ${{ secrets.REPO_USER }}
       artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+  build-debian-jenkins-agent:
+    name: Build debian-jenkins-agent image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker/node'
+      registry_addr: "artifact.onwalk.net"
+      image_name: 'public/base/debian-jenkins-agent'
+      image_tag: 'latest'
+      dockerfile_path: 'oci/base/debian-jenkins-agent'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
