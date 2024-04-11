@@ -25,7 +25,7 @@ jobs:
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
       method: 'docker/node'
-      registry_addr: "artifact.onwalk.net"
+      registry_addr: "harbor.onwalk.net"
       dockerfile_path: 'oci/base/alpine-ansible-lint'
       image_name: 'public/base/alpine-ansible-lint'
       image_tag: 'latest'
