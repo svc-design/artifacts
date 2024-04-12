@@ -1,4 +1,4 @@
-name: build & push ci base images
+name: build & push ci runer images
 
 on:
   push:
