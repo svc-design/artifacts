@@ -27,5 +27,6 @@ RUN apk add --no-cache bash git python3 py3-pip jq             \
 # Set work directory
 WORKDIR /src
 
-# Define an entrypoint
-ENTRYPOINT ["/bin/bash"]
+
+ADD entrypoint.sh /
+ENTRYPOINT [ "/entrypoint.sh" ]
