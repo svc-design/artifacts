@@ -1,15 +1,24 @@
-FROM alpine:3.12
+FROM node:lts-alpine
 
-# Install Node.js and npm
-RUN apk add --no-cache \
-    nodejs \
-    npm
+# Install bash, git, and curl
+RUN apk add --no-cache bash git curl && \
+    npm install -g eslint            && \
+    npm install -g next              && \
+    npm install -g jest              && \
+    npm install -g ts-node           && \
+    npm install -g typescript        && \
+    npm install -g next-translate    && \
+    npm install -g next-translate-plugin
 
-# Install eslint
-RUN npm install -g eslint
+# Install gitleaks using binary installation
+RUN wget https://mirrors.onwalk.net/tools/gitleaks_8.2.4_linux_x64.tar.gz \
+    && tar -xf gitleaks_8.2.4_linux_x64.tar.gz \
+    && mv gitleaks /usr/bin/ \
+    && rm gitleaks_8.2.4_linux_x64.tar.gz
 
-# Set work directory
+# Set the working directory
 WORKDIR /src
 
-# Define an entrypoint
-ENTRYPOINT ["eslint"]
+ENTRYPOINT ["/bin/bash"]
+# Define the default command to start bash
+CMD ["/bin/bash"]
