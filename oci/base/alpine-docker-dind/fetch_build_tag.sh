@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -x
+
 git version
 
 # Configure git to allow all directories
