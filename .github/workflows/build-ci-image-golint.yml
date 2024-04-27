@@ -1,0 +1,28 @@
+name: build images golint
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/base/alpine-golint/Dockerfile'
+      - 'build-ci-image-eslint.yml/build-ci-image-golint.yml'
+  workflow_dispatch:
+    branches:
+      - main
+env:
+  IMAGE_REPO: "artifact.onwalk.net"
+
+jobs:
+  eslint:
+    name: Build ESlint image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker/node'
+      registry_addr: "harbor.onwalk.net"
+      dockerfile_path: 'oci/base/alpine-golint'
+      image_name: 'public/base/alpine-golint'
+      image_tag: 'latest'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
