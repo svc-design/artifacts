@@ -8,6 +8,7 @@ RUN apk update && \
 # Set environment variables for Docker daemon to listen on tcp and to disable TLS (adjust based on your security requirements)
 ENV DOCKER_TLS_CERTDIR=""
 ENV DOCKER_HOST=tcp://localhost:2375
+COPY fetch_build_tag.sh /opt/
 
 # Expose the default Docker daemon port
 EXPOSE 2375
