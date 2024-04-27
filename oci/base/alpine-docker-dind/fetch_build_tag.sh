@@ -1,5 +1,7 @@
 #!/bin/bash
 
+git version
+
 # Configure git to allow all directories
 git config --global --add safe.directory '*'
 
