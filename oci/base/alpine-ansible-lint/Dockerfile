@@ -11,10 +11,10 @@ ENV TIME_ZONE=Asia/Shanghai                                              \
 RUN unlink /etc/localtime && ln -s /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime                                                 \
     && apt-get update -y && apt-get upgrade -y                                                                                     \
     && apt-get --reinstall -y install tar curl sshpass jq git vim uuid-runtime                                                     \
-    && wget ${HELM_URL}/helm-${HELM_VERSION}-linux-amd64.tar.gz -O - | tar -xz -C ${BIN_DIR} --strip-components=1 linux-amd64/helm                                          \
-    && wget ${HELM_FILE_URL}/v${HELM_FILE_VERSION}/helmfile_${HELM_FILE_VERSION}_linux_amd64.tar.gz -O - | tar -xz -C ${BIN_DIR} --strip-components=1 linux-amd64/helmfile  \
-    && chmod ${BIN_PERM} ${BIN_DIR}/helmfile                                                                                       \
+    && wget ${HELM_URL}/helm-${HELM_VERSION}-linux-amd64.tar.gz -O - | tar -xz -C ${BIN_DIR} --strip-components=1 linux-amd64/helm \
     && chmod ${BIN_PERM} ${BIN_DIR}/helm                                                                                           \
+    && wget ${HELM_FILE_URL}/v${HELM_FILE_VERSION}/helmfile_${HELM_FILE_VERSION}_linux_amd64.tar.gz -O - | tar -xz -C ${BIN_DIR} --strip-components=1 helmfile_${HELM_FILE_VERSION}_linux_amd64/helmfile  \
+    && chmod ${BIN_PERM} ${BIN_DIR}/helmfile                                                                                       \
     && helm plugin install https://github.com/databus23/helm-diff                                                                  \
     && rm -rf /var/lib/apt/lists/*
 
