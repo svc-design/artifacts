@@ -4,7 +4,7 @@ ENV TIME_ZONE=Asia/Shanghai                                              \
     BIN_PERM=0755                                                        \
     BIN_DIR=/usr/local/bin                                               \ 
     HELM_FILE_URL=https://github.com/roboll/helmfile/releases/download   \
-    HELM_FILE_VERSION=v0.139.9                                           \
+    HELM_FILE_VERSION=v0.139.9
 
 RUN unlink /etc/localtime && ln -s /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime            \
     && apt-get update -y && apt-get upgrade -y                                                \
