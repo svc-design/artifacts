@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.10
 
 ENV TIME_ZONE=Asia/Shanghai                                              \
     BIN_PERM=0755                                                        \
@@ -18,7 +18,7 @@ RUN unlink /etc/localtime && ln -s /usr/share/zoneinfo/${TIME_ZONE} /etc/localti
     && helm plugin install https://github.com/databus23/helm-diff                                                                  \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install ansible==2.10 ansible-lint jmespath hvac jinja2 && ansible-galaxy collection install community.hashi_vault
+RUN pip install ansible ansible-lint jmespath hvac jinja2 && ansible-galaxy collection install community.hashi_vault
 
 WORKDIR /home/${USER}
 
