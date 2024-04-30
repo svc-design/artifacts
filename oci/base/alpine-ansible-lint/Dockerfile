@@ -1,12 +1,21 @@
-FROM alpine:latest
+FROM python:latest
 
-# Install system dependencies
-RUN apk add --no-cache bash git python3 py3-pip jq && \
-    pip3 install --upgrade pip                     && \
-    pip3 install hvac jinja2 ansible ansible-lint  && \
-    ansible-galaxy collection install community.hashi_vault
+ENV TIME_ZONE=Asia/Shanghai                                              \
+    BIN_PERM=0755                                                        \
+    BIN_DIR=/usr/local/bin                                               \ 
+    HELM_FILE_URL=https://github.com/roboll/helmfile/releases/download   \
+    HELM_FILE_VERSION=v0.139.9                                           \
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/bin/bash"]
+RUN unlink /etc/localtime && ln -s /usr/share/zoneinfo/${TIME_ZONE} /etc/localtime            \
+    && apt-get update -y && apt-get upgrade -y                                                \
+    && apt-get --reinstall -y install tar curl sshpass jq git vim uuid-runtime                \
+    && wget ${HELM_FILE_URL}/${HELM_FILE_VERSION}/helmfile_linux_amd64 -O ${BIN_DIR}/helmfile \
+    && chmod ${BIN_PERM} ${BIN_DIR}/helmfile                                                  \
+    && helm plugin install https://github.com/databus23/helm-diff                             \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install ansible==2.10 ansible-lint jmespath hvac jinja2 && ansible-galaxy collection install community.hashi_vault
+
+WORKDIR /home/${USER}
+
+CMD $@
