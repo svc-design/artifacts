@@ -39,5 +39,5 @@ jobs:
           docker tag  $src_image $dest_image
           docker push $dest_image
         }
-        sync_image "nginx:1.16.0" "artifact.onwalk.net/public/nginx:1.16.0"
-        sync_image "busybox:1.28" "artifact.onwalk.net/public/busybox:1.28"
+        sync_image "nginx:1.16.0" "harbor.onwalk.net/public/nginx:1.16.0"
+        sync_image "busybox:1.28" "harbor.onwalk.net/public/busybox:1.28"
