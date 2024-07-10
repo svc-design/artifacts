@@ -41,3 +41,4 @@ jobs:
         }
         sync_image "nginx:1.16.0" "harbor.onwalk.net/public/nginx:1.16.0"
         sync_image "busybox:1.28" "harbor.onwalk.net/public/busybox:1.28"
+        sync_image "bpatrik/pigallery2:latest" "harbor.onwalk.net/public/pigallery2:latest"
