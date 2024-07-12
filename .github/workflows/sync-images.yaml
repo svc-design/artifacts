@@ -43,5 +43,6 @@ jobs:
         sync_image "hashicorp/vault-k8s:1.4.1" "harbor.onwalk.net/public/hashicorp/vault-k8s:1.4.1"
         sync_image "nginx:1.16.0" "harbor.onwalk.net/public/nginx:1.16.0"
         sync_image "busybox:1.28" "harbor.onwalk.net/public/busybox:1.28"
+        sync_image "bpatrik/pigallery2:latest" "harbor.onwalk.net/public/pigallery2:latest"
         sync_image "photoprism/photoprism:latest" "harbor.onwalk.net/public/photoprism:latest"
         sync_image "bitnami/external-dns:0.14.0-debian-11-r4" "harbor.onwalk.net/public/bitnami/external-dns:0.14.0-debian-11-r4"
