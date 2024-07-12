@@ -39,6 +39,9 @@ jobs:
           docker tag  $src_image $dest_image
           docker push $dest_image
         }
+        sync_image "rancher/mirrored-pause:3.6" "harbor.onwalk.net/public/rancher/mirrored-pause:3.6"
+        sync_image "rancher/mirrored-metrics-server:v0.6.2" "harbor.onwalk.net/public/rancher/mirrored-metrics-server:v0.6.2"
+        sync_image "rancher/mirrored-coredns-coredns:1.10.1" "harbor.onwalk.net/public/rancher/mirrored-coredns-coredns:1.10.1"
         sync_image "hashicorp/vault:1.16.1" "harbor.onwalk.net/public/hashicorp/vault:1.16.1"
         sync_image "hashicorp/vault-k8s:1.4.1" "harbor.onwalk.net/public/hashicorp/vault-k8s:1.4.1"
         sync_image "nginx:1.16.0" "harbor.onwalk.net/public/nginx:1.16.0"
