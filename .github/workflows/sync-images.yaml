@@ -39,8 +39,9 @@ jobs:
           docker tag  $src_image $dest_image
           docker push $dest_image
         }
-        sync_image "hashicorp/vault:1.17.2" "images.svc.plus/public/hashicorp/vault:1.17.2"
-        sync_image "hashicorp/vault-k8s:1.4.2" "images.svc.plus/public/hashicorp/vault-k8s:1.4.2"
+        sync_image "rancher/mirrored-library-busybox:1.34.1" "images.svc.plus/public/rancher/mirrored-library-busybox:1.34.1"
+        #sync_image "hashicorp/vault:1.17.2" "images.svc.plus/public/hashicorp/vault:1.17.2"
+        #sync_image "hashicorp/vault-k8s:1.4.2" "images.svc.plus/public/hashicorp/vault-k8s:1.4.2"
         #sync_image "rancher/mirrored-pause:3.6" "images.svc.plus/public/rancher/mirrored-pause:3.6"
         #sync_image "rancher/local-path-provisioner:v0.0.24" "images.svc.plus/public/rancher/local-path-provisioner:v0.0.24"
         #sync_image "rancher/mirrored-metrics-server:v0.6.2" "images.svc.plus/public/rancher/mirrored-metrics-server:v0.6.2"
