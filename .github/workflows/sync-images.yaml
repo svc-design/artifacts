@@ -26,7 +26,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install git -y
-        echo "$PASSWORD" | docker login --username=admin --password-stdin harbor.onwalk.net
+        echo "$PASSWORD" | docker login --username=admin --password-stdin images.svc.plus
 
     - name: sync images
       shell: bash
@@ -39,15 +39,15 @@ jobs:
           docker tag  $src_image $dest_image
           docker push $dest_image
         }
-        sync_image "rancher/mirrored-pause:3.6" "harbor.onwalk.net/public/rancher/mirrored-pause:3.6"
-        sync_image "rancher/local-path-provisioner:v0.0.24" "harbor.onwalk.net/public/rancher/local-path-provisioner:v0.0.24"
-        sync_image "rancher/mirrored-metrics-server:v0.6.2" "harbor.onwalk.net/public/rancher/mirrored-metrics-server:v0.6.2"
-        sync_image "rancher/mirrored-coredns-coredns:1.10.1" "harbor.onwalk.net/public/rancher/mirrored-coredns-coredns:1.10.1"
-        sync_image "hashicorp/vault:1.16.1" "harbor.onwalk.net/public/hashicorp/vault:1.16.1"
-        sync_image "hashicorp/vault-k8s:1.4.1" "harbor.onwalk.net/public/hashicorp/vault-k8s:1.4.1"
-        sync_image "nginx:1.16.0" "harbor.onwalk.net/public/nginx:1.16.0"
-        sync_image "nginx/nginx-ingress:2.4.0" "harbor.onwalk.net/public/nginx/nginx-ingress:2.4.0"
-        sync_image "busybox:1.28" "harbor.onwalk.net/public/busybox:1.28"
-        sync_image "bpatrik/pigallery2:latest" "harbor.onwalk.net/public/pigallery2:latest"
-        sync_image "photoprism/photoprism:latest" "harbor.onwalk.net/public/photoprism:latest"
-        sync_image "bitnami/external-dns:0.14.0-debian-11-r4" "harbor.onwalk.net/public/bitnami/external-dns:0.14.0-debian-11-r4"
+        sync_image "rancher/mirrored-pause:3.6" "images.svc.plus/public/rancher/mirrored-pause:3.6"
+        sync_image "rancher/local-path-provisioner:v0.0.24" "images.svc.plus/public/rancher/local-path-provisioner:v0.0.24"
+        sync_image "rancher/mirrored-metrics-server:v0.6.2" "images.svc.plus/public/rancher/mirrored-metrics-server:v0.6.2"
+        sync_image "rancher/mirrored-coredns-coredns:1.10.1" "images.svc.plus/public/rancher/mirrored-coredns-coredns:1.10.1"
+        sync_image "hashicorp/vault:1.16.1" "images.svc.plus/public/hashicorp/vault:1.16.1"
+        sync_image "hashicorp/vault-k8s:1.4.1" "images.svc.plus/public/hashicorp/vault-k8s:1.4.1"
+        sync_image "nginx:1.16.0" "images.svc.plus/public/nginx:1.16.0"
+        sync_image "nginx/nginx-ingress:2.4.0" "images.svc.plus/public/nginx/nginx-ingress:2.4.0"
+        sync_image "busybox:1.28" "images.svc.plus/public/busybox:1.28"
+        sync_image "bpatrik/pigallery2:latest" "images.svc.plus/public/pigallery2:latest"
+        sync_image "photoprism/photoprism:latest" "images.svc.plus/public/photoprism:latest"
+        sync_image "bitnami/external-dns:0.14.0-debian-11-r4" "images.svc.plus/public/bitnami/external-dns:0.14.0-debian-11-r4"
