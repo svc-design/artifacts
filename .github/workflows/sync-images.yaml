@@ -39,7 +39,8 @@ jobs:
           docker tag  $src_image $dest_image
           docker push $dest_image
         }
-        sync_image "rancher/mirrored-library-busybox:1.36.1" "images.svc.plus/public/rancher/mirrored-library-busybox:1.36.1"
+        sync_image "ghcr.io/open-webui/open-webui:latest" "images.svc.plus/public/open-webui/open-webui:latest"
+        #sync_image "rancher/mirrored-library-busybox:1.36.1" "images.svc.plus/public/rancher/mirrored-library-busybox:1.36.1"
         #sync_image "hashicorp/vault:1.17.2" "images.svc.plus/public/hashicorp/vault:1.17.2"
         #sync_image "hashicorp/vault-k8s:1.4.2" "images.svc.plus/public/hashicorp/vault-k8s:1.4.2"
         #sync_image "rancher/mirrored-pause:3.6" "images.svc.plus/public/rancher/mirrored-pause:3.6"
