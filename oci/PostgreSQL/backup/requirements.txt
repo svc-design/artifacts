@@ -1,0 +1,5 @@
+PyYAML
+boto3          # 用于 AWS S3 和阿里云 OSS
+oss2           # 阿里云 OSS 的官方 SDK
+cryptography   # 用于加密
+psycopg2-binary # PostgreSQL 的 Python 适配器
