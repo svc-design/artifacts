@@ -1,4 +1,4 @@
-FROM python:3.10-base
+FROM images.onwalk.net/public/base/python-3.10:latest
 
 # 安装必要的软件包
 RUN apt-get update && \
