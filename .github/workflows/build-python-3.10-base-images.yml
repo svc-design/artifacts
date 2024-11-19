@@ -10,16 +10,14 @@ on:
   workflow_dispatch:
     branches:
       - main
-env:
-  IMAGE_REPO: "images.onwalk.net"
 
 jobs:
-  eslint:
-    name: Build Docker in Docker image
+  build-python-3-10:
+    name: build python 3.10 images
     uses: svc-design/actions/.github/workflows/build-images.yaml@main
     with:
       method: 'docker/node'
-      registry_addr: ${{ env.IMAGE_REPO }}
+      registry_addr: images.onwalk.net
       dockerfile_path: 'oci/base/python-3.10'
       image_name: 'public/base/python-3.10'
       image_tag: 'latest'
