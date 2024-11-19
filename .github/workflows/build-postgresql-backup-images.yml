@@ -1,0 +1,26 @@
+name: build images postgresql-backup
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/PostgreSQL/backup/Dockerfile'
+      - '.github/workflows/build-python-3.10-base-images.yml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  build-postgresql-backup-image:
+    name: build postgresql backup image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker/node'
+      registry_addr: images.onwalk.net
+      dockerfile_path: 'oci/PostgreSQL/backup/'
+      image_name: 'public/postgresql-backup'
+      image_tag: 'latest'
+    secrets:
+      artifactory_sa: ${{ secrets.IMAGES_REPO_USER }}
+      artifactory_pw: ${{ secrets.IMAGES_REPO_PASSWORD }}
