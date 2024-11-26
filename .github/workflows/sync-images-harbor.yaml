@@ -1,0 +1,143 @@
+name: Sync Images for Harbor
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-harbor.yaml'
+  push:
+    paths:
+      - '.github/workflows/sync-images-harbor.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  harbor-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Harbor Core
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/harbor-core:v2.12.0
+          docker tag docker.io/goharbor/harbor-core:v2.12.0 images.onwalk.net/public/goharbor/harbor-core:v2.12.0
+          docker push images.onwalk.net/public/goharbor/harbor-core:v2.12.0
+
+  harbor-db:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Harbor DB
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/harbor-db:v2.12.0
+          docker tag docker.io/goharbor/harbor-db:v2.12.0 images.onwalk.net/public/goharbor/harbor-db:v2.12.0
+          docker push images.onwalk.net/public/goharbor/harbor-db:v2.12.0
+
+  harbor-jobservice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Harbor Jobservice
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/harbor-jobservice:v2.12.0
+          docker tag docker.io/goharbor/harbor-jobservice:v2.12.0 images.onwalk.net/public/goharbor/harbor-jobservice:v2.12.0
+          docker push images.onwalk.net/public/goharbor/harbor-jobservice:v2.12.0
+
+  harbor-portal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Harbor Portal
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/harbor-portal:v2.12.0
+          docker tag docker.io/goharbor/harbor-portal:v2.12.0 images.onwalk.net/public/goharbor/harbor-portal:v2.12.0
+          docker push images.onwalk.net/public/goharbor/harbor-portal:v2.12.0
+
+  redis-photon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Redis Photon
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/redis-photon:v2.12.0
+          docker tag docker.io/goharbor/redis-photon:v2.12.0 images.onwalk.net/public/goharbor/redis-photon:v2.12.0
+          docker push images.onwalk.net/public/goharbor/redis-photon:v2.12.0
+
+  registry-photon:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Registry Photon
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/registry-photon:v2.12.0
+          docker tag docker.io/goharbor/registry-photon:v2.12.0 images.onwalk.net/public/goharbor/registry-photon:v2.12.0
+          docker push images.onwalk.net/public/goharbor/registry-photon:v2.12.0
+
+  harbor-registryctl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Registry Photon
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/harbor-registryctl:v2.12.0
+          docker tag docker.io/goharbor/harbor-registryctl:v2.12.0 images.onwalk.net/public/goharbor/harbor-registryctl:v2.12.0
+          docker push images.onwalk.net/public/goharbor/harbor-registryctl:v2.12.0
+
+  trivy-adapter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Trivy Adapter
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/goharbor/trivy-adapter-photon:v2.12.0
+          docker tag docker.io/goharbor/trivy-adapter-photon:v2.12.0 images.onwalk.net/public/goharbor/trivy-adapter-photon:v2.12.0
+          docker push images.onwalk.net/public/goharbor/trivy-adapter-photon:v2.12.0
