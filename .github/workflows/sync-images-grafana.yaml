@@ -6,9 +6,6 @@ on:
   pull_request:
     paths:
       - '.github/workflows/sync-images-grafana.yaml'
-  push:
-    paths:
-      - '.github/workflows/sync-images-grafana.yaml'
   workflow_dispatch:
     branches:
       - main
