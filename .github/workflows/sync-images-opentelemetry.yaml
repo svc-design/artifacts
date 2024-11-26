@@ -15,7 +15,7 @@ env:
 
 jobs:
   accountingservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync accountingservice image
@@ -31,7 +31,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-accountingservice
 
   adservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync adservice image
@@ -47,7 +47,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-adservice
 
   cartservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync cartservice image
@@ -63,7 +63,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-cartservice
 
   checkoutservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync checkoutservice image
@@ -79,7 +79,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-checkoutservice
 
   currencyservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync currencyservice image
@@ -95,7 +95,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-currencyservice
 
   emailservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync emailservice image
@@ -111,7 +111,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-emailservice
 
   flagdui:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync flagdui image
@@ -127,7 +127,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-flagdui
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync frontend image
@@ -143,7 +143,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-frontend
 
   frontendproxy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync frontendproxy image
@@ -159,7 +159,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-frontendproxy
 
   imageprovider:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync imageprovider image
@@ -175,7 +175,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-imageprovider
 
   kafka:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync kafka image
@@ -191,7 +191,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-kafka
 
   loadgenerator:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync loadgenerator image
@@ -207,7 +207,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-loadgenerator
 
   paymentservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync paymentservice image
@@ -223,7 +223,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-paymentservice
 
   productcatalogservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync productcatalogservice image
@@ -239,7 +239,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-productcatalogservice
 
   quoteservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync quoteservice image
@@ -255,7 +255,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-quoteservice
 
   recommendationservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync recommendationservice image
@@ -271,7 +271,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-recommendationservice
 
   shippingservice:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v2
       - name: Sync shippingservice image
