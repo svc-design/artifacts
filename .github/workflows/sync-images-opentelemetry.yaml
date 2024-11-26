@@ -1,0 +1,287 @@
+name: Sync OpenTelemetry Demo Images
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-opentelemetry.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  VERSION: 1.12.0
+
+jobs:
+  accountingservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync accountingservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-accountingservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-accountingservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-accountingservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-accountingservice
+
+  adservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync adservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-adservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-adservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-adservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-adservice
+
+  cartservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync cartservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-cartservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-cartservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-cartservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-cartservice
+
+  checkoutservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync checkoutservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-checkoutservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-checkoutservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-checkoutservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-checkoutservice
+
+  currencyservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync currencyservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-currencyservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-currencyservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-currencyservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-currencyservice
+
+  emailservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync emailservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-emailservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-emailservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-emailservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-emailservice
+
+  flagdui:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync flagdui image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-flagdui
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-flagdui images.onwalk.net/public/opentelemetry/demo:${VERSION}-flagdui
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-flagdui
+
+  frontend:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync frontend image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-frontend
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-frontend images.onwalk.net/public/opentelemetry/demo:${VERSION}-frontend
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-frontend
+
+  frontendproxy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync frontendproxy image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-frontendproxy
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-frontendproxy images.onwalk.net/public/opentelemetry/demo:${VERSION}-frontendproxy
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-frontendproxy
+
+  imageprovider:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync imageprovider image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-imageprovider
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-imageprovider images.onwalk.net/public/opentelemetry/demo:${VERSION}-imageprovider
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-imageprovider
+
+  kafka:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync kafka image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-kafka
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-kafka images.onwalk.net/public/opentelemetry/demo:${VERSION}-kafka
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-kafka
+
+  loadgenerator:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync loadgenerator image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-loadgenerator
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-loadgenerator images.onwalk.net/public/opentelemetry/demo:${VERSION}-loadgenerator
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-loadgenerator
+
+  paymentservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync paymentservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-paymentservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-paymentservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-paymentservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-paymentservice
+
+  productcatalogservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync productcatalogservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-productcatalogservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-productcatalogservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-productcatalogservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-productcatalogservice
+
+  quoteservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync quoteservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-quoteservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-quoteservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-quoteservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-quoteservice
+
+  recommendationservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync recommendationservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-recommendationservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-recommendationservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-recommendationservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-recommendationservice
+
+  shippingservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync shippingservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-shippingservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-shippingservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-shippingservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-shippingservice
