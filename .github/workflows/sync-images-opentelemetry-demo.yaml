@@ -1,4 +1,4 @@
-sync-images-microservice-demo.yamlname: Sync OpenTelemetry Demo Images
+name: Sync OpenTelemetry Demo Images
 
 on:
   schedule:
