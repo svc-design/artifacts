@@ -25,10 +25,9 @@ jobs:
           sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
           java -version
           echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
-          git clone https://github.com/aliyun/alibabacloud-microservice-demo.git -b jdk11
+          git clone https://github.com/svc-design/alibabacloud-microservice-demo.git -b java-openjdk-17
           cd alibabacloud-microservice-demo/
-          mvn clean install -U
-          mvn --batch-mode clean package install                                                                                && \
+          mvn clean compile package install                                                                                     && \
           cd src/frontend && docker build -t images.onwalk.net/public/microservice-demo/frontend:1.0.0-SNAPSHOT .               && \
           cd ../cartservice && docker build -t images.onwalk.net/public/microservice-demo/cartservice:1.0.0-SNAPSHOT .          && \
           cd ../productservice && docker build -t images.onwalk.net/public/microservice-demo/productservice:1.0.0-SNAPSHOT .    && \
