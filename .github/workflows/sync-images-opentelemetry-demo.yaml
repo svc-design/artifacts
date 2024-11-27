@@ -5,7 +5,7 @@ on:
     - cron: "0 0 * * *"
   pull_request:
     paths:
-      - '.github/workflows/sync-images-opentelemetry.yaml'
+      - '.github/workflows/sync-images-opentelemetry-demo.yaml'
   workflow_dispatch:
     branches:
       - main
