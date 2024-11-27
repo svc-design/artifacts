@@ -11,99 +11,34 @@ on:
       - main
 
 jobs:
-  checkoutservice:
-    runs-on: ubuntu-latest
+  alibabacloud-microservice-demo:
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v2
-      - name: sync checkoutservice images
+      - name: build and push alibabacloud-microservice-demo images
         env:
           USER: ${{ secrets.IMAGES_REPO_USER }}
           PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
-          ALI_CLOUD_USER: ${{ secrets.ALI_CLOUD_USER }}
-          ALI_CLOUD_PASSWORD: ${{ secrets.ALI_CLOUD_PASSWORD }}
         shell: bash
         run: |
-          sudo apt update && sudo apt install -y git
+          sudo apt update && sudo apt install -y git maven openjdk-11-jdk
+          sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+          java -version
           echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
-          echo "$ALI_CLOUD_PASSWORD" | docker login --username=$ALI_CLOUD_USER --password-stdin registry.cn-hangzhou.aliyuncs.com
-          docker pull registry.cn-hangzhou.aliyuncs.com/mse-hz/checkoutservice:1.0.0-SNAPSHOT
-          docker tag registry.cn-hangzhou.aliyuncs.com/mse-hz/checkoutservice:1.0.0-SNAPSHOT images.onwalk.net/public/microservice-demo/checkoutservice:1.0.0-SNAPSHOT
-          docker push images.onwalk.net/public/microservice-demo/checkoutservice:1.0.0-SNAPSHOT
+          git clone https://github.com/aliyun/alibabacloud-microservice-demo.git -b jdk11
+          cd alibabacloud-microservice-demo/
+          mvn clean install -U
+          mvn --batch-mode clean package install                                                                                && \
+          cd src/frontend && docker build -t images.onwalk.net/public/microservice-demo/frontend:1.0.0-SNAPSHOT .               && \
+          cd ../cartservice && docker build -t images.onwalk.net/public/microservice-demo/cartservice:1.0.0-SNAPSHOT .          && \
+          cd ../productservice && docker build -t images.onwalk.net/public/microservice-demo/productservice:1.0.0-SNAPSHOT .    && \
+          cd ../checkoutservice && docker build -t images.onwalk.net/public/microservice-demo/checkoutservice:1.0.0-SNAPSHOT .  && \
+          cd ../zuul-gateway && docker build -t images.onwalk.net/public/microservice-demo/zuul-gateway:1.0.0-SNAPSHOT .
 
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: sync frontend images
-        env:
-          USER: ${{ secrets.IMAGES_REPO_USER }}
-          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
-          ALI_CLOUD_USER: ${{ secrets.ALI_CLOUD_USER }}
-          ALI_CLOUD_PASSWORD: ${{ secrets.ALI_CLOUD_PASSWORD }}
-        shell: bash
-        run: |
-          sudo apt update && sudo apt install -y git
-          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
-          echo "$ALI_CLOUD_PASSWORD" | docker login --username=$ALI_CLOUD_USER --password-stdin registry.cn-hangzhou.aliyuncs.com
-          docker pull registry.cn-hangzhou.aliyuncs.com/mse-hz/frontend:1.0.0-SNAPSHOT
-          docker tag registry.cn-hangzhou.aliyuncs.com/mse-hz/frontend:1.0.0-SNAPSHOT images.onwalk.net/public/microservice-demo/frontend:1.0.0-SNAPSHOT
           docker push images.onwalk.net/public/microservice-demo/frontend:1.0.0-SNAPSHOT
-
-  loadgenerator:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: sync loadgenerator images
-        env:
-          USER: ${{ secrets.IMAGES_REPO_USER }}
-          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
-          ALI_CLOUD_USER: ${{ secrets.ALI_CLOUD_USER }}
-          ALI_CLOUD_PASSWORD: ${{ secrets.ALI_CLOUD_PASSWORD }}
-        shell: bash
-        run: |
-          sudo apt update && sudo apt install -y git
-          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
-          echo "$ALI_CLOUD_PASSWORD" | docker login --username=$ALI_CLOUD_USER --password-stdin registry.cn-hangzhou.aliyuncs.com
-          docker pull registry.cn-hangzhou.aliyuncs.com/mse-hz/loadgenerator:1.0.0-SNAPSHOT
-          docker tag registry.cn-hangzhou.aliyuncs.com/mse-hz/loadgenerator:1.0.0-SNAPSHOT images.onwalk.net/public/microservice-demo/loadgenerator:1.0.0-SNAPSHOT
-          docker push images.onwalk.net/public/microservice-demo/loadgenerator:1.0.0-SNAPSHOT
-
-  productservice:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: sync productservice images
-        env:
-          USER: ${{ secrets.IMAGES_REPO_USER }}
-          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
-          ALI_CLOUD_USER: ${{ secrets.ALI_CLOUD_USER }}
-          ALI_CLOUD_PASSWORD: ${{ secrets.ALI_CLOUD_PASSWORD }}
-        shell: bash
-        run: |
-          sudo apt update && sudo apt install -y git
-          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
-          echo "$ALI_CLOUD_PASSWORD" | docker login --username=$ALI_CLOUD_USER --password-stdin registry.cn-hangzhou.aliyuncs.com
-          docker pull registry.cn-hangzhou.aliyuncs.com/mse-hz/productservice:1.0.0-SNAPSHOT
-          docker tag registry.cn-hangzhou.aliyuncs.com/mse-hz/productservice:1.0.0-SNAPSHOT images.onwalk.net/public/microservice-demo/productservice:1.0.0-SNAPSHOT
-          docker push images.onwalk.net/public/microservice-demo/loadgenerator:1.0.0-SNAPSHOT
-
-  zuul-gateway:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: sync zuul-gateway images
-        env:
-          USER: ${{ secrets.IMAGES_REPO_USER }}
-          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
-          ALI_CLOUD_USER: ${{ secrets.ALI_CLOUD_USER }}
-          ALI_CLOUD_PASSWORD: ${{ secrets.ALI_CLOUD_PASSWORD }}
-        shell: bash
-        run: |
-          sudo apt update && sudo apt install -y git
-          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
-          echo "$ALI_CLOUD_PASSWORD" | docker login --username=$ALI_CLOUD_USER --password-stdin registry.cn-hangzhou.aliyuncs.com
-          docker pull registry.cn-hangzhou.aliyuncs.com/mse-hz/zuul-gateway:1.0.0-SNAPSHOT
-          docker tag registry.cn-hangzhou.aliyuncs.com/mse-hz/zuul-gateway:1.0.0-SNAPSHOT images.onwalk.net/public/microservice-demo/zuul-gateway:1.0.0-SNAPSHOT
+          docker push images.onwalk.net/public/microservice-demo/cartservice:1.0.0-SNAPSHOT
+          docker push images.onwalk.net/public/microservice-demo/productservice:1.0.0-SNAPSHOT
+          docker push images.onwalk.net/public/microservice-demo/checkoutservice:1.0.0-SNAPSHOT
           docker push images.onwalk.net/public/microservice-demo/zuul-gateway:1.0.0-SNAPSHOT
 
   mysql:
