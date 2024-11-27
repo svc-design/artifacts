@@ -1,0 +1,32 @@
+name: Sync Images for Base OS
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-base-os.yaml'
+  push:
+    paths:
+      - '.github/workflows/sync-images-base-os.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  busybox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Base OS images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/busybox:latest
+          docker tag docker.io/busybox:latest images.onwalk.net/public/base/busybox:latest
+          docker push images.onwalk.net/public/base/busybox:latest
+
