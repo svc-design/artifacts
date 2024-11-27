@@ -285,3 +285,19 @@ jobs:
           docker pull ghcr.io/open-telemetry/demo:${VERSION}-shippingservice
           docker tag ghcr.io/open-telemetry/demo:${VERSION}-shippingservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-shippingservice
           docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-shippingservice
+
+  frauddetectionservice:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync frauddetectionservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-telemetry/demo:${VERSION}-frauddetectionservice
+          docker tag ghcr.io/open-telemetry/demo:${VERSION}-frauddetectionservice images.onwalk.net/public/opentelemetry/demo:${VERSION}-frauddetectionservice
+          docker push images.onwalk.net/public/opentelemetry/demo:${VERSION}-frauddetectionservice
