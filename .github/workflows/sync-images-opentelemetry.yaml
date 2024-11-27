@@ -1,0 +1,46 @@
+name: Sync OpenTelemetry Images
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-opentelemetry.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  VERSION: 1.12.0
+
+jobs:
+  opentelemetry-collector:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync opentelemetry-collector image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull otel/opentelemetry-collector-contrib:0.113.0
+          docker tag otel/opentelemetry-collector-contrib:0.113.0 images.onwalk.net/public/opentelemetry/opentelemetry-collector-contrib:0.113.0
+          docker push images.onwalk.net/public/opentelemetry/opentelemetry-collector-contrib:0.113.0
+  jaegertracing:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync jaegertracing image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull jaegertracing/all-in-one:1.53.0
+          docker tag jaegertracing/all-in-one:1.53.0 images.onwalk.net/public/jaegertracing/all-in-one:1.53.0
+          docker push images.onwalk.net/public/jaegertracing/all-in-one:1.53.0
