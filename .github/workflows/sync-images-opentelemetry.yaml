@@ -59,3 +59,19 @@ jobs:
           docker pull docker.io/valkey/valkey:7.2-alpine
           docker tag docker.io/valkey/valkey:7.2-alpine images.onwalk.net/public/opentelemetry/valkey:7.2-alpine
           docker push images.onwalk.net/public/opentelemetry/valkey:7.2-alpine
+
+  flagd:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - name: Sync flagd image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+          VERSION: ${{ env.VERSION }}
+        shell: bash
+        run: |
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull ghcr.io/open-feature/flagd:v0.11.4
+          docker tag  ghcr.io/open-feature/flagd:v0.11.4 images.onwalk.net/public/open-feature/flagd:v0.11.4
+          docker push images.onwalk.net/public/open-feature/flagd:v0.11.4
