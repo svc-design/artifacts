@@ -11,6 +11,22 @@ on:
       - main
 
 jobs:
+  grafana:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and grafana images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/grafana/grafana:11.3.0
+          docker tag docker.io/grafana/grafana:11.3.0 images.onwalk.net/public/grafana/grafana:11.3.0
+          docker push images.onwalk.net/public/grafana/grafana:11.3.0
+
   grafana-agent:
     runs-on: ubuntu-latest
     steps:
@@ -26,6 +42,7 @@ jobs:
           docker pull docker.io/grafana/agent:v0.42.0
           docker tag docker.io/grafana/agent:v0.42.0 images.onwalk.net/public/grafana/agent:v0.42.0
           docker push images.onwalk.net/public/grafana/agent:v0.42.0
+
   configmap-reload:
     runs-on: ubuntu-latest
     steps:
