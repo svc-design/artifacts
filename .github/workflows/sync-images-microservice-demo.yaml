@@ -1,0 +1,89 @@
+name: Sync Images for Microservice Demo
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-microservice-demo.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  alibabacloud-microservice-demo:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: build and push alibabacloud-microservice-demo images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git maven openjdk-11-jdk
+          sudo update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+          java -version
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          git clone https://github.com/svc-design/alibabacloud-microservice-demo.git -b java-openjdk-17
+          cd alibabacloud-microservice-demo/
+          mvn clean compile package install                                                                                     && \
+          cd src/frontend && docker build -t images.onwalk.net/public/microservice-demo/frontend:1.0.0-SNAPSHOT .               && \
+          cd ../cartservice && docker build -t images.onwalk.net/public/microservice-demo/cartservice:1.0.0-SNAPSHOT .          && \
+          cd ../productservice && docker build -t images.onwalk.net/public/microservice-demo/productservice:1.0.0-SNAPSHOT .    && \
+          cd ../checkoutservice && docker build -t images.onwalk.net/public/microservice-demo/checkoutservice:1.0.0-SNAPSHOT .  && \
+          cd ../zuul-gateway && docker build -t images.onwalk.net/public/microservice-demo/zuul-gateway:1.0.0-SNAPSHOT .
+
+          docker push images.onwalk.net/public/microservice-demo/frontend:1.0.0-SNAPSHOT
+          docker push images.onwalk.net/public/microservice-demo/cartservice:1.0.0-SNAPSHOT
+          docker push images.onwalk.net/public/microservice-demo/productservice:1.0.0-SNAPSHOT
+          docker push images.onwalk.net/public/microservice-demo/checkoutservice:1.0.0-SNAPSHOT
+          docker push images.onwalk.net/public/microservice-demo/zuul-gateway:1.0.0-SNAPSHOT
+
+  mysql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: sync mysql 5.6 images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull mysql:5.6
+          docker tag mysql:5.6 images.onwalk.net/public/microservice-demo/mysql:5.6
+          docker push images.onwalk.net/public/microservice-demo/mysql:5.6
+
+  redis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: sync redis images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull redis:latest
+          docker tag redis:latest images.onwalk.net/public/microservice-demo/redis:latest
+          docker push images.onwalk.net/public/microservice-demo/redis:latest
+
+  nacos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: sync nacos images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull nacos/nacos-server:latest
+          docker tag nacos/nacos-server:latest images.onwalk.net/public/microservice-demo/nacos-server:latest
+          docker push images.onwalk.net/public/microservice-demo/nacos-server:latest
