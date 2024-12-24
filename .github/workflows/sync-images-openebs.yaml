@@ -1,0 +1,65 @@
+name: Sync Images for OpenEBS
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-openebs.yaml'
+  push:
+    paths:
+      - '.github/workflows/sync-images-openebs.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  node-disk-manager:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Base OS images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin global-images.onwalk.net
+          docker pull docker.io/openebs/node-disk-manager:2.0.0
+          docker tag docker.io/openebs/node-disk-manager:2.0.0 global-images.onwalk.net/private/deepflow-v6.3/openebs/node-disk-manager:2.0.0
+          docker push global-images.onwalk.net/private/deepflow-v6.3/openebs/node-disk-manager:2.0.0
+
+  node-disk-operator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Push images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin global-images.onwalk.net
+          docker pull docker.io/openebs/node-disk-operator:2.0.0
+          docker tag docker.io/openebs/node-disk-operator:2.0.0 global-images.onwalk.net/private/deepflow-v6.3/openebs/node-disk-operator:2.0.0
+          docker push global-images.onwalk.net/private/deepflow-v6.3/openebs/node-disk-operator:2.0.0
+
+  provisioner-localpv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Push images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin global-images.onwalk.net
+          docker pull docker.io/openebs/provisioner-localpv:3.3.0
+          docker tag docker.io/openebs/provisioner-localpv:3.3.0 global-images.onwalk.net/private/deepflow-v6.3/openebs/provisioner-localpv:3.3.0
+          docker push global-images.onwalk.net/private/deepflow-v6.3/openebs/provisioner-localpv:3.3.0
+
+
