@@ -39,5 +39,6 @@ jobs:
           docker push $dest_image
         }
         sync_image "docker.io/library/redis:alpine" "images.onwalk.net/public/redis:alpine"
+        sync_image "docker.io/otel/opentelemetry-collector-contrib:0.62.0" "images.onwalk.net/public/opentelemetry-collector-contrib:0.62.0"
         #sync_image "busybox:1.32" "images.onwalk.net/public/busybox:1.32"
         #sync_image "docker.io/mysql:5.7.30" "images.onwalk.net/public/database/mysql:5.7.30"
