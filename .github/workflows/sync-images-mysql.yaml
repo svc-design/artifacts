@@ -38,5 +38,6 @@ jobs:
           docker tag  $src_image $dest_image
           docker push $dest_image
         }
-        sync_image "busybox:1.32" "images.onwalk.net/public/busybox:1.32"
-        sync_image "docker.io/mysql:5.7.30" "images.onwalk.net/public/database/mysql:5.7.30"
+        sync_image "docker.io/library/redis:alpine" "images.onwalk.net/public/redis:alpine"
+        #sync_image "busybox:1.32" "images.onwalk.net/public/busybox:1.32"
+        #sync_image "docker.io/mysql:5.7.30" "images.onwalk.net/public/database/mysql:5.7.30"
