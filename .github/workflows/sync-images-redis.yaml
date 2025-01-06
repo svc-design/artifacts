@@ -39,3 +39,4 @@ jobs:
           docker push $dest_image
         }
         sync_image "docker.io/bitnami/redis-cluster:7.4.1-debian-12-r3" "images.onwalk.net/public/redis-cluster:7.4.1-debian-12-r3"
+        sync_image "docker.io/bitnami/redis:7.4.1-debian-12-r3" "images.onwalk.net/public/redis:7.4.1-debian-12-r3"
