@@ -1,11 +1,11 @@
-name: sync images for Kafka
+name: sync images for Redis
 
 on:
   schedule:
     - cron: "0 0 * * *"
   pull_request:
     paths:
-      - '.github/workflows/sync-images-nginx.yaml'
+      - '.github/workflows/sync-images-redis.yaml'
   workflow_dispatch:
     branches:
       - main
@@ -38,5 +38,4 @@ jobs:
           docker tag  $src_image $dest_image
           docker push $dest_image
         }
-        sync_image "docker.io/bitnami/kafka:3.9.0-debian-12-r4" "images.onwalk.net/public/kafka:3.9.0-debian-12-r4"
-
+        sync_image "docker.io/bitnami/redis-cluster:7.4.1-debian-12-r3" "images.onwalk.net/public/redis-cluster:7.4.1-debian-12-r3"
