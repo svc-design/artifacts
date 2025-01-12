@@ -1,0 +1,60 @@
+name: Sync Images for Apollo
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-apollo.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  apollo-adminservice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Apollo-adminservice image
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin global-images.onwalk.net
+          docker pull docker.io/apolloconfig/apollo-adminservice:2.3.0
+          docker tag docker.io/apolloconfig/apollo-adminservice:2.3.0 global-images.onwalk.net/public/apolloconfig/apollo-adminservice:2.3.0
+          docker push global-images.onwalk.net/public/apolloconfig/apollo-adminservice:2.3.0
+
+  apollo-configservice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Harbor DB
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin global-images.onwalk.net
+          docker pull docker.io/apolloconfig/apollo-configservice:2.3.0
+          docker tag docker.io/apolloconfig/apollo-configservice:2.3.0 global-images.onwalk.net/public/apolloconfig/apollo-configservice:2.3.0
+          docker push global-images.onwalk.net/public/apolloconfig/apollo-configservice:2.3.0
+
+  apollo-portal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Harbor Jobservice
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin global-images.onwalk.net
+          docker pull docker.io/apolloconfig/apollo-portal:2.3.0
+          docker tag docker.io/apolloconfig/apollo-portal:2.3.0 global-images.onwalk.net/public/apolloconfig/apollo-portal:2.3.0
+          docker push global-images.onwalk.net/public/apolloconfig/apollo-portal:2.3.0
