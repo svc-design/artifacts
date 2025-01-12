@@ -1,0 +1,70 @@
+name: sync images for Prometheus-community
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+  pull_request:
+    paths:
+      - '.github/workflows/sync-images-prometheus-community.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  kube-state-metrics:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      env:
+        USER: ${{ secrets.IMAGES_REPO_USER }}
+        PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+
+    - name: sync images
+      shell: bash
+      run: |
+        function sync_image()
+        {
+          local src_image=$1
+          local dest_image=$2
+          docker pull $src_image
+          docker tag  $src_image $dest_image
+          docker push $dest_image
+        }
+        sync_image "registry.k8s.io/kube-state-metrics/kube-state-metrics:v2.14.0" "images.onwalk.net/public/prometheus/kube-state-metrics:v2.14.0"
+
+  node-exporter:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Initialization environment
+      env:
+        USER: ${{ secrets.IMAGES_REPO_USER }}
+        PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install git -y
+        echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+
+    - name: sync images
+      shell: bash
+      run: |
+        function sync_image()
+        {
+          local src_image=$1
+          local dest_image=$2
+          docker pull $src_image
+          docker tag  $src_image $dest_image
+          docker push $dest_image
+        }
+        sync_image "quay.io/prometheus/node-exporter:v1.8.2" "images.onwalk.net/public/prometheus/node-exporter:v1.8.2"
