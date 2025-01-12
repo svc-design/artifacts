@@ -43,6 +43,22 @@ jobs:
           docker tag docker.io/grafana/agent:v0.42.0 images.onwalk.net/public/grafana/agent:v0.42.0
           docker push images.onwalk.net/public/grafana/agent:v0.42.0
 
+  grafana-alloy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and grafana images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/grafana/alloy:v1.5.1
+          docker tag docker.io/grafana/alloy:v1.5.1 images.onwalk.net/public/grafana/alloy:v1.5.1
+          docker push images.onwalk.net/public/grafana/alloy:v1.5.1
+
   configmap-reload:
     runs-on: ubuntu-latest
     steps:
