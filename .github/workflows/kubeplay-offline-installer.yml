@@ -1,0 +1,115 @@
+name: Create and Test Offline Kubernetes Installer Release
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/kubeplay-offline-installer.yml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  prepare-offline-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      # Create offline package directory
+      - name: Create offline package directory
+        run: mkdir -p /tmp/offline-package
+
+      # Download kubeplay binary
+      - name: Download kubeplay binary
+        run: |
+          curl -sSL https://github.com/kubeplay/kubeplay/releases/download/v0.1.0/kubeplay-linux-amd64 -o /tmp/offline-package/kubeplay
+          chmod +x /tmp/offline-package/kubeplay
+
+      # Download Calico YAML file
+      - name: Download Calico YAML
+        run: |
+          curl -sSL https://docs.projectcalico.org/v3.22/manifests/calico.yaml -o /tmp/offline-package/calico.yaml
+
+      # Create the installer package
+      - name: Create kubeplay-offline-installer.tar.gz
+        run: |
+          mkdir -p installer
+          tar -czvf installer/kubeplay-offline-package.tar.gz -C /tmp offline-package
+          echo '#!/bin/bash' > installer/install-kubeplay.sh
+          echo 'if [ -f /etc/os-release ]; then' >> installer/install-kubeplay.sh
+          echo '  . /etc/os-release' >> installer/install-kubeplay.sh
+          echo '  if [[ "$ID" == "ubuntu" || "$ID_LIKE" == "debian" ]]; then' >> installer/install-kubeplay.sh
+          echo '    cp /tmp/offline-package/kubeplay /usr/local/bin/kubeplay' >> installer/install-kubeplay.sh
+          echo '    kubectl apply -f /tmp/offline-package/calico.yaml' >> installer/install-kubeplay.sh
+          echo '  elif [[ "$ID" == "centos" || "$ID" == "rhel" ]]; then' >> installer/install-kubeplay.sh
+          echo '    cp /tmp/offline-package/kubeplay /usr/local/bin/kubeplay' >> installer/install-kubeplay.sh
+          echo '    kubectl apply -f /tmp/offline-package/calico.yaml' >> installer/install-kubeplay.sh
+          echo '  fi' >> installer/install-kubeplay.sh
+          echo 'fi' >> installer/install-kubeplay.sh
+          chmod +x installer/install-kubeplay.sh
+          tar -czvf kubeplay-offline-installer.tar.gz installer
+
+      # Upload the installer package as an artifact
+      - name: Upload kubeplay-offline-installer.tar.gz as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: kubeplay-offline-installer
+          path: kubeplay-offline-installer.tar.gz
+
+  test-installer:
+    runs-on: ubuntu-latest
+    needs: prepare-offline-package
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, centos-7, centos-8]
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      # Download the installer package from the artifact
+      - name: Download the installer package from artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: kubeplay-offline-installer
+
+      # Extract the installer package
+      - name: Extract the installer package
+        run: |
+          tar -xzvf kubeplay-offline-installer.tar.gz
+
+      # Run the installer script
+      - name: Run the installer script
+        run: |
+          ./installer/install-kubeplay.sh
+
+      # Verify kubectl and kubeplay installation
+      - name: Verify Kubernetes and kubeplay installation
+        run: |
+          kubectl version --client
+          kubeplay --version
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: test-installer
+    if: success()  # Only run if the test-installer job succeeds
+
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ github.run_number }}-${{ github.run_id }}  # Generate version number
+          release_name: Release v${{ github.run_number }}-${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload kubeplay-offline-installer.tar.gz to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}-${{ github.run_id }}
+          files: |
+            kubeplay-offline-installer.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
