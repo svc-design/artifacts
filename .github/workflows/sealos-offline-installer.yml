@@ -1,0 +1,120 @@
+name: Create and Test Sealos Offline Installer Release
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/sealos-offline-installer.yml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  prepare-offline-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      # Set Kubernetes version as a variable
+      - name: Set Kubernetes version
+        run: echo "K8S_VERSION=1.25.16" >> $GITHUB_ENV
+
+      # Create offline package directory
+      - name: Create offline package directory
+        run: mkdir -p /tmp/offline-package-${{ env.K8S_VERSION }}
+
+      # Download Sealos and Kubernetes binaries
+      - name: Download sealos and kubernetes binaries
+        run: |
+          curl -sSL https://github.com/labring/sealos/releases/download/v3.0.0/sealos-amd64-k8s-${{ env.K8S_VERSION }}.tar.gz -o /tmp/offline-package-${{ env.K8S_VERSION }}/sealos-amd64-k8s-${{ env.K8S_VERSION }}.tar.gz
+          curl -sSL https://github.com/labring/helm/releases/download/v3.9.4/helm-v3.9.4-linux-amd64.tar.gz -o /tmp/offline-package-${{ env.K8S_VERSION }}/helm.tar.gz
+          curl -sSL https://github.com/projectcalico/calicoctl/releases/download/v3.24.1/calicoctl-linux-amd64 -o /tmp/offline-package-${{ env.K8S_VERSION }}/calicoctl
+          chmod +x /tmp/offline-package-${{ env.K8S_VERSION }}/calicoctl
+
+      # Create the installer package
+      - name: Create sealos-offline-installer-${{ env.K8S_VERSION }}.tar.gz
+        run: |
+          mkdir -p installer
+          tar -czvf installer/sealos-offline-package-${{ env.K8S_VERSION }}.tar.gz -C /tmp offline-package-${{ env.K8S_VERSION }}
+          echo '#!/bin/bash' > installer/install-sealos.sh
+          echo 'mkdir /opt/k8s-deploy && tar -xvpf /tmp/offline-package-${{ env.K8S_VERSION }}/sealos-amd64-k8s-${{ env.K8S_VERSION }}.tar.gz -C /opt/k8s-deploy' >> installer/install-sealos.sh
+          echo 'cd /opt/k8s-deploy/ && cp sealos helm calicoctl nerdctl /usr/bin/ && chmod +x /usr/bin/sealos /usr/bin/helm /usr/bin/calicoctl /usr/bin/nerdctl' >> installer/install-sealos.sh
+          echo 'sealos load -i /tmp/offline-package-${{ env.K8S_VERSION }}/sealos-calico.tar' >> installer/install-sealos.sh
+          echo 'sealos load -i /tmp/offline-package-${{ env.K8S_VERSION }}/sealos-helm.tar' >> installer/install-sealos.sh
+          echo 'sealos load -i /tmp/offline-package-${{ env.K8S_VERSION }}/sealos-k8s-${{ env.K8S_VERSION }}.tar' >> installer/install-sealos.sh
+          echo 'sealos run registry.cn-shanghai.aliyuncs.com/labring/kubernetes:v${{ env.K8S_VERSION }} registry.cn-shanghai.aliyuncs.com/labring/helm:v3.9.4 registry.cn-shanghai.aliyuncs.com/labring/calico:v3.24.1 --single' >> installer/install-sealos.sh
+          echo 'kubectl label node $k8s_node slave_controller=enable' >> installer/install-sealos.sh
+          echo 'kubectl label node $k8s_node tsdb=enable' >> installer/install-sealos.sh
+          echo 'kubectl label node $k8s_node dfdb=enable' >> installer/install-sealos.sh
+          echo 'kubectl label node $k8s_node elasticsearch-warm=enable' >> installer/install-sealos.sh
+          echo 'kubectl taint nodes $k8s_node node-role.kubernetes.io/control-plane:NoSchedule-' >> installer/install-sealos.sh
+          echo 'kubectl label nodes $k8s_node master_controller-' >> installer/install-sealos.sh
+          echo 'mkdir -p /usr/local/deepflow && mount -o ro deepflow-docker-release-v6.5-242.iso /media && rsync -av /media/* /usr/local/deepflow/' >> installer/install-sealos.sh
+          echo 'rsync -av /usr/local/deepflow/registry/* /var/lib/registry/' >> installer/install-sealos.sh
+          chmod +x installer/install-sealos.sh
+          tar -czvf sealos-offline-installer-${{ env.K8S_VERSION }}.tar.gz installer
+
+      # Upload the installer package as an artifact
+      - name: Upload sealos-offline-installer-${{ env.K8S_VERSION }}.tar.gz as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sealos-offline-installer-${{ env.K8S_VERSION }}
+          path: sealos-offline-installer-${{ env.K8S_VERSION }}.tar.gz
+
+  test-installer:
+    runs-on: ubuntu-latest
+    needs: prepare-offline-package
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, centos-7, centos-8]
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      # Download the installer package from the artifact
+      - name: Download the installer package from artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sealos-offline-installer-${{ env.K8S_VERSION }}
+
+      # Extract the installer package
+      - name: Extract the installer package
+        run: |
+          tar -xzvf sealos-offline-installer-${{ env.K8S_VERSION }}.tar.gz
+
+      # Run the installer script
+      - name: Run the installer script
+        run: |
+          ./installer/install-sealos.sh
+
+      # Verify Sealos and Kubernetes installation
+      - name: Verify Sealos and Kubernetes installation
+        run: |
+          sealos --version
+          kubectl version --client
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: test-installer
+    if: success()  # Only run if the test-installer job succeeds
+
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ github.run_number }}-${{ github.run_id }}  # Generate version number
+          release_name: Release v${{ github.run_number }}-${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload sealos-offline-installer-${{ env.K8S_VERSION }}.tar.gz to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}-${{ github.run_id }}
+          files: |
+            sealos-offline-installer-${{ env.K8S_VERSION }}.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
