@@ -52,7 +52,7 @@ jobs:
 
       # Upload the installer package as an artifact
       - name: Upload kubeplay-offline-installer.tar.gz as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: kubeplay-offline-installer
           path: kubeplay-offline-installer.tar.gz
@@ -70,7 +70,7 @@ jobs:
 
       # Download the installer package from the artifact
       - name: Download the installer package from artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: kubeplay-offline-installer
 
