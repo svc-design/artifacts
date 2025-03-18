@@ -58,3 +58,18 @@ jobs:
           docker pull docker.io/apolloconfig/apollo-portal:2.3.0
           docker tag docker.io/apolloconfig/apollo-portal:2.3.0 global-images.onwalk.net/public/apolloconfig/apollo-portal:2.3.0
           docker push global-images.onwalk.net/public/apolloconfig/apollo-portal:2.3.0
+  kubectl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Harbor Jobservice
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull docker.io/bitnami/kubectl:1.31
+          docker tag docker.io/bitnami/kubectl:1.31 images.onwalk.net/public/bitnami/kubectl:1.31
+          docker push global-images.onwalk.net/public/bitnami/kubectl:1.31
