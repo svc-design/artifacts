@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Initialize and Sync Harbor Jobservice
+      - name: Initialize and Sync Kubectl Image
         env:
           USER: ${{ secrets.IMAGES_REPO_USER }}
           PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
@@ -73,3 +73,19 @@ jobs:
           docker pull docker.io/bitnami/kubectl:1.31
           docker tag docker.io/bitnami/kubectl:1.31 images.onwalk.net/public/bitnami/kubectl:1.31
           docker push images.onwalk.net/public/bitnami/kubectl:1.31
+
+  velero:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Initialize and Sync Velero images
+        env:
+          USER: ${{ secrets.IMAGES_REPO_USER }}
+          PASSWORD: ${{ secrets.IMAGES_REPO_PASSWORD }}
+        shell: bash
+        run: |
+          sudo apt update && sudo apt install -y git
+          echo "$PASSWORD" | docker login --username=$USER --password-stdin images.onwalk.net
+          docker pull velero/velero:v1.15.2
+          docker tag velero/velero:v1.15.2 images.onwalk.net/public/velero/velero:v1.15.2
+          docker push images.onwalk.net/public/velero/velero:v1.15.2
