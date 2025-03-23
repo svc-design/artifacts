@@ -1,0 +1,26 @@
+name: build images ansible-runner
+
+on:
+  pull_request:
+    paths:
+      - 'oci/base/alpine-ansible-lint/Dockerfile'
+      - '.github/workflows/alpine-ansible-ci-runner.yml'
+  workflow_dispatch:
+    branches:
+      - main
+env:
+  IMAGE_REPO: "images.onwalk.net"
+
+jobs:
+  eslint:
+    name: Build Docker in Docker image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker/node'
+      registry_addr: "images.onwalk.net"
+      dockerfile_path: 'oci/base/alpine-ansible-ci-runner'
+      image_name: 'public/base/alpine-ansible-ci-runner'
+      image_tag: 'latest'
+    secrets:
+      artifactory_sa: ${{ secrets.IMAGES_REPO_USER }}
+      artifactory_pw: ${{ secrets.IMAGES_REPO_PASSWORD }}
