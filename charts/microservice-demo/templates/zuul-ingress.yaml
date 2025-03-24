@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/service-weight: 'zuul-gateway-svc: 100'
+  name: zuul-ingress
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: zuul-gateway-svc
+            port:
+              number: 80
+        path: /
+        pathType: ImplementationSpecific
+status:
+  loadBalancer:
+    ingress:
+    - ip: {{ .Values.slb.zuul}}

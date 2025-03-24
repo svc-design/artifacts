@@ -1,0 +1,9 @@
+apiVersion: v2
+name: ollama-gpu-chart
+description: A Helm chart for deploying ollama application with GPU support
+version: 0.1.0
+appVersion: "1.0"
+dependencies:
+  - name: gpu-benchmark
+    version: "0.1.0"
+    repository: "file://charts/gpu-benchmark"

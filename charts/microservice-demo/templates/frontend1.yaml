@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: frontend1
+  name: frontend1
+  selfLink: /apis/apps/v1/namespaces/default/deployments/frontend1
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        alicloud.service.tag: tag1
+        armsPilotAutoEnable: "on"
+        armsPilotCreateAppName: {{ .Values.application.name.prefix}}frontend
+        msePilotAutoEnable: "on"
+        msePilotCreateAppName: {{ .Values.application.name.prefix}}frontend
+        app: frontend1
+    spec:
+      containers:
+      - env:
+        - name: LANG
+          value: C.UTF-8
+        - name: TOMCAT_ACCESSLOG_ENABLED
+          value: "true"
+        - name: micro.service.shutdown.wait.time
+          value: "30000"
+        - name: profiler.micro.service.shutdown.auto.wait.enable
+          value: "false"
+        - name: spring.cloud.nacos.discovery.server-addr
+          value: {{ .Values.mse.address.springcloud}}
+        - name: dubbo.registry.address
+          value: {{ .Values.mse.address.dubbo}}
+        - name: JAVA_TOOL_OPTIONS
+          value: ' -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 '
+        - name: dubbo.consumer.check
+          value: "false"
+        image: {{ .Values.image.prefix }}frontend:{{ .Values.image.version }}
+        imagePullPolicy: Always
+        name: frontend1
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30

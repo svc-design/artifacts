@@ -1,0 +1,13 @@
+# Default values for ollama-gpu-chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  repository: ollama/ollama
+  tag: latest
+
+# Choose which model to run
+model:
+  name: default_model
+  # Add more models here if needed
+  pvcName: ollama-model-pvc
+

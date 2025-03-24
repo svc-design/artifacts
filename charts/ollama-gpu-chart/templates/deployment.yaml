@@ -1,0 +1,38 @@
+{{- if .Values.model.name }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-ollama
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: ollama
+      model: {{ .Values.model.name }}
+  template:
+    metadata:
+      labels:
+        app: ollama
+        model: {{ .Values.model.name }}
+    spec:
+      initContainers:
+        - name: init-ollama
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["ollama", "pull", "{{ .Values.model.name }}"]
+          volumeMounts:
+            - name: model-data
+              mountPath: /model
+      containers:
+        - name: ollama
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - name: http
+              containerPort: 11434
+              protocol: TCP
+          volumeMounts:
+            - name: model-data
+              mountPath: /model
+  volumes:
+    - name: model-data
+      persistentVolumeClaim:
+        claimName: {{ .Values.model.pvcName }}
