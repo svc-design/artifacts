@@ -43,3 +43,4 @@ jobs:
         }
         sync_image "nginx:1.16.0" "images.onwalk.net/public/nginx:1.16.0"
         sync_image "docker.io/nginx/nginx-ingress:2.4.0" "images.onwalk.net/public/nginx/nginx-ingress:2.4.0"
+        sync_image "docker.io/library/registry:latest" "images.onwalk.net/public/registry:latest"
