@@ -1,0 +1,88 @@
+name: Generate and Release Self-Signed SSL Certificates
+
+on:
+  push:
+    tags:
+      - "release-*"
+  pull_request:
+    paths:
+      - '.github/workflows/self-signed-ssl-cert-workflow.yml'
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: 'Domain to generate certificate for'
+        required: false
+        default: 'kube.registry.local'
+      valid_days:
+        description: 'Certificate validity (days)'
+        required: false
+        default: '3650'
+
+env:
+  DOMAIN: ${{ github.event.inputs.domain || 'kube.registry.local' }}
+  VALID_DAYS: ${{ github.event.inputs.valid_days || '3650' }}
+  OUTPUT_DIR: ssl_certificates
+  TAG_NAME: ${{ github.ref_name != '' && github.ref_name || format('daily-{0}', github.run_number) }}
+
+jobs:
+  generate-cert:
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ env.TAG_NAME }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Ensure script is executable
+        run: chmod +x scripts/generate_ssl.sh
+
+      - name: Generate Self-Signed SSL Certificate
+        run: scripts/generate_ssl.sh "$DOMAIN" "$VALID_DAYS" "$OUTPUT_DIR"
+
+      - name: Package Certificates
+        run: tar -czvf ssl_certificates.tar.gz -C "$OUTPUT_DIR" .
+
+      - name: Upload SSL Certificates Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: self-signed-ssl-certificates
+          path: ssl_certificates.tar.gz
+
+  test-cert:
+    needs: generate-cert
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download SSL Certificates
+        uses: actions/download-artifact@v4
+        with:
+          name: self-signed-ssl-certificates
+
+      - name: Unpack Certificates
+        run: tar -xzvf ssl_certificates.tar.gz
+
+      - name: Validate Certificate with OpenSSL
+        run: |
+          openssl x509 -in ssl_certificates/cert.pem -noout -subject -issuer -dates
+          echo "✅ Certificate appears valid"
+
+  release-cert:
+    needs: test-cert
+    if: startsWith(github.ref, 'refs/tags/release-') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download SSL Certificates
+        uses: actions/download-artifact@v4
+        with:
+          name: self-signed-ssl-certificates
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name != '' && github.ref_name || format('daily-{0}', github.run_number) }}
+          name: >-
+            ${{ startsWith(github.ref, 'refs/tags/')
+              && format('Release {0}', github.ref_name)
+              || format('Daily Build {0}', github.run_number) }}
+          files: ssl_certificates.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,131 @@
+name: Build Offline K3s Installer
+
+on:
+  push:
+    paths:
+      - 'scripts/make_k3s_offline_package.sh'
+      - '.github/workflows/build-k3s-offline-installer.yml'
+  workflow_dispatch:
+
+jobs:
+  build-k3s-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Install dependencies
+        run: |
+          export NERDCTL_VERSION=2.0.4
+          sudo apt-get update && sudo apt-get install -y curl tar tree
+          # 安装 K3s
+          curl -sfL https://get.k3s.io | sh -
+          # 设置 kubeconfig
+          mkdir -p $HOME/.kube
+          sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+          sudo chown $USER:$USER $HOME/.kube/config
+          # 安装 nerdctl
+          sudo curl -LO https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz
+          sudo tar -C /usr/local/bin -xzf nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz
+          sudo chmod +x /usr/local/bin/nerdctl
+
+          # k3s 测试
+          kubectl get nodes
+          kubectl get pods -A
+
+          # nerdctl 测试
+          sudo nerdctl --version
+          sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock ps
+
+      - name: Run Offline Package Builder
+        run: |
+          chmod +x scripts/make_k3s_offline_package.sh
+          ARCH=${{ matrix.arch }} ./scripts/make_k3s_offline_package.sh
+
+      - name: Compress Offline Installer
+        run: |
+          tar czvf k3s-offline-package-${{ matrix.arch }}.tar.gz k3s-offline-package
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: k3s-offline-package-${{ matrix.arch }}
+          path: k3s-offline-package-${{ matrix.arch }}.tar.gz
+
+  test-k3s-installer:
+    needs: build-k3s-installer
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: k3s-offline-package-${{ matrix.arch }}
+          path: ./test-dir
+
+      - name: Extract Package
+        run: |
+          cd test-dir
+          tar -xzvf k3s-offline-package-${{ matrix.arch }}.tar.gz
+
+      - name: Setup K3s and Test
+        run: |
+          cd test-dir/k3s-offline-package
+          bash install-server.sh
+          KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl get nodes
+          KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl get pods -A
+
+  publish-release:
+    needs: test-k3s-installer
+    runs-on: ubuntu-latest
+    env:
+      tag_name: offline-k3s-${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.tag_name }}
+          release_name: Daily Build ${{ env.tag_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: k3s-offline-package-amd64
+          path: release-artifacts
+
+      - name: Download arm64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: k3s-offline-package-arm64
+          path: release-artifacts
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.tag_name }}
+          files: |
+            release-artifacts/k3s-offline-package-amd64.tar.gz
+            release-artifacts/k3s-offline-package-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

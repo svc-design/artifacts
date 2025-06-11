@@ -1,0 +1,140 @@
+name: Build Offline Pulp Installer
+
+on:
+  push:
+    paths:
+      - 'scripts/pulp-installer.sh'
+      - '.github/workflows/build-pulp-offline-installer.yml'
+  workflow_dispatch:
+
+jobs:
+  build-pulp-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare offline structure
+        run: mkdir -p offline-pulp/{charts,scripts,images,manifests}
+
+      - name: Download Helm Chart
+        run: |
+          helm repo add pulp-operator https://github.com/pulp/pulp-k8s-resources/raw/main/helm-charts/ --force-update
+          helm repo update
+          helm pull pulp-operator/pulp-operator --untar --untardir offline-pulp/charts
+
+      - name: Pull & Save Image
+        run: |
+          docker pull quay.io/pulp/pulp-operator:v1.0.0-beta.5
+          docker save quay.io/pulp/pulp-operator:v1.0.0-beta.5 -o offline-pulp/images/pulp-operator.tar
+          docker pull gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
+          docker save gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0 -o offline-pulp/images/kube-rbac-proxy.tar
+
+      - name: Copy installer script
+        run: |
+          cp scripts/pulp-installer.sh offline-pulp/scripts/
+          chmod +x offline-pulp/scripts/pulp-installer.sh
+
+      - name: Package offline installer
+        run: |
+          cd offline-pulp
+          tar czvf ../offline-setup-pulp-${{ matrix.arch }}.tar.gz ./
+          cd ..
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-setup-pulp-${{ matrix.arch }}
+          path: offline-setup-pulp-${{ matrix.arch }}.tar.gz
+
+  test-offline-installer:
+    needs: build-pulp-installer
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download offline installer artifact for ${{ matrix.arch }}
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-pulp-${{ matrix.arch }}
+          path: offline-test
+
+      - name: Setup K3s and KUBECONFIG for user
+        run: |
+          curl -sfL https://get.k3s.io | sudo sh -
+          mkdir -p $HOME/.kube
+          sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+          sudo chown $USER:$USER $HOME/.kube/config
+          kubectl get nodes
+          kubectl version
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | sudo bash
+
+      - name: Load offline installer package
+        run: |
+          cd offline-test
+          tar -xzvf offline-setup-pulp-${{ matrix.arch }}.tar.gz
+          if [ -f nerdctl.tar.gz ]; then
+            sudo tar xzvf nerdctl.tar.gz -C /usr/local/bin/
+          fi
+          docker load -i images/pulp-operator.tar
+          cd ..
+
+      - name: Run offline Pulp installer in K3S
+        run: |
+          cd offline-test
+          bash scripts/pulp-installer.sh
+          sleep 15
+          helm list -A
+          kubectl -n pulp get pods
+
+  publish-release:
+    needs: test-offline-installer
+    runs-on: ubuntu-latest
+    env:
+      tag_name: offline-pulp-${{ github.run_number }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.tag_name }}
+          release_name: Daily Build ${{ env.tag_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-pulp-amd64
+          path: release-artifacts
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-pulp-arm64
+          path: release-artifacts
+
+      - name: Upload offline installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.tag_name }}
+          files: |
+            release-artifacts/offline-setup-pulp-amd64.tar.gz
+            release-artifacts/offline-setup-pulp-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
