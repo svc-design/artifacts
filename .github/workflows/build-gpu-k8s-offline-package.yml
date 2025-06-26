@@ -1,0 +1,22 @@
+name: Build GPU K8s offline package
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Build offline package
+        run: |
+          bash scripts/create-gpu-k8s-offline-package.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: gpu_k8s_offline_packages
+          path: gpu_k8s_offline_packages.tar.gz
+
