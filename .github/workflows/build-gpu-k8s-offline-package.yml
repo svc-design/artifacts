@@ -14,9 +14,23 @@ jobs:
         run: |
           bash scripts/create-gpu-k8s-offline-package.sh
 
+      - name: Prepare release artifacts
+        run: |
+          mkdir -p release-artifacts
+          mv gpu_k8s_offline_packages.tar.gz release-artifacts/
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: gpu_k8s_offline_packages
-          path: gpu_k8s_offline_packages.tar.gz
+          path: release-artifacts/gpu_k8s_offline_packages.tar.gz
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: daily-${{ github.run_number }}
+          name: Daily Build ${{ github.run_number }}
+          files: release-artifacts/**/*.*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
