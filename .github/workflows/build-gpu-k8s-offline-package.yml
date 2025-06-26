@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -15,7 +15,7 @@ jobs:
           bash scripts/create-gpu-k8s-offline-package.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gpu_k8s_offline_packages
           path: gpu_k8s_offline_packages.tar.gz
