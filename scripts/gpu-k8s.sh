@@ -5,7 +5,7 @@ set -euo pipefail
 MASTER_IP=$(hostname -I | awk '{print $1}')
 USER=${USER:-$(whoami)}
 SSH_KEY="${HOME}/.ssh/id_rsa"
-K8S_VERSION="labring/kubernetes:v1.25.16"
+K8S_VERSION="labring/kubernetes:v1.29.9"
 CILIUM_VERSION="labring/cilium:v1.13.4"
 HELM_VERSION="labring/helm:v3.9.4"
 NVIDIA_DRIVER_VERSION="nvidia-driver-535"
@@ -170,7 +170,7 @@ install_kubeadm() {
   echo "📦 安装 kubeadm、kubelet、kubectl"
 
   # 默认安装版本，可传参覆盖
-  local KUBE_VERSION="${1:-1.25.16}"
+  local KUBE_VERSION="${1:-1.29.9}"
 
   echo "➡️ 目标版本: $KUBE_VERSION"
 
@@ -186,18 +186,18 @@ install_kubeadm() {
 
   # 在线安装
   sudo apt-get update
-  sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+  sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 
   sudo mkdir -p /etc/apt/keyrings
   if [ -f "${OFFLINE_DIR}/kubernetes-archive-keyring.gpg" ]; then
     sudo cp "${OFFLINE_DIR}/kubernetes-archive-keyring.gpg" /etc/apt/keyrings/
   else
-    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
-      gpg --dearmor | sudo tee /etc/apt/keyrings/kubernetes-archive-keyring.gpg > /dev/null
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | \
+      sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-archive-keyring.gpg
   fi
 
   echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] \
-    https://apt.kubernetes.io/ kubernetes-xenial main" | \
+    https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | \
     sudo tee /etc/apt/sources.list.d/kubernetes.list
 
   sudo apt-get update

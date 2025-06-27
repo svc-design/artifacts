@@ -2,14 +2,14 @@
 set -euo pipefail
 
 # Versions
-K8S_VERSION="${K8S_VERSION:-labring/kubernetes:v1.25.16}"
+K8S_VERSION="${K8S_VERSION:-labring/kubernetes:v1.29.9}"
 CILIUM_VERSION="${CILIUM_VERSION:-labring/cilium:v1.13.4}"
 HELM_VERSION="${HELM_VERSION:-labring/helm:v3.9.4}"
 NERDCTL_VERSION="${NERDCTL_VERSION:-2.1.2}"
 NVIDIA_PLUGIN_VERSION="${NVIDIA_PLUGIN_VERSION:-v0.17.1}"
 NVIDIA_DRIVER_VERSION="${NVIDIA_DRIVER_VERSION:-nvidia-driver-535}"
 CUDA_SAMPLE_IMAGE="${CUDA_SAMPLE_IMAGE:-nvcr.io/nvidia/k8s/cuda-sample:vectoradd-cuda12.5.0}"
-KUBEADM_VERSION="${KUBEADM_VERSION:-1.25.16}"
+KUBEADM_VERSION="${KUBEADM_VERSION:-1.29.9}"
 
 IMAGES=(
   "$K8S_VERSION"
@@ -38,10 +38,10 @@ curl -s -L "https://nvidia.github.io/nvidia-docker/${distribution}/nvidia-docker
   sed 's#^deb #deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] #' | \
   sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
-# Add Kubernetes repository for kubeadm/kubelet/kubectl (Ubuntu 22.04 compatible)
-curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+# Add Kubernetes repository for kubeadm/kubelet/kubectl (Kubernetes 1.29)
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | \
   sudo gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | \
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | \
   sudo tee /etc/apt/sources.list.d/kubernetes.list
 cp /usr/share/keyrings/kubernetes-archive-keyring.gpg "$WORKDIR/kubernetes-archive-keyring.gpg"
 
