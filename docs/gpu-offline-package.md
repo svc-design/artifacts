@@ -17,7 +17,9 @@ bash scripts/create-gpu-k8s-offline-package.sh
 
 - Kubernetes 二进制镜像
 - Cilium、Helm 等依赖镜像
-- NVIDIA 驱动及插件
+- NVIDIA 驱动（nvidia-driver-535）及 nvidia-container-toolkit deb 包
+- nerdctl CLI（v${NERDCTL_VERSION:-2.1.2}）
+- 必要的容器镜像，包括 `registry.k8s.io/pause:3.8`
 
 该离线包用于基于 `sealos` 部署 Kubernetes，最低推荐版本为 **1.29**，也可以使用更新的 `1.30` 等稳定版本。
 
