@@ -13,6 +13,7 @@ NVIDIA_PLUGIN_VERSION="v0.17.1"
 NERDCTL_VERSION="2.1.2"
 PROXY_ADDR="http://127.0.0.1:1081"
 USE_PROXY=${USE_PROXY:-false}
+DEPLOY_MODE=${DEPLOY_MODE:-kubeadm}  # 支持 kubeadm 或 sealos
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OFFLINE_DIR=${OFFLINE_DIR:-$SCRIPT_DIR}
 
@@ -132,6 +133,42 @@ install_sealos() {
   fi
 }
 
+install_kubeadm() {
+  echo "📦 安装 kubeadm、kubelet、kubectl"
+
+  # 默认安装版本，可传参覆盖
+  local KUBE_VERSION="${1:-1.25.16}"
+
+  echo "➡️ 目标版本: $KUBE_VERSION"
+
+  # 添加 Kubernetes apt 仓库
+  sudo apt-get update
+  sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
+
+  sudo mkdir -p /etc/apt/keyrings
+  curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+    gpg --dearmor | sudo tee /etc/apt/keyrings/kubernetes-archive-keyring.gpg > /dev/null
+
+  echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] \
+    https://apt.kubernetes.io/ kubernetes-xenial main" | \
+    sudo tee /etc/apt/sources.list.d/kubernetes.list
+
+  sudo apt-get update
+
+  # 安装指定版本的 kubeadm/kubelet/kubectl
+  sudo apt-get install -y \
+    kubelet=${KUBE_VERSION}-00 \
+    kubeadm=${KUBE_VERSION}-00 \
+    kubectl=${KUBE_VERSION}-00
+
+  sudo apt-mark hold kubelet kubeadm kubectl
+
+  echo "✅ kubeadm/kubelet/kubectl 安装完成（版本 ${KUBE_VERSION}）"
+
+  # 启动 kubelet（kubeadm init 后才会真正激活）
+  sudo systemctl enable --now kubelet
+}
+
 setup_ssh() {
   echo "[5/8] 配置 SSH 免密"
   [ ! -f "${SSH_KEY}" ] && ssh-keygen -f "${SSH_KEY}" -N ""
@@ -140,18 +177,39 @@ setup_ssh() {
   sudo systemctl enable --now ssh || sudo systemctl enable --now sshd
 }
 
+# === 修改的 deploy_k8s 支持 sealos / kubeadm 两种模式 ===
 deploy_k8s() {
-  echo "[6/8] 使用 Sealos 部署 K8s"
-  load_offline_images || true
-  sealos run "${K8S_VERSION}" "${CILIUM_VERSION}" "${HELM_VERSION}" \
-    --masters "${MASTER_IP}" --user "${USER}" --pk "${SSH_KEY}" \
-    --env '{}' --cmd "kubeadm init --skip-phases=addon/kube-proxy"
+  echo "[6/8] 部署 Kubernetes，模式: $DEPLOY_MODE"
+  MASTER_IP=$(hostname -I | awk '{print $1}')
 
-  echo "[6.1] 禁用 sealos containerd, 启用系统 containerd"
-  sudo systemctl disable --now sealos-containerd || true
-  sudo systemctl enable --now containerd
-  sleep 3
-  sudo systemctl status containerd --no-pager | grep Active
+  if [ "$DEPLOY_MODE" = "sealos" ]; then
+    echo "[6.0] 使用 Sealos 部署 Kubernetes"
+    load_offline_images || true
+    sealos run "$K8S_VERSION" "$CILIUM_VERSION" "$HELM_VERSION" \
+      --masters "$MASTER_IP" --user "$USER" --pk "$SSH_KEY" \
+      --env '{}' --cmd "kubeadm init --skip-phases=addon/kube-proxy"
+  else
+    echo "[6.0] 使用 kubeadm 初始化 K8s master 节点"
+    sudo kubeadm init \
+      --pod-network-cidr=10.42.0.0/16 \
+      --apiserver-advertise-address="$MASTER_IP" \
+      --skip-phases=addon/kube-proxy
+
+    mkdir -p $HOME/.kube
+    sudo cp -f /etc/kubernetes/admin.conf $HOME/.kube/config
+    sudo chown "$(id -u):$(id -g)" $HOME/.kube/config
+
+    echo "[6.1] 安装 Cilium 网络插件（无 kube-proxy 模式）"
+    helm repo add cilium https://helm.cilium.io/ || true
+    helm repo update
+    helm install cilium cilium/cilium --version "${CILIUM_VERSION:-1.13.4}" \
+      --namespace kube-system \
+      --set kubeProxyReplacement=true \
+      --set k8sServiceHost="$MASTER_IP" \
+      --set k8sServicePort=6443
+  fi
+
+  echo "[6.2] Kubernetes 部署完成 ✅"
 }
 
 deploy_plugin() {
@@ -204,18 +262,20 @@ show_help() {
   echo "  --install-containerd   安装 containerd + nerdctl"
   echo "  --install-nvidia       安装 NVIDIA 驱动和工具"
   echo "  --install-sealos       安装 Sealos"
+  echo "  --install-kubeadm      安装 kubeadm/kubelet/kubectl"
   echo "  --setup-ssh            配置 SSH 免密"
-  echo "  --deploy-k8s           使用 Sealos 部署 Kubernetes"
+  echo "  --deploy-k8s           部署 Kubernetes（支持 sealos/kubeadm）"
   echo "  --deploy-plugin        部署 NVIDIA Device Plugin"
   echo "  --run-test             运行 GPU 测试"
   echo "  --all                  全部步骤执行"
   echo ""
   echo "环境变量:"
   echo "  OFFLINE_DIR           指定离线包解压目录，默认为脚本所在目录"
+  echo "  DEPLOY_MODE           设置部署模式（kubeadm 或 sealos，默认 kubeadm）"
   echo -e "\n示例命令\t\t\t说明"
   echo "USE_PROXY=true ./gpu-k8s.sh --install-nvidia      # 只安装 NVIDIA 工具包并走代理"
+  echo "DEPLOY_MODE=sealos ./gpu-k8s.sh --deploy-k8s       # 使用 sealos 部署 K8s"
   echo "USE_PROXY=false ./gpu-k8s.sh --all                # 全流程执行但不使用代理"
-  echo "./gpu-k8s.sh --install-sealos --deploy-k8s        # 默认关闭代理执行指定阶段"
   echo "OFFLINE_DIR=/path/to/offline ./gpu-k8s.sh --all   # 使用离线包运行"
 }
 
@@ -233,6 +293,7 @@ for arg in "$@"; do
     --install-containerd) install_containerd ;;
     --install-nvidia) install_nvidia ;;
     --install-sealos) install_sealos ;;
+    --install-kubeadm) install_kubeadm ;;
     --setup-ssh) setup_ssh ;;
     --deploy-k8s) deploy_k8s ;;
     --deploy-plugin) deploy_plugin ;;
@@ -242,6 +303,7 @@ for arg in "$@"; do
       install_containerd
       install_nvidia
       install_sealos
+      install_kubeadm
       setup_ssh
       deploy_k8s
       deploy_plugin
