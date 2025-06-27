@@ -97,12 +97,9 @@ install_base() {
   }
 }
 
-install_containerd() {
+install_nerdctl() {
   echo "[2/8] 安装 containerd + nerdctl"
-  sudo apt-get purge -y docker.io docker-ce docker-ce-cli containerd.io || true
-  if ! install_all_offline_packages; then
-    sudo apt-get install -y containerd
-  fi
+  sudo apt-get purge -y docker.io docker-ce docker-ce-cli containerd.io containerd || true
 
   archive="nerdctl-full-${NERDCTL_VERSION}-linux-amd64.tar.gz"
   if [ -f "${OFFLINE_DIR}/${archive}" ]; then
@@ -117,9 +114,6 @@ install_containerd() {
   echo "📅 解压 nerdctl 到 /usr/local"
   sudo tar -xzf "${tmpdir}/${archive}" -C /usr/local
 
-  sudo mkdir -p /etc/containerd
-  sudo containerd config default | sudo tee /etc/containerd/config.toml > /dev/null
-  sudo systemctl enable --now containerd
   nerdctl --version && echo "✅ nerdctl 安装成功" || echo "❌ nerdctl 安装失败"
 }
 
@@ -140,10 +134,10 @@ install_nvidia() {
     sudo apt-get update -y
     sudo apt-get install -y ${NVIDIA_DRIVER_VERSION} nvidia-container-toolkit
   fi
-  sudo nvidia-ctk runtime configure \
-    --config /var/lib/sealos/data/default/rootfs/etc/containerd/config.toml \
-    --set-as-default
-  sudo systemctl restart sealos-containerd
+
+  sudo nvidia-ctk runtime configure --runtime=containerd
+  sudo systemctl restart containerd
+
   if ! command -v nvidia-smi >/dev/null; then echo "❌ nvidia-smi 未找到"; exit 1; fi
   nvidia-smi || { echo "❌ NVIDIA 驱动有问题"; exit 1; }
 }
@@ -230,12 +224,12 @@ show_help() {
   echo -e "用法: ./gpu-k8s.sh [阶段参数...]\n"
   echo "可用阶段:"
   echo "  --install-base         安装基础依赖"
-  echo "  --install-containerd   安装 containerd + nerdctl"
+  echo "  --load_offline_images  导入离线镜像"
+  echo "  --install-nerdctl      安装 nerdctl"
   echo "  --install-nvidia       安装 NVIDIA 驱动和工具"
   echo "  --install-sealos       安装 Sealos"
   echo "  --setup-ssh            配置 SSH 免密"
-  echo "  --load_offline_images  导入离线镜像"
-  echo "  --deploy-k8s           部署 Kubernetes"
+  echo "  --deploy-k8s           部署 Kubernetes,包括安装基础依赖,导入离线镜像,安装 nerdctl, Sealos-CLI,配置 SSH 免密"
   echo "  --deploy-plugin        部署 NVIDIA Device Plugin"
   echo "  --run-test             运行 GPU 测试"
   echo "  --all                  全部步骤执行"
@@ -245,9 +239,9 @@ show_help() {
   echo "  DEPLOY_MODE           (已废弃)"
   echo "  IMAGE_LOAD_TOOL       选择加载镜像的工具（sealos|nerdctl|docker，默认 sealos）"
   echo -e "\n示例命令\t\t\t说明"
-  echo "USE_PROXY=true ./gpu-k8s.sh --install-nvidia      # 只安装 NVIDIA 工具包并走代理"
-  echo "./gpu-k8s.sh --deploy-k8s                         # 部署 Kubernetes"
-  echo "USE_PROXY=false ./gpu-k8s.sh --all                # 全流程执行但不使用代理"
+  echo "./gpu-k8s.sh --deploy-k8s                          # 部署 Kubernetes"
+  echo "USE_PROXY=true ./gpu-k8s.sh --install-nvidia       # 只安装 NVIDIA 工具包并走代理"
+  echo "USE_PROXY=false ./gpu-k8s.sh --all                 # 全流程执行但不使用代理"
   echo "OFFLINE_DIR=/path/to/offline ./gpu-k8s.sh --all    # 使用离线包运行"
   echo "IMAGE_LOAD_TOOL=nerdctl ./gpu-k8s.sh --load_offline_images            # 选择 nerdctl 导入镜像"
 }
@@ -263,19 +257,25 @@ fi
 for arg in "$@"; do
   case "$arg" in
     --install-base) install_base ;;
-    --install-containerd) install_containerd ;;
+    --load_offline_images) load_offline_images ;;
+    --install-nerdctl) install_nerdctl ;;
     --install-nvidia) install_nvidia ;;
     --install-sealos) install_sealos ;;
     --setup-ssh) setup_ssh ;;
-    --load_offline_images) load_offline_images ;;
-    --deploy-k8s) deploy_k8s ;;
+    --deploy-k8s) 
+        setup_ssh
+        install_base
+        install_sealos
+        install_nerdctl
+        load_offline_images
+        deploy_k8s
+        ;;
     --deploy-plugin) deploy_plugin ;;
     --run-test) run_test ;;
     --all)
       install_base
-      install_containerd
+      install_nerdctl
       install_nvidia
-      install_sealos
       setup_ssh
       deploy_k8s
       deploy_plugin

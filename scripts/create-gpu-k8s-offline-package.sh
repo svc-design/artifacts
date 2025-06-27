@@ -39,8 +39,13 @@ curl -s -L "https://nvidia.github.io/nvidia-docker/${distribution}/nvidia-docker
   sed 's#^deb #deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] #' | \
   sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
-
 sudo apt-get update -y
+export NVIDIA_CONTAINER_TOOLKIT_VERSION=1.17.8-1
+sudo apt-get install --download-only -y \
+      nvidia-container-toolkit=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
+      nvidia-container-toolkit-base=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
+      libnvidia-container-tools=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
+      libnvidia-container1=${NVIDIA_CONTAINER_TOOLKIT_VERSION}
 sudo apt-get install --download-only -y "${APT_PACKAGES[@]}"
 cp /var/cache/apt/archives/*.deb "$WORKDIR/packages/"
 sudo apt-get clean
