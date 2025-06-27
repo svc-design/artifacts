@@ -1,0 +1,111 @@
+name: Create and Test Offline Ansible Installer Release
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ansible-offline-installer.yml'
+  workflow_dispatch:
+    branches:
+      - main
+
+jobs:
+  prepare-offline-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      # Install dependencies and prepare packages for Ubuntu/Debian
+      - name: Install dependencies for Ubuntu/Debian
+        run: |
+          sudo apt update
+          sudo apt install -y python3 python3-pip
+          pip3 install --download /tmp/offline_packages ansible
+
+      # Install dependencies for CentOS (7.x and 8.x)
+      - name: Install dependencies for CentOS (7.x and 8.x)
+        run: |
+          sudo yum install -y python3 python3-pip
+          pip3 install --download /tmp/offline_packages ansible
+        if: runner.os == 'Linux' && (startsWith(runner.os, 'rhel') || startsWith(runner.os, 'centos'))
+
+      # Create the installer package
+      - name: Create ansible-offline-installer.tar.gz
+        run: |
+          mkdir -p installer
+          tar -czvf installer/ansible-offline-package.tar.gz -C /tmp offline_packages
+          echo '#!/bin/bash' > installer/install-ansible.sh
+          echo 'if [ -f /etc/os-release ]; then' >> installer/install-ansible.sh
+          echo '  . /etc/os-release' >> installer/install-ansible.sh
+          echo '  if [[ "$ID" == "ubuntu" || "$ID_LIKE" == "debian" ]]; then' >> installer/install-ansible.sh
+          echo '    pip3 install --no-index --find-links=/tmp/offline_packages ansible' >> installer/install-ansible.sh
+          echo '  elif [[ "$ID" == "centos" || "$ID" == "rhel" ]]; then' >> installer/install-ansible.sh
+          echo '    pip3 install --no-index --find-links=/tmp/offline_packages ansible' >> installer/install-ansible.sh
+          echo '  fi' >> installer/install-ansible.sh
+          echo 'fi' >> installer/install-ansible.sh
+          chmod +x installer/install-ansible.sh
+          tar -czvf ansible-offline-installer.tar.gz installer
+
+      # Upload the installer package as an artifact
+      - name: Upload ansible-offline-installer.tar.gz as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: ansible-offline-installer
+          path: ansible-offline-installer.tar.gz
+
+  test-installer:
+    runs-on: ubuntu-latest
+    needs: prepare-offline-package
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04, ubuntu-24.04, centos-7, centos-8]
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      # Download the installer package from the artifact
+      - name: Download the installer package from artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: ansible-offline-installer
+
+      # Extract the installer package
+      - name: Extract the installer package
+        run: |
+          tar -xzvf ansible-offline-installer.tar.gz
+
+      # Run the installer script
+      - name: Run the installer script
+        run: |
+          ./installer/install-ansible.sh
+
+      # Verify Ansible installation
+      - name: Verify Ansible installation
+        run: |
+          ansible --version
+
+  create-release:
+    runs-on: ubuntu-latest
+    needs: test-installer
+    if: success()  # Only run if the test-installer job succeeds
+
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: v${{ github.run_number }}-${{ github.run_id }}  # Generate version number
+          release_name: Release v${{ github.run_number }}-${{ github.run_id }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload ansible-offline-installer.tar.gz to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ github.run_number }}-${{ github.run_id }}
+          files: |
+            ansible-offline-installer.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
