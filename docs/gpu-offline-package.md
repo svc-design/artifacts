@@ -17,7 +17,7 @@ bash scripts/create-gpu-k8s-offline-package.sh
 
 - Kubernetes 二进制镜像
 - Cilium、Helm 等依赖镜像
-- NVIDIA 驱动（nvidia-driver-535）及 nvidia-container-toolkit deb 包
+- NVIDIA 驱动（nvidia-driver-535）及 nvidia-container-toolkit 离线包（deb/rpm）
 - nerdctl CLI（v${NERDCTL_VERSION:-2.1.2}）
 - 必要的容器镜像，包括 `registry.k8s.io/pause:3.8`
 
