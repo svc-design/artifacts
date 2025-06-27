@@ -118,8 +118,15 @@ install_nvidia() {
     sudo apt-get update -y
     sudo apt-get install -y ${NVIDIA_DRIVER_VERSION} nvidia-container-toolkit
   fi
-  sudo nvidia-ctk runtime configure --runtime=containerd --set-as-default
-  sudo systemctl restart containerd
+  if [ "$DEPLOY_MODE" = "sealos" ]; then
+    sudo nvidia-ctk runtime configure \
+      --config /var/lib/sealos/data/default/rootfs/etc/containerd/config.toml \
+      --set-as-default
+    sudo systemctl restart sealos-containerd
+  else
+    sudo nvidia-ctk runtime configure --runtime=containerd --set-as-default
+    sudo systemctl restart containerd
+  fi
   if ! command -v nvidia-smi >/dev/null; then echo "❌ nvidia-smi 未找到"; exit 1; fi
   nvidia-smi || { echo "❌ NVIDIA 驱动有问题"; exit 1; }
 }
