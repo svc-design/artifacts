@@ -40,15 +40,41 @@ curl -s -L "https://nvidia.github.io/nvidia-docker/${distribution}/nvidia-docker
   sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
 sudo apt-get update -y
-export NVIDIA_CONTAINER_TOOLKIT_VERSION=1.17.8-1
-sudo apt-get install --download-only -y \
+
+if [ -n "${NVIDIA_CONTAINER_TOOLKIT_VERSION:-}" ]; then
+  sudo apt-get install --download-only -y \
       nvidia-container-toolkit=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
       nvidia-container-toolkit-base=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
       libnvidia-container-tools=${NVIDIA_CONTAINER_TOOLKIT_VERSION} \
       libnvidia-container1=${NVIDIA_CONTAINER_TOOLKIT_VERSION}
+else
+  sudo apt-get install --download-only -y \
+      nvidia-container-toolkit nvidia-container-toolkit-base \
+      libnvidia-container-tools libnvidia-container1
+fi
+
 sudo apt-get install --download-only -y "${APT_PACKAGES[@]}"
 cp /var/cache/apt/archives/*.deb "$WORKDIR/packages/"
 sudo apt-get clean
+
+if command -v dnf >/dev/null; then
+  distribution=$(. /etc/os-release; echo $ID$VERSION_ID)
+  curl -s -L "https://nvidia.github.io/nvidia-docker/${distribution}/nvidia-docker.repo" \
+    | sudo tee /etc/yum.repos.d/nvidia-docker.repo
+  sudo dnf -y install 'dnf-command(download)'
+  sudo dnf -y makecache
+  RPM_PACKAGES=(nvidia-container-toolkit nvidia-container-toolkit-base \
+    libnvidia-container-tools libnvidia-container1)
+  if [ -n "${NVIDIA_CONTAINER_TOOLKIT_VERSION:-}" ]; then
+    for pkg in "${RPM_PACKAGES[@]}"; do
+      sudo dnf download --resolve --destdir "$WORKDIR/packages" \
+        "${pkg}-${NVIDIA_CONTAINER_TOOLKIT_VERSION}"
+    done
+  else
+    sudo dnf download --resolve --destdir "$WORKDIR/packages" "${RPM_PACKAGES[@]}"
+  fi
+  sudo rm -f /etc/yum.repos.d/nvidia-docker.repo
+fi
 
 # Download sealos deb
 curl -L -o "$WORKDIR/sealos_5.0.1_linux_amd64.deb" \
@@ -75,6 +101,7 @@ curl -L -o "$WORKDIR/nvidia-gpgkey" https://nvidia.github.io/nvidia-docker/gpgke
 
 # Include deployment script
 cp "$(dirname "$0")/gpu-k8s.sh" "$WORKDIR/"
+cp "$(dirname "$0")/check-gpu-status.sh" "$WORKDIR/"
 
 # Create final archive
 TAR_NAME="gpu_k8s_offline_packages.tar.gz"

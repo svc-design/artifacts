@@ -79,12 +79,26 @@ load_offline_images() {
 }
 
 install_all_offline_packages() {
-  if [ -d "${OFFLINE_DIR}/packages" ]; then
-    echo "📦 Using offline deb packages"
-    sudo dpkg -i ${OFFLINE_DIR}/packages/*.deb 2>/dev/null || sudo apt-get -f install -y
-    return 0
+  if [ ! -d "${OFFLINE_DIR}/packages" ]; then
+    return 1
   fi
-  return 1
+
+  echo "📦 Using offline packages"
+
+  shopt -s nullglob
+  debs=("${OFFLINE_DIR}"/packages/*.deb)
+  rpms=("${OFFLINE_DIR}"/packages/*.rpm)
+
+  if [ ${#debs[@]} -gt 0 ]; then
+    sudo dpkg -i "${debs[@]}" 2>/dev/null || sudo apt-get -f install -y
+  fi
+
+  if [ ${#rpms[@]} -gt 0 ] && command -v dnf >/dev/null; then
+    sudo dnf install -y "${rpms[@]}"
+  fi
+
+  shopt -u nullglob
+  return 0
 }
 
 install_base() {
@@ -120,6 +134,7 @@ install_nerdctl() {
 install_nvidia() {
   echo "[3/8] 安装 NVIDIA 驱动和容器工具"
   distribution="ubuntu22.04"
+
   if [ -f "${OFFLINE_DIR}/nvidia-gpgkey" ]; then
     sudo install -m 0644 "${OFFLINE_DIR}/nvidia-gpgkey" /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
   else
@@ -127,7 +142,9 @@ install_nvidia() {
       sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
   fi
 
-  if ! install_all_offline_packages; then
+  if install_all_offline_packages; then
+    echo "✅ 离线安装 NVIDIA 相关包完成"
+  else
     proxy_curl -sL https://nvidia.github.io/nvidia-docker/${distribution}/nvidia-docker.list | \
       sed 's|^deb |deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] |' | \
       sudo tee /etc/apt/sources.list.d/nvidia-docker.list
