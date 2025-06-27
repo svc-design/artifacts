@@ -39,9 +39,9 @@ curl -s -L "https://nvidia.github.io/nvidia-docker/${distribution}/nvidia-docker
   sudo tee /etc/apt/sources.list.d/nvidia-docker.list
 
 # Add Kubernetes repository for kubeadm/kubelet/kubectl (Ubuntu 22.04 compatible)
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.25/deb/Release.key | \
+curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
   sudo gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.25/deb/ /" | \
+echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | \
   sudo tee /etc/apt/sources.list.d/kubernetes.list
 cp /usr/share/keyrings/kubernetes-archive-keyring.gpg "$WORKDIR/kubernetes-archive-keyring.gpg"
 
