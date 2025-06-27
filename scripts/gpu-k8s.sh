@@ -13,9 +13,12 @@ NVIDIA_PLUGIN_VERSION="v0.17.1"
 NERDCTL_VERSION="2.1.2"
 PROXY_ADDR="http://127.0.0.1:1081"
 USE_PROXY=${USE_PROXY:-false}
-DEPLOY_MODE=${DEPLOY_MODE:-kubeadm}  # 支持 kubeadm 或 sealos
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OFFLINE_DIR=${OFFLINE_DIR:-$SCRIPT_DIR}
+
+# 部署模式: kubeadm 或 sealos
+# 默认使用 kubeadm，可通过环境变量 DEPLOY_MODE 覆盖
+DEPLOY_MODE=${DEPLOY_MODE:-kubeadm}
 
 # === 选项代理 ===
 configure_proxy() {
@@ -141,13 +144,27 @@ install_kubeadm() {
 
   echo "➡️ 目标版本: $KUBE_VERSION"
 
-  # 添加 Kubernetes apt 仓库
+  if [ -d "${OFFLINE_DIR}/packages" ] && ls "${OFFLINE_DIR}/packages"/kubeadm_* &>/dev/null; then
+    echo "📦 使用离线 deb 安装 kubeadm/kubelet/kubectl"
+    sudo dpkg -i "${OFFLINE_DIR}/packages"/kube{adm,let,ctl}_*${KUBE_VERSION}-00*.deb 2>/dev/null || \
+      sudo apt-get -f install -y
+    sudo apt-mark hold kubelet kubeadm kubectl
+    sudo systemctl enable --now kubelet
+    echo "✅ kubeadm/kubelet/kubectl 离线安装完成（版本 ${KUBE_VERSION}）"
+    return
+  fi
+
+  # 在线安装
   sudo apt-get update
   sudo apt-get install -y apt-transport-https ca-certificates curl gnupg
 
   sudo mkdir -p /etc/apt/keyrings
-  curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
-    gpg --dearmor | sudo tee /etc/apt/keyrings/kubernetes-archive-keyring.gpg > /dev/null
+  if [ -f "${OFFLINE_DIR}/kubernetes-archive-keyring.gpg" ]; then
+    sudo cp "${OFFLINE_DIR}/kubernetes-archive-keyring.gpg" /etc/apt/keyrings/
+  else
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+      gpg --dearmor | sudo tee /etc/apt/keyrings/kubernetes-archive-keyring.gpg > /dev/null
+  fi
 
   echo "deb [signed-by=/etc/apt/keyrings/kubernetes-archive-keyring.gpg] \
     https://apt.kubernetes.io/ kubernetes-xenial main" | \
@@ -276,7 +293,7 @@ show_help() {
   echo "USE_PROXY=true ./gpu-k8s.sh --install-nvidia      # 只安装 NVIDIA 工具包并走代理"
   echo "DEPLOY_MODE=sealos ./gpu-k8s.sh --deploy-k8s       # 使用 sealos 部署 K8s"
   echo "USE_PROXY=false ./gpu-k8s.sh --all                # 全流程执行但不使用代理"
-  echo "OFFLINE_DIR=/path/to/offline ./gpu-k8s.sh --all   # 使用离线包运行"
+  echo "OFFLINE_DIR=/path/to/offline DEPLOY_MODE=sealos ./gpu-k8s.sh --all   # 使用离线包运行"
 }
 
 # === 执行 ===
@@ -303,7 +320,9 @@ for arg in "$@"; do
       install_containerd
       install_nvidia
       install_sealos
-      install_kubeadm
+      if [ "$DEPLOY_MODE" = "kubeadm" ]; then
+        install_kubeadm
+      fi
       setup_ssh
       deploy_k8s
       deploy_plugin
