@@ -20,6 +20,10 @@ OFFLINE_DIR=${OFFLINE_DIR:-$SCRIPT_DIR}
 # 默认使用 kubeadm，可通过环境变量 DEPLOY_MODE 覆盖
 DEPLOY_MODE=${DEPLOY_MODE:-kubeadm}
 
+# 加载镜像的工具: sealos、nerdctl 或 docker
+# 默认使用 sealos，可通过 IMAGE_LOAD_TOOL 环境变量覆盖
+IMAGE_LOAD_TOOL=${IMAGE_LOAD_TOOL:-sealos}
+
 # === 选项代理 ===
 configure_proxy() {
   if [ "$USE_PROXY" = true ]; then
@@ -45,15 +49,34 @@ proxy_curl() {
 load_offline_images() {
   local tar="${OFFLINE_DIR}/images/gpu_k8s_images.tar"
   [ -f "$tar" ] || return 0
-  echo "📦 Loading images from $tar"
-  if command -v nerdctl &>/dev/null; then
-    sudo nerdctl load -i "$tar"
-  elif command -v docker &>/dev/null; then
-    docker load -i "$tar"
-  else
-    echo "❌ 无法找到 nerdctl 或 docker 用于加载镜像"
-    return 1
-  fi
+  echo "📦 导入离线镜像..."
+  case "$IMAGE_LOAD_TOOL" in
+    sealos)
+      if command -v sealos &>/dev/null; then
+        sealos load -i "$tar"
+        return
+      fi
+      ;;
+    nerdctl)
+      if command -v nerdctl &>/dev/null; then
+        sudo nerdctl load -i "$tar"
+        return
+      fi
+      ;;
+    docker)
+      if command -v docker &>/dev/null; then
+        docker load -i "$tar"
+        return
+      fi
+      ;;
+    *)
+      echo "❌ 不支持的加载工具: $IMAGE_LOAD_TOOL"
+      return 1
+      ;;
+  esac
+
+  echo "❌ 无法找到 $IMAGE_LOAD_TOOL 用于加载镜像"
+  return 1
 }
 
 install_all_offline_packages() {
@@ -281,6 +304,7 @@ show_help() {
   echo "  --install-sealos       安装 Sealos"
   echo "  --install-kubeadm      安装 kubeadm/kubelet/kubectl"
   echo "  --setup-ssh            配置 SSH 免密"
+  echo "  --load_offline_images  导入离线镜像"
   echo "  --deploy-k8s           部署 Kubernetes（支持 sealos/kubeadm）"
   echo "  --deploy-plugin        部署 NVIDIA Device Plugin"
   echo "  --run-test             运行 GPU 测试"
@@ -289,11 +313,13 @@ show_help() {
   echo "环境变量:"
   echo "  OFFLINE_DIR           指定离线包解压目录，默认为脚本所在目录"
   echo "  DEPLOY_MODE           设置部署模式（kubeadm 或 sealos，默认 kubeadm）"
+  echo "  IMAGE_LOAD_TOOL       选择加载镜像的工具（sealos|nerdctl|docker，默认 sealos）"
   echo -e "\n示例命令\t\t\t说明"
   echo "USE_PROXY=true ./gpu-k8s.sh --install-nvidia      # 只安装 NVIDIA 工具包并走代理"
   echo "DEPLOY_MODE=sealos ./gpu-k8s.sh --deploy-k8s       # 使用 sealos 部署 K8s"
   echo "USE_PROXY=false ./gpu-k8s.sh --all                # 全流程执行但不使用代理"
   echo "OFFLINE_DIR=/path/to/offline DEPLOY_MODE=sealos ./gpu-k8s.sh --all   # 使用离线包运行"
+  echo "IMAGE_LOAD_TOOL=nerdctl ./gpu-k8s.sh --load_offline_images            # 选择 nerdctl 导入镜像"
 }
 
 # === 执行 ===
@@ -312,6 +338,7 @@ for arg in "$@"; do
     --install-sealos) install_sealos ;;
     --install-kubeadm) install_kubeadm ;;
     --setup-ssh) setup_ssh ;;
+    --load_offline_images) load_offline_images ;;
     --deploy-k8s) deploy_k8s ;;
     --deploy-plugin) deploy_plugin ;;
     --run-test) run_test ;;
