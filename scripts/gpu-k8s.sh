@@ -191,6 +191,9 @@ deploy_k8s() {
     --env '{}' --cmd "kubeadm init --skip-phases=addon/kube-proxy"
 
   echo "[6.2] Kubernetes 部署完成 ✅"
+
+  echo "[6.3] 关闭调度器和控制器调试端口"
+  ${SCRIPT_DIR}/close-k8s-debug-ports.sh || true
 }
 
 
