@@ -4,6 +4,7 @@ set -euo pipefail
 K8S_VERSION="${K8S_VERSION:-labring/kubernetes:v1.29.9}"
 CILIUM_VERSION="${CILIUM_VERSION:-labring/cilium:v1.13.4}"
 HELM_VERSION="${HELM_VERSION:-labring/helm:v3.9.4}"
+SEALOS_VERSION="${SEALOS_VERSION:-5.0.1}"
 
 ARCH="${ARCH:-amd64}"
 IMAGES=("$K8S_VERSION" "$CILIUM_VERSION" "$HELM_VERSION")
@@ -18,6 +19,10 @@ for img in "${IMAGES[@]}"; do
 done
 
 docker save "${IMAGES[@]}" -o "$WORKDIR/images/sealos-images.tar"
+
+SEALOS_TARBALL="sealos_${SEALOS_VERSION}_linux_${ARCH}.tar.gz"
+curl -L -o "$WORKDIR/${SEALOS_TARBALL}" \
+  "https://github.com/labring/sealos/releases/download/v${SEALOS_VERSION}/${SEALOS_TARBALL}"
 
 cp "$SCRIPT_DIR/cilium-values.yaml" "$WORKDIR/"
 cp "$SCRIPT_DIR/sealos-install.sh" "$WORKDIR/"
