@@ -102,6 +102,7 @@ curl -L -o "$WORKDIR/nvidia-gpgkey" https://nvidia.github.io/nvidia-docker/gpgke
 # Include deployment script
 cp "$(dirname "$0")/gpu-k8s.sh" "$WORKDIR/"
 cp "$(dirname "$0")/check-gpu-status.sh" "$WORKDIR/"
+cp "$(dirname "$0")/close-k8s-debug-ports.sh" "$WORKDIR/"
 
 # Create final archive
 TAR_NAME="gpu_k8s_offline_packages.tar.gz"
