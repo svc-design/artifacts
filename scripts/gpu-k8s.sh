@@ -105,9 +105,15 @@ install_base() {
   echo "[1/8] 安装基础依赖"
   install_all_offline_packages || {
     sudo apt-get update -y
-    sudo apt-get install -y curl gnupg2 ca-certificates lsb-release \
-      apt-transport-https software-properties-common openssh-client \
-      openssh-server uidmap containerd ${NVIDIA_DRIVER_VERSION} nvidia-container-toolkit
+    sudo apt-get install -y curl \
+        gnupg2 \
+        lsb-release \
+        openssh-client \
+        openssh-server \
+        ca-certificates \
+        apt-transport-https \
+        software-properties-common \
+        uidmap ${NVIDIA_DRIVER_VERSION} nvidia-container-toolkit
   }
 }
 
@@ -198,22 +204,6 @@ deploy_k8s() {
 
 
 deploy_plugin() {
-  echo "[7/8] 部署 NVIDIA Device Plugin"
-  local plugin_file="${OFFLINE_DIR}/nvidia-device-plugin.yml"
-  if [ -f "$plugin_file" ]; then
-    kubectl apply -f "$plugin_file"
-  else
-    plugin_url="https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/${NVIDIA_PLUGIN_VERSION}/deployments/static/nvidia-device-plugin.yml"
-    if [ "$USE_PROXY" = true ]; then
-      HTTPS_PROXY=$PROXY_ADDR HTTP_PROXY=$PROXY_ADDR \
-      kubectl apply -f "$plugin_url"
-    else
-      kubectl apply -f "$plugin_url"
-    fi
-  fi
-  sleep 15
-  kubectl -n kube-system get pods | grep nvidia || echo "⚠️ 插件未启动"
-  kubectl describe node | grep -A10 Capacity | grep -i nvidia
 }
 
 run_test() {
