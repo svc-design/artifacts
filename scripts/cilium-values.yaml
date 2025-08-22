@@ -12,6 +12,8 @@ externalIPs:
 hostServices:
   enabled: true
 enableIPv4Masquerade: true
+hubble:
+  enabled: false
 envoy:
   enabled: false
 operator:
