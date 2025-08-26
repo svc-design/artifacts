@@ -1,0 +1,29 @@
+name: build image proxysql
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/proxysql/Dockerfile'
+      - '.github/workflows/build-ci-image-proxysql.yml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  IMAGE_REPO: "artifact.svc.plus"
+
+jobs:
+  proxysql:
+    name: Build ProxySQL image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker'
+      registry_addr: "ghcr.io"               # 推送到 GitHub Container Registry
+      dockerfile_path: 'oci/proxysql'        # 你放 Dockerfile 的目录
+      image_name: 'public/base/proxysql'     # 镜像仓库路径 (可按你实际改)
+      image_tag: '3.0.2-nojemalloc'          # 标签，可以改成 latest 或 matrix
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
