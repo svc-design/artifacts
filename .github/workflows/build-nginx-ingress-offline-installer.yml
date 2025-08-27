@@ -1,0 +1,212 @@
+name: Build Offline NGINX Ingress Installer (OCI multi-arch)
+
+on:
+  push:
+    paths:
+      - 'gitops/scripts/ingress-installer.sh'
+      - '.github/workflows/build-nginx-ingress-offline-installer.yml'
+  workflow_dispatch:
+
+env:
+  NERDCTL_VERSION: "2.0.4"
+  NGINX_IC_IMAGE: "nginx/nginx-ingress:2.4.0"
+  # 证书生成 Job 镜像（建议使用官方多架构镜像；如需换 tag 可在这里改）
+  CERT_IMG: "registry.k8s.io/ingress-nginx/kube-webhook-certgen:v20230407"
+  HELM_REPO_NAME: "nginx-stable"
+  HELM_REPO_URL: "https://helm.nginx.com/stable"
+  HELM_CHART_NAME: "nginx-ingress"
+
+jobs:
+  build-nginx-ingress-installer:
+    name: build-nginx-ingress-installer (${{ matrix.arch }})
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (helm, skopeo, curl, tar, tree, jq)
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y skopeo curl tar tree jq
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
+          skopeo --version
+
+      - name: Prepare offline package layout
+        run: |
+          set -euxo pipefail
+          PKG=nginx-ingress-offline-installer
+          rm -rf "${PKG}"
+          mkdir -p "${PKG}/images" "${PKG}/charts"
+          install -m 0755 gitops/scripts/ingress-installer.sh "${PKG}/ingress-installer.sh"
+          cat > "${PKG}/VERSION.txt" <<EOF
+          Build Time: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+          Arch Package: ${{ matrix.arch }}
+          NERDCTL_VERSION: ${NERDCTL_VERSION}
+          Controller Image: ${NGINX_IC_IMAGE}
+          CertGen Image: ${CERT_IMG}
+          Helm Chart: ${HELM_REPO_NAME}/${HELM_CHART_NAME}
+          EOF
+
+      - name: Build nerdctl.tar.gz (linux amd64/arm64 + darwin arm64 + wrapper)
+        run: |
+          set -euxo pipefail
+          PKG=nginx-ingress-offline-installer
+          TMP=$(mktemp -d)
+          curl -L -o "${TMP}/nerdctl-linux-amd64.tgz"  "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz"
+          curl -L -o "${TMP}/nerdctl-linux-arm64.tgz"  "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-arm64.tar.gz"
+          curl -L -o "${TMP}/nerdctl-darwin-arm64.tgz" "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-darwin-arm64.tar.gz"
+          mkdir -p "${TMP}/bundle"
+          tar -xzf "${TMP}/nerdctl-linux-amd64.tgz"  -C "${TMP}/bundle"
+          install -m0755 "${TMP}/bundle/nerdctl" "${TMP}/bundle/nerdctl.linux.amd64"; rm -f "${TMP}/bundle/nerdctl"
+          tar -xzf "${TMP}/nerdctl-linux-arm64.tgz"  -C "${TMP}/bundle"
+          install -m0755 "${TMP}/bundle/nerdctl" "${TMP}/bundle/nerdctl.linux.arm64"; rm -f "${TMP}/bundle/nerdctl"
+          tar -xzf "${TMP}/nerdctl-darwin-arm64.tgz" -C "${TMP}/bundle"
+          install -m0755 "${TMP}/bundle/nerdctl" "${TMP}/bundle/nerdctl.darwin.arm64"; rm -f "${TMP}/bundle/nerdctl"
+          cat > "${TMP}/bundle/nerdctl" <<'SH'
+          #!/usr/bin/env bash
+          set -e
+          OS=$(uname -s | tr '[:upper:]' '[:lower:]'); ARCH=$(uname -m)
+          case "$OS/$ARCH" in
+            linux/x86_64) exec /usr/local/bin/nerdctl.linux.amd64 "$@" ;;
+            linux/arm64|linux/aarch64) exec /usr/local/bin/nerdctl.linux.arm64 "$@" ;;
+            darwin/arm64) exec /usr/local/bin/nerdctl.darwin.arm64 "$@" ;;
+            *) echo "Unsupported platform: $OS/$ARCH" >&2; exit 1 ;;
+          esac
+          SH
+          chmod +x "${TMP}/bundle/nerdctl"
+          tar -C "${TMP}/bundle" -czf "${PKG}/nerdctl.tar.gz" nerdctl nerdctl.linux.amd64 nerdctl.linux.arm64 nerdctl.darwin.arm64
+          ls -lh "${PKG}/nerdctl.tar.gz"
+
+      - name: Pull Helm chart to charts/nginx-ingress
+        run: |
+          set -euxo pipefail
+          PKG=nginx-ingress-offline-installer
+          helm repo add "${HELM_REPO_NAME}" "${HELM_REPO_URL}"
+          helm repo update
+          helm pull "${HELM_REPO_NAME}/${HELM_CHART_NAME}" --untar --untardir "${PKG}/charts"
+          test -d "${PKG}/charts/nginx-ingress"
+
+      - name: Build single OCI multi-arch archive with both images
+        run: |
+          set -euxo pipefail
+          PKG=nginx-ingress-offline-installer
+          LAYOUT_DIR="${PKG}/images/oci-layout"
+          mkdir -p "${LAYOUT_DIR}"
+          # 将 controller 和 certgen 都写入同一个 OCI Layout 目录
+          skopeo copy --all docker://${NGINX_IC_IMAGE} oci:${LAYOUT_DIR}:nginx-ingress-2.4.0
+          skopeo copy --all docker://${CERT_IMG}         oci:${LAYOUT_DIR}:kube-webhook-certgen
+          # 打包成单个归档文件
+          tar -C "${PKG}/images" -czf "${PKG}/images/oci-archive.tar" oci-layout
+          rm -rf "${LAYOUT_DIR}"
+          ls -lh "${PKG}/images/oci-archive.tar"
+
+      - name: Show package tree
+        run: |
+          set -euxo pipefail
+          tree -L 2 nginx-ingress-offline-installer
+
+      - name: Create tarball artifact
+        run: |
+          set -euxo pipefail
+          PKG=nginx-ingress-offline-installer
+          tar -czf ${PKG}-${{ matrix.arch }}.tar.gz -C ${PKG} .
+          ls -lh ${PKG}-${{ matrix.arch }}.tar.gz
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nginx-ingress-offline-installer-${{ matrix.arch }}
+          path: nginx-ingress-offline-installer-${{ matrix.arch }}.tar.gz
+          if-no-files-found: error
+
+  test-nginx-ingress-installer:
+    name: test-nginx-ingress-installer (amd64)
+    needs: build-nginx-ingress-installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Download amd64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nginx-ingress-offline-installer-amd64
+          path: ./test-dir
+
+      - name: Extract Package
+        run: |
+          set -euxo pipefail
+          cd test-dir
+          tar -xzvf nginx-ingress-offline-installer-amd64.tar.gz
+
+      - name: Install K3s and kubectl context
+        run: |
+          set -euxo pipefail
+          curl -sfL https://get.k3s.io | sh -
+          mkdir -p $HOME/.kube
+          sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+          sudo chown $USER:$USER $HOME/.kube/config
+          kubectl get nodes
+
+      - name: Install helm
+        run: |
+          set -euxo pipefail
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      - name: Run offline installer script (containerd path)
+        working-directory: ./test-dir
+        run: |
+          set -euxo pipefail
+          export DOCKER_HOST=unix:///invalid   # 强制走 containerd 分支
+          sudo bash ./ingress-installer.sh
+
+      - name: Wait for rollout & show objects
+        run: |
+          set -euxo pipefail
+          for d in $(kubectl -n ingress get deploy -o name); do
+            kubectl -n ingress rollout status "$d" --timeout=180s || true
+          done
+          kubectl -n ingress get all
+
+  publish-release:
+    name: publish-release
+    needs: test-nginx-ingress-installer
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      tag_name: offline-nginx-ingress-${{ github.run_number }}
+
+    steps:
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.tag_name }}
+          name: Daily Build ${{ env.tag_name }}
+          draft: false
+          prerelease: false
+
+      - name: Download amd64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nginx-ingress-offline-installer-amd64
+          path: release-artifacts
+
+      - name: Download arm64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: nginx-ingress-offline-installer-arm64
+          path: release-artifacts
+
+      - name: Upload Assets to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.tag_name }}
+          files: |
+            release-artifacts/nginx-ingress-offline-installer-amd64.tar.gz
+            release-artifacts/nginx-ingress-offline-installer-arm64.tar.gz
