@@ -92,18 +92,26 @@ jobs:
           fi
 
   sync-one:
-    name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.tag }}
+    name: Sync ${{ matrix.asset_prefix }}_${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.tag }}
     needs: prep
     if: needs.prep.outputs.exists == 'false'   # 远端已存在则整个矩阵跳过
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        asset_suffix:
-          - "linux_amd64.tar.gz"
-          - "linux_amd64.deb"
-          - "linux_arm64.tar.gz"
-          - "linux_arm64.deb"
+        include:
+          - asset_prefix: "otelcol-contrib"
+            asset_suffix: "linux_amd64.tar.gz"
+            release_tag_prefix: ""
+          - asset_prefix: "otelcol-contrib"
+            asset_suffix: "linux_arm64.tar.gz"
+            release_tag_prefix: ""
+          - asset_prefix: "opampsupervisor"
+            asset_suffix: "linux_amd64"
+            release_tag_prefix: "cmd/opampsupervisor/"
+          - asset_prefix: "opampsupervisor"
+            asset_suffix: "linux_arm64"
+            release_tag_prefix: "cmd/opampsupervisor/"
     env:
       GH_REPO: open-telemetry/opentelemetry-collector-releases
       GH_TOKEN: ${{ github.token }}          # 继续使用内置 token
@@ -127,15 +135,17 @@ jobs:
         id: has_asset
         run: |
           set -euo pipefail
-          ASSET="otelcol-contrib_${VERSION}_${{ matrix.asset_suffix }}"
-          echo "Checking asset $ASSET for tag ${TAG}"
-          if gh release view "${TAG}" --repo "${GH_REPO}" --json assets \
-             | jq -r '.assets[].name' | grep -Fxq "$ASSET"; then
+          ASSET="${{ matrix.asset_prefix }}_${VERSION}_${{ matrix.asset_suffix }}"
+          RELEASE_TAG="${{ matrix.release_tag_prefix }}${TAG}"
+          echo "Checking asset $ASSET for release tag ${RELEASE_TAG}"
+          ASSET_LIST=$(gh release view "${RELEASE_TAG}" --repo "${GH_REPO}" --json assets | jq -r '.assets[].name')
+          if echo "${ASSET_LIST}" | grep -Fxq "$ASSET"; then
             echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+            echo "release_tag=${RELEASE_TAG}" >> "$GITHUB_OUTPUT"
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
-            echo "Asset $ASSET not found for ${TAG}, will skip."
+            echo "Asset $ASSET not found for ${RELEASE_TAG}, will skip."
           fi
 
       - name: Download asset
@@ -143,7 +153,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "releases/${TAG}"
-          gh release download "${TAG}" \
+          gh release download "${{ steps.has_asset.outputs.release_tag }}" \
             --repo "${GH_REPO}" \
             --pattern "${{ steps.has_asset.outputs.asset }}" \
             --dir "releases/${TAG}"
