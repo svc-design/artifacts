@@ -1,0 +1,209 @@
+name: Sync OpenTelemetry Collector Contrib v0.* (matrix)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to sync (e.g., v0.133.0). Defaults to v0.133.0"
+        required: false
+        type: string
+  schedule:
+    - cron: "0 2 * * *" # UTC 02:00；若需 JST 02:00，请改为 "0 17 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-otel-collector-v0
+  cancel-in-progress: false
+
+env:
+  GH_REPO: open-telemetry/opentelemetry-collector-releases
+  DEFAULT_TAG: v0.133.0
+  REMOTE_ROOT: /data/update-server/otel/OpenTelemetry/
+
+jobs:
+  prep:
+    name: Resolve tag & remote check
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+      exists: ${{ steps.remotecheck.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure GitHub CLI & deps
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y gh jq rsync
+          gh --version
+          jq --version
+          rsync --version | head -n1
+
+      - name: Resolve tag (use input or default)
+        id: resolve
+        run: |
+          set -euo pipefail
+          TAG_INPUT='${{ github.event.inputs.tag }}'
+          if [ -n "$TAG_INPUT" ]; then
+            TAG="$TAG_INPUT"
+          else
+            TAG="$DEFAULT_TAG"
+          fi
+
+          # 简单校验：必须形如 v0.xxx.y
+          if ! echo "$TAG" | grep -Eq '^v0\.[0-9]+\.[0-9]+$'; then
+            echo "Invalid tag format: $TAG" >&2
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag: $TAG"
+
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Check remote existing tag
+        id: remotecheck
+        env:
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          REMOTE_DIR="${REMOTE_ROOT}/${TAG}"
+          if ssh -i ~/.ssh/id_rsa "root@${VPS_HOST}" "test -d '${REMOTE_DIR}'"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Remote already has ${REMOTE_DIR}, skip whole sync."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Remote does not have ${REMOTE_DIR}, will sync."
+          fi
+
+  sync-assets:
+    name: Sync ${{ matrix.asset }} for ${{ needs.prep.outputs.tag }}
+    needs: prep
+    if: needs.prep.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        asset:
+          - "otelcol-contrib_0.133.0_linux_amd64.tar.gz"
+          - "otelcol-contrib_0.133.0_linux_amd64.deb"
+          - "otelcol-contrib_0.133.0_linux_arm64.tar.gz"
+          - "otelcol-contrib_0.133.0_linux_arm64.deb"
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      TAG: ${{ needs.prep.outputs.tag }}
+      GH_REPO: ${{ env.GH_REPO }}
+      REMOTE_ROOT: ${{ env.REMOTE_ROOT }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure GitHub CLI & deps
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y gh jq rsync
+          gh --version
+
+      - name: Check asset exists for tag
+        id: has_asset
+        run: |
+          set -euo pipefail
+          ASSET='${{ matrix.asset }}'
+          # 提取文件名前缀中的版本号，要求与 TAG 一致，以避免错传
+          # e.g. otelcol-contrib_0.133.0_linux_amd64.tar.gz -> 0.133.0
+          VERSION_FROM_NAME="$(echo "$ASSET" | sed -E 's/^otelcol-contrib_([0-9]+\.[0-9]+\.[0-9]+)_linux_.+/\1/')"
+          if [ "v$VERSION_FROM_NAME" != "${TAG}" ]; then
+            echo "Asset version ($VERSION_FROM_NAME) does not match TAG (${TAG})" >&2
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Checking asset $ASSET for ${TAG}"
+          if gh release view "${TAG}" --repo "${GH_REPO}" --json assets \
+             | jq -r '.assets[].name' | grep -Fxq "$ASSET"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Asset $ASSET not found for ${TAG}, will skip."
+          fi
+
+      - name: Download asset
+        if: steps.has_asset.outputs.exists == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "releases/${TAG}"
+          gh release download "${TAG}" \
+            --repo "${GH_REPO}" \
+            --pattern "${{ matrix.asset }}" \
+            --dir "releases/${TAG}"
+
+      - name: Init SSH
+        if: steps.has_asset.outputs.exists == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync asset to remote
+        if: steps.has_asset.outputs.exists == 'true'
+        run: |
+          set -euo pipefail
+          REMOTE_DIR="${REMOTE_ROOT}/${TAG}"
+          ssh -i ~/.ssh/id_rsa "root@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
+          echo "Rsync releases/${TAG}/${{ matrix.asset }} -> ${VPS_HOST}:${REMOTE_DIR}/"
+          rsync -av -e "ssh -i ~/.ssh/id_rsa" \
+            "releases/${TAG}/${{ matrix.asset }}" "root@${VPS_HOST}:${REMOTE_DIR}/"
+
+  retention:
+    name: Remote retention (keep latest 10 v0.*)
+    needs: [prep, sync-assets]
+    if: needs.prep.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    env:
+      RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: ${{ env.REMOTE_ROOT }}
+    steps:
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prune old versions on remote (keep 10)
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_rsa "root@${VPS_HOST}" bash -lc '
+            set -euo pipefail
+            cd "'"${REMOTE_ROOT}"'" || exit 0
+            keep=10
+            # 只保留 v0.*，按语义版本逆序
+            mapfile -t all < <(ls -1 | grep -E "^v0\.[0-9]+\.[0-9]+$" | sort -V -r || true)
+            if [ "${#all[@]}" -le "$keep" ]; then
+              echo "Nothing to prune. Count=${#all[@]}"
+              exit 0
+            fi
+            to_delete=("${all[@]:keep}")
+            echo "Pruning old versions: ${to_delete[*]}"
+            for d in "${to_delete[@]}"; do
+              rm -rf -- "$d"
+            done
+          '
