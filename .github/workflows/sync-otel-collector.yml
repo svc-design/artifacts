@@ -25,7 +25,8 @@ jobs:
     env:
       GH_REPO: open-telemetry/opentelemetry-collector-releases
       GH_TOKEN: ${{ github.token }}          # 用内置 token，无需自建 PAT
-      RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
       REMOTE_ROOT: /data/update-server/otelcol-contrib
       DEFAULT_TAG: v0.133.0
@@ -82,7 +83,7 @@ jobs:
         run: |
           set -euo pipefail
           REMOTE_DIR="${REMOTE_ROOT}/${TAG}"
-          if ssh -i ~/.ssh/id_rsa "root@${VPS_HOST}" "test -d '${REMOTE_DIR}'"; then
+          if ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "test -d '${REMOTE_DIR}'"; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
             echo "Remote already has ${REMOTE_DIR}, skip whole sync."
           else
@@ -106,7 +107,8 @@ jobs:
     env:
       GH_REPO: open-telemetry/opentelemetry-collector-releases
       GH_TOKEN: ${{ github.token }}          # 继续使用内置 token
-      RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
       REMOTE_ROOT: /data/update-server/otelcol-contrib
       TAG: ${{ needs.prep.outputs.tag }}
@@ -160,10 +162,10 @@ jobs:
         run: |
           set -euo pipefail
           REMOTE_DIR="${REMOTE_ROOT}/${TAG}"
-          ssh -i ~/.ssh/id_rsa "root@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
           echo "Rsync releases/${TAG}/${{ steps.has_asset.outputs.asset }} -> ${VPS_HOST}:${REMOTE_DIR}/"
           rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            "releases/${TAG}/${{ steps.has_asset.outputs.asset }}" "root@${VPS_HOST}:${REMOTE_DIR}/"
+            "releases/${TAG}/${{ steps.has_asset.outputs.asset }}" "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
     name: Remote retention (keep latest 10 v0.*)
@@ -171,7 +173,8 @@ jobs:
     if: needs.prep.outputs.exists == 'false'   # 只有新增版本时才清理
     runs-on: ubuntu-latest
     env:
-      RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
       REMOTE_ROOT: /data/update-server/otelcol-contrib
     steps:
@@ -186,7 +189,7 @@ jobs:
       - name: Prune old versions on remote (keep 10)
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/id_rsa "root@${VPS_HOST}" bash -lc '
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
             set -euo pipefail
             cd "'"${REMOTE_ROOT}"'" || exit 0
             keep=10
