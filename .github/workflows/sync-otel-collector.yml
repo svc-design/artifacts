@@ -28,7 +28,7 @@ jobs:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
-      REMOTE_ROOT: /data/update-server/otelcol-contrib
+      REMOTE_ROOT: /data/update-server/otel/OpenTelemetry/
       DEFAULT_TAG: v0.133.0
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
@@ -110,7 +110,7 @@ jobs:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
-      REMOTE_ROOT: /data/update-server/otelcol-contrib
+      REMOTE_ROOT: /data/update-server/otel/OpenTelemetry
       TAG: ${{ needs.prep.outputs.tag }}
       VERSION: ${{ needs.prep.outputs.version }}
     steps:
@@ -176,7 +176,7 @@ jobs:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
-      REMOTE_ROOT: /data/update-server/otelcol-contrib
+      REMOTE_ROOT: /data/update-server/otel/OpenTelemetry/
     steps:
       - name: Init SSH
         run: |
