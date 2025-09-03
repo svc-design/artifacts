@@ -1,4 +1,4 @@
-name: Sync OpenTelemetry Collector Contrib v0.* (matrix)
+name: Sync otelcol-contrib v0.* (matrix)
 
 on:
   workflow_dispatch:
@@ -8,30 +8,30 @@ on:
         required: false
         type: string
   schedule:
-    - cron: "0 2 * * *" # UTC 02:00；若需 JST 02:00，请改为 "0 17 * * *"
+    - cron: "0 2 * * *" # <-- 这是 UTC 02:00。若需 JST 02:00，请改为 "0 17 * * *"
 
+# 让内置 GITHUB_TOKEN 具备读 release 资产的权限
 permissions:
   contents: read
 
 concurrency:
-  group: sync-otel-collector-v0
+  group: sync-otelcol-contrib-v0
   cancel-in-progress: false
-
-env:
-  GH_REPO: open-telemetry/opentelemetry-collector-releases
-  DEFAULT_TAG: v0.133.0
-  REMOTE_ROOT: /data/update-server/otel/OpenTelemetry/
 
 jobs:
   prep:
     name: Resolve tag & remote check
     runs-on: ubuntu-latest
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_REPO: open-telemetry/opentelemetry-collector-releases
+      GH_TOKEN: ${{ github.token }}          # 用内置 token，无需自建 PAT
       RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: /data/update-server/otelcol-contrib
+      DEFAULT_TAG: v0.133.0
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
+      version: ${{ steps.resolve.outputs.version }}
       exists: ${{ steps.remotecheck.outputs.exists }}
     steps:
       - uses: actions/checkout@v4
@@ -56,14 +56,16 @@ jobs:
             TAG="$DEFAULT_TAG"
           fi
 
-          # 简单校验：必须形如 v0.xxx.y
+          # 基本校验：必须形如 v0.X.Y
           if ! echo "$TAG" | grep -Eq '^v0\.[0-9]+\.[0-9]+$'; then
             echo "Invalid tag format: $TAG" >&2
             exit 1
           fi
 
+          VERSION="${TAG#v}"  # 去掉前缀 v，例如 v0.133.0 -> 0.133.0
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Resolved tag: $TAG"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Use tag: $TAG (version=$VERSION)"
 
       - name: Init SSH
         run: |
@@ -88,26 +90,27 @@ jobs:
             echo "Remote does not have ${REMOTE_DIR}, will sync."
           fi
 
-  sync-assets:
-    name: Sync ${{ matrix.asset }} for ${{ needs.prep.outputs.tag }}
+  sync-one:
+    name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.tag }}
     needs: prep
-    if: needs.prep.outputs.exists == 'false'
+    if: needs.prep.outputs.exists == 'false'   # 远端已存在则整个矩阵跳过
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        asset:
-          - "otelcol-contrib_0.133.0_linux_amd64.tar.gz"
-          - "otelcol-contrib_0.133.0_linux_amd64.deb"
-          - "otelcol-contrib_0.133.0_linux_arm64.tar.gz"
-          - "otelcol-contrib_0.133.0_linux_arm64.deb"
+        asset_suffix:
+          - "linux_amd64.tar.gz"
+          - "linux_amd64.deb"
+          - "linux_arm64.tar.gz"
+          - "linux_arm64.deb"
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_REPO: open-telemetry/opentelemetry-collector-releases
+      GH_TOKEN: ${{ github.token }}          # 继续使用内置 token
       RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: /data/update-server/otelcol-contrib
       TAG: ${{ needs.prep.outputs.tag }}
-      GH_REPO: ${{ env.GH_REPO }}
-      REMOTE_ROOT: ${{ env.REMOTE_ROOT }}
+      VERSION: ${{ needs.prep.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -118,23 +121,15 @@ jobs:
           sudo apt-get install -y gh jq rsync
           gh --version
 
-      - name: Check asset exists for tag
+      - name: Check asset exists via GitHub CLI
         id: has_asset
         run: |
           set -euo pipefail
-          ASSET='${{ matrix.asset }}'
-          # 提取文件名前缀中的版本号，要求与 TAG 一致，以避免错传
-          # e.g. otelcol-contrib_0.133.0_linux_amd64.tar.gz -> 0.133.0
-          VERSION_FROM_NAME="$(echo "$ASSET" | sed -E 's/^otelcol-contrib_([0-9]+\.[0-9]+\.[0-9]+)_linux_.+/\1/')"
-          if [ "v$VERSION_FROM_NAME" != "${TAG}" ]; then
-            echo "Asset version ($VERSION_FROM_NAME) does not match TAG (${TAG})" >&2
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          echo "Checking asset $ASSET for ${TAG}"
+          ASSET="otelcol-contrib_${VERSION}_${{ matrix.asset_suffix }}"
+          echo "Checking asset $ASSET for tag ${TAG}"
           if gh release view "${TAG}" --repo "${GH_REPO}" --json assets \
              | jq -r '.assets[].name' | grep -Fxq "$ASSET"; then
+            echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
@@ -148,7 +143,7 @@ jobs:
           mkdir -p "releases/${TAG}"
           gh release download "${TAG}" \
             --repo "${GH_REPO}" \
-            --pattern "${{ matrix.asset }}" \
+            --pattern "${{ steps.has_asset.outputs.asset }}" \
             --dir "releases/${TAG}"
 
       - name: Init SSH
@@ -160,25 +155,25 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Rsync asset to remote
+      - name: Rsync this asset to remote
         if: steps.has_asset.outputs.exists == 'true'
         run: |
           set -euo pipefail
           REMOTE_DIR="${REMOTE_ROOT}/${TAG}"
           ssh -i ~/.ssh/id_rsa "root@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
-          echo "Rsync releases/${TAG}/${{ matrix.asset }} -> ${VPS_HOST}:${REMOTE_DIR}/"
+          echo "Rsync releases/${TAG}/${{ steps.has_asset.outputs.asset }} -> ${VPS_HOST}:${REMOTE_DIR}/"
           rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            "releases/${TAG}/${{ matrix.asset }}" "root@${VPS_HOST}:${REMOTE_DIR}/"
+            "releases/${TAG}/${{ steps.has_asset.outputs.asset }}" "root@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
     name: Remote retention (keep latest 10 v0.*)
-    needs: [prep, sync-assets]
-    if: needs.prep.outputs.exists == 'false'
+    needs: [prep, sync-one]
+    if: needs.prep.outputs.exists == 'false'   # 只有新增版本时才清理
     runs-on: ubuntu-latest
     env:
       RSYNC_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
-      REMOTE_ROOT: ${{ env.REMOTE_ROOT }}
+      REMOTE_ROOT: /data/update-server/otelcol-contrib
     steps:
       - name: Init SSH
         run: |
@@ -195,7 +190,6 @@ jobs:
             set -euo pipefail
             cd "'"${REMOTE_ROOT}"'" || exit 0
             keep=10
-            # 只保留 v0.*，按语义版本逆序
             mapfile -t all < <(ls -1 | grep -E "^v0\.[0-9]+\.[0-9]+$" | sort -V -r || true)
             if [ "${#all[@]}" -le "$keep" ]; then
               echo "Nothing to prune. Count=${#all[@]}"
