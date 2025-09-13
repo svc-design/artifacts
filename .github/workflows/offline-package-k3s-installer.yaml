@@ -62,14 +62,14 @@ jobs:
           set -euo pipefail
           # 假设脚本产出目录为 k3s-offline-package
           test -d k3s-offline-package
-          tar czf offline-package-k3s-installer.tar.gz k3s-offline-package
-          ls -lh offline-package-k3s-installer.tar.gz
+          tar czf offline-package-k3s-installer-${{ matrix.arch }}.tar.gz k3s-offline-package
+          ls -lh offline-package-k3s-installer-${{ matrix.arch }}.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: offline-package-k3s-installer
-          path: offline-package-k3s-installer.tar.gz
+          name: offline-package-k3s-installer-${{ matrix.arch }}
+          path: offline-package-k3s-installer-${{ matrix.arch }}.tar.gz
           if-no-files-found: error
 
   test-k3s-installer:
@@ -83,13 +83,13 @@ jobs:
       - name: Download Artifact
         uses: actions/download-artifact@v4
         with:
-          name: k3s-offline-package-${{ matrix.arch }}
+          name: offline-package-k3s-installer-${{ matrix.arch }}
           path: ./test-dir
 
       - name: Extract Package
         run: |
           cd test-dir
-          tar -xzvf k3s-offline-package-${{ matrix.arch }}.tar.gz
+          tar -xzvf offline-package-k3s-installer-${{ matrix.arch }}.tar.gz
 
       - name: Setup K3s and Test
         run: |
@@ -121,13 +121,13 @@ jobs:
       - name: Download amd64 Artifact
         uses: actions/download-artifact@v4
         with:
-          name: k3s-offline-package-amd64
+          name: offline-package-k3s-installer-amd64
           path: release-artifacts
 
       - name: Download arm64 Artifact
         uses: actions/download-artifact@v4
         with:
-          name: k3s-offline-package-arm64
+          name: offline-package-k3s-installer-arm64
           path: release-artifacts
 
       - name: Upload to GitHub Release
@@ -135,8 +135,8 @@ jobs:
         with:
           tag_name: ${{ env.tag_name }}
           files: |
-            release-artifacts/k3s-offline-package-amd64.tar.gz
-            release-artifacts/k3s-offline-package-arm64.tar.gz
+            release-artifacts/offline-package-k3s-installer-amd64.tar.gz
+            release-artifacts/offline-package-k3s-installer-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
