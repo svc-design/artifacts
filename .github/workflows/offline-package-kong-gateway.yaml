@@ -1,0 +1,104 @@
+name: Build Offline Kong Gateway Installer
+
+on:
+  push:
+    paths:
+      - 'gitops/scripts/kong-gateway/deploy-kong-gateway.sh'
+      - '.github/workflows/offline-package-kong-gateway.yaml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to use/sync (e.g., v0.1.0). Leave empty to use offline-kong-gateway-<run_number>"
+        required: false
+        type: string
+      gateway_tag:
+        description: "Kong Gateway image tag. Default: 3.7"
+        required: false
+        type: string
+      kic_tag:
+        description: "Kubernetes Ingress Controller image tag. Default: 3.2"
+        required: false
+        type: string
+      chart_version:
+        description: "Override helm chart version for kong/ingress"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-offline-kong-gateway
+  cancel-in-progress: false
+
+jobs:
+  build-offline-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    env:
+      GATEWAY_TAG: ${{ github.event.inputs.gateway_tag || '3.7' }}
+      KIC_TAG: ${{ github.event.inputs.kic_tag || '3.2' }}
+      CHART_VERSION: ${{ github.event.inputs.chart_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (curl, helm)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y curl
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
+
+      - name: Add helm repo
+        run: |
+          set -euo pipefail
+          helm repo add kong https://charts.konghq.com
+          helm repo update
+
+      - name: Prepare directories
+        run: |
+          set -euo pipefail
+          mkdir -p offline-installer/{images,charts,scripts,bin}
+
+      - name: Stage deploy script
+        run: |
+          set -euo pipefail
+          cp gitops/scripts/kong-gateway/deploy-kong-gateway.sh offline-installer/scripts/
+          chmod +x offline-installer/scripts/deploy-kong-gateway.sh
+
+      - name: Download nerdctl binary for ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          wget https://github.com/containerd/nerdctl/releases/download/v2.0.3/nerdctl-2.0.3-linux-${{ matrix.arch }}.tar.gz -O offline-installer/nerdctl.tar.gz
+
+      - name: Pull & export required images
+        run: |
+          set -euo pipefail
+          docker pull "kong/kong-gateway:${GATEWAY_TAG}"
+          docker pull "kong/kubernetes-ingress-controller:${KIC_TAG}"
+
+          docker save "kong/kong-gateway:${GATEWAY_TAG}" -o offline-installer/images/kong-gateway.tar
+          docker save "kong/kubernetes-ingress-controller:${KIC_TAG}" -o offline-installer/images/kic.tar
+
+      - name: Download Helm Chart (kong/ingress)
+        run: |
+          set -euo pipefail
+          if [ -n "${CHART_VERSION}" ]; then
+            helm pull kong/ingress --version="${CHART_VERSION}" --untar --untardir offline-installer/charts
+          else
+            helm pull kong/ingress --untar --untardir offline-installer/charts
+          fi
+
+      - name: Create offline package
+        run: |
+          set -euo pipefail
+          tar -C offline-installer -czf offline-setup-kong-gateway-${{ matrix.arch }}.tar.gz .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-setup-kong-gateway-${{ matrix.arch }}
+          path: offline-setup-kong-gateway-${{ matrix.arch }}.tar.gz
