@@ -102,7 +102,11 @@ jobs:
     needs: test-k3s-installer
     runs-on: ubuntu-latest
     env:
-      tag_name: offline-k3s-${{ needs.build-k3s-installer.outputs.k3s_version }}
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-k3s-{0}', github.run_number) }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: /data/update-server/nginx-ingress
 
     steps:
       - uses: actions/checkout@v4
@@ -111,8 +115,8 @@ jobs:
         id: create_release
         uses: actions/create-release@v1
         with:
-          tag_name: ${{ env.tag_name }}
-          release_name: Daily Build ${{ env.tag_name }}
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Daily Build ${{ env.TAG_NAME }}
           draft: false
           prerelease: false
         env:
@@ -133,7 +137,7 @@ jobs:
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.tag_name }}
+          tag_name: ${{ env.TAG_NAME }}
           files: |
             release-artifacts/offline-package-k3s-installer-amd64.tar.gz
             release-artifacts/offline-package-k3s-installer-arm64.tar.gz
