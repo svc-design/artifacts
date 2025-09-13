@@ -114,12 +114,6 @@ jobs:
           set -euo pipefail
           helm pull nginx-stable/nginx-ingress --version="${CHART_VERSION}" --untar --untardir offline-installer/charts
 
-      - name: Copy installer script
-        run: |
-          set -euo pipefail
-          cp scripts/ingress-installer.sh offline-installer/scripts/
-          chmod +x offline-installer/scripts/ingress-installer.sh
-
       - name: Package offline installer
         run: |
           set -euo pipefail

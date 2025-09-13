@@ -116,11 +116,12 @@ generate_values() {
   tag="${NGINX_IC_IMAGE##*:}"
 
   cat > values.yaml <<EOF
-controller:
-  ingressClass: nginx
-  ingressClassResource:
-    enabled: true
-  replicaCount: 2
+  controller:
+    ingressClass:
+      name: nginx
+      create: true
+      setAsDefaultIngress: false
+    replicaCount: 2
   image:
     repository: ${repo}
     tag: "${tag}"
