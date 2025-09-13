@@ -27,7 +27,7 @@ jobs:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
-      REMOTE_ROOT: /data/update-server/prometheus/node_exporter/
+      REMOTE_ROOT: /data/update-server/otel/node_exporter/
       DEFAULT_TAG: 1.9.1           # <-- 无 v
       ALLOWED_SERIES: "^(1\\.9|1\\.8)\\.[0-9]+\\.[0-9]+$"
     outputs:
