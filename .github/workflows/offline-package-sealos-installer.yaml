@@ -1,0 +1,200 @@
+name: Build Offline Sealos Installer
+
+on:
+  push:
+    paths:
+      - 'scripts/create-sealos-offline-package.sh'
+      - 'scripts/sealos-install.sh'
+      - 'scripts/cilium-values.yaml'
+      - 'scripts/resolve_sealos_versions.sh'
+      - '.github/workflows/offline-package-sealos-installer.yaml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to use/sync (e.g., v5.0.3). Leave empty to use offline-sealos-<run_number>"
+        required: false
+        type: string
+      sealos_version:
+        description: "Override Sealos version (e.g., 5.0.3). Leave empty to auto-resolve"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-offline-sealos
+  cancel-in-progress: false
+
+jobs:
+  build-offline-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    outputs:
+      sealos_version: ${{ steps.resolve.outputs.sealos_version }}
+      artifact-name: ${{ steps.upload-artifact.outputs.artifact-name }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (curl, jq)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y curl jq
+
+      - name: Resolve latest Sealos version
+        id: resolve
+        env:
+          OVERRIDE_SEALOS_VERSION: ${{ github.event.inputs.sealos_version }}
+        run: |
+          set -euo pipefail
+          bash scripts/resolve_sealos_versions.sh
+
+      - name: Run Offline Package Builder
+        env:
+          SEALOS_VERSION: ${{ steps.resolve.outputs.sealos_version }}
+        run: |
+          set -euo pipefail
+          chmod +x scripts/create-sealos-offline-package.sh
+          ARCH=${{ matrix.arch }} ./scripts/create-sealos-offline-package.sh
+
+      - name: Upload Artifact
+        id: upload-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sealos-offline-package-${{ matrix.arch }}
+          path: sealos-offline-package-${{ matrix.arch }}.tar.gz
+
+  test-offline-installer:
+    needs: build-offline-installer
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sealos-offline-package-${{ matrix.arch }}
+          path: ./test-dir
+
+      - name: Extract Package
+        run: |
+          set -euo pipefail
+          cd test-dir
+          tar -xzvf sealos-offline-package-${{ matrix.arch }}.tar.gz
+
+      - name: Verify Package Contents
+        run: |
+          set -euo pipefail
+          test -f test-dir/sealos-offline-package/sealos-install.sh
+          test -f test-dir/sealos-offline-package/cilium-values.yaml
+
+  publish-release:
+    needs: test-offline-installer
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-sealos-{0}', github.run_number) }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: /data/update-server/sealos
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Build ${{ env.TAG_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sealos-offline-package-amd64
+          path: release-artifacts
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: sealos-offline-package-arm64
+          path: release-artifacts
+
+      - name: Upload offline installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            release-artifacts/sealos-offline-package-amd64.tar.gz
+            release-artifacts/sealos-offline-package-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure deps (rsync, ssh)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y rsync openssh-client
+
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync release assets to remote
+        run: |
+          set -euo pipefail
+          REMOTE_DIR="${REMOTE_ROOT}/${TAG_NAME}"
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
+          echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
+          rsync -av -e "ssh -i ~/.ssh/id_rsa" \
+            release-artifacts/sealos-offline-package-amd64.tar.gz \
+            release-artifacts/sealos-offline-package-arm64.tar.gz \
+            "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
+
+  retention:
+    name: Remote retention (keep latest 3)
+    needs: publish-release
+    runs-on: ubuntu-latest
+    env:
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: /data/update-server/sealos
+    steps:
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prune old versions on remote (keep 3)
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
+            set -euo pipefail
+            cd "'"${REMOTE_ROOT}"'" || exit 0
+            keep=3
+            mapfile -t all < <(ls -1 | grep -E "^(offline-sealos-|v[0-9]+\.)" | sort -V -r || true)
+            if [ "${#all[@]}" -le "$keep" ]; then
+              echo "Nothing to prune. Count=${#all[@]}"
+              exit 0
+            fi
+            to_delete=("${all[@]:keep}")
+            echo "Pruning old versions: ${to_delete[*]}"
+            for d in "${to_delete[@]}"; do
+              rm -rf -- "$d"
+            done
+          '
