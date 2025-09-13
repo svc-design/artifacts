@@ -102,3 +102,66 @@ jobs:
         with:
           name: offline-setup-kong-gateway-${{ matrix.arch }}
           path: offline-setup-kong-gateway-${{ matrix.arch }}.tar.gz
+
+  test-release:
+    needs: build-offline-installer
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download offline installer artifact for ${{ matrix.arch }}
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-kong-gateway-${{ matrix.arch }}
+          path: offline-test
+
+      - name: Verify offline package
+        run: |
+          set -euo pipefail
+          cd offline-test
+          tar -tzf offline-setup-kong-gateway-${{ matrix.arch }}.tar.gz > /dev/null
+          cd ..
+
+  publish-release:
+    needs: test-release
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-kong-gateway-{0}', github.run_number) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Build ${{ env.TAG_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-kong-gateway-amd64
+          path: release-artifacts
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-kong-gateway-arm64
+          path: release-artifacts
+
+      - name: Upload offline installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            release-artifacts/offline-setup-kong-gateway-amd64.tar.gz
+            release-artifacts/offline-setup-kong-gateway-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
