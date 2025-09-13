@@ -1,39 +1,51 @@
-#!/bin/bash
-# make_k3s_offline_package.sh - v1.0.4
-set -e
+#!/usr/bin/env bash
+# scripts/make_k3s_offline_package.sh
+# 构建离线安装包：输出到仓库根目录 k3s-offline-package-${ARCH}.tar.gz
+# 依赖：curl、tar、（优先）docker 或（备选）containerd+nerdctl
+set -euo pipefail
 
-VERSION="v1.32.4+k3s1"
-ARCH_LIST=("amd64")
-BASE_DIR="k3s-offline-package"
+# ====== 参数与默认值 ======
+VERSION="${VERSION:-${K3S_VERSION:-v1.33.4+k3s1}}"
+ARCH="${ARCH:-amd64}"                       # 由 matrix 传入：amd64/arm64
+BASE_DIR="${BASE_DIR:-k3s-offline-package}"
+CNI_VERSION="${CNI_VERSION:-v1.3.0}"
+HELM_VERSION="${HELM_VERSION:-v3.14.2}"
+NERDCTL_VERSION="${NERDCTL_VERSION:-2.1.4}"
+
+# kubectl 版本：默认给一个常用稳定版；可通过 KUBECTL_VERSION 覆盖
+KUBECTL_VERSION="${KUBECTL_VERSION:-v1.30.0}"
+
+# URL
 K3S_URL_BASE="https://github.com/k3s-io/k3s/releases/download/${VERSION}"
-CNI_VERSION="v1.3.0"
-HELM_VERSION="v3.14.2"
-NERDCTL_VERSION="2.0.4"
 
-mkdir -p "${BASE_DIR}/"{bin,images,cni-plugins,addons,registry/docker.io,registry/ghcr.io,install}
+# ====== 工具函数 ======
+log() { echo -e "[\e[32mINFO\e[0m] $*"; }
+err() { echo -e "[\e[31mERROR\e[0m] $*" >&2; exit 1; }
 
-safe_copy() {
-  local src_url=$1
-  local dest_path=$2
-  if [[ -f "${dest_path}" ]]; then
-    echo "[SKIP] 已存在：${dest_path}"
-  else
-    echo "[DOWNLOAD] ${src_url} -> ${dest_path}"
-    curl -sLo "$dest_path" "$src_url"
+download() {
+  local url="$1" out="$2"
+  if [[ -f "$out" ]]; then
+    log "SKIP 已存在：$out"
+    return
   fi
+  log "DOWNLOAD $url -> $out"
+  curl -fSL --retry 3 --retry-connrefused --connect-timeout 15 "$url" -o "$out"
+  [[ -s "$out" ]] || err "空文件：$out"
 }
 
-export_airgap_images() {
-  local arch=$1
-  local out="${BASE_DIR}/images/k3s-airgap-images-${arch}.tar"
-  local ns="k8s.io"
+pick_runtime() {
+  if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
+    echo "docker"; return
+  fi
+  if command -v nerdctl >/dev/null 2>&1 && [[ -S /run/containerd/containerd.sock ]]; then
+    echo "nerdctl-default"; return
+  fi
+  echo "none"
+}
 
-  nerd() {
-    sudo nerdctl --namespace $ns --address /run/k3s/containerd/containerd.sock "$@"
-  }
-
-  # ---- 核心镜像列表 ----
-  local core_imgs=(
+pull_and_save_images() {
+  local out_tar="$1"
+  local imgs=(
     docker.io/rancher/mirrored-pause:3.6
     docker.io/rancher/mirrored-metrics-server:v0.6.3
     docker.io/rancher/mirrored-coredns-coredns:1.10.1
@@ -41,39 +53,38 @@ export_airgap_images() {
     docker.io/rancher/mirrored-kube-state-metrics-kube-state-metrics:v2.12.0
   )
 
-  echo "[INFO] 拉取核心镜像…"
-  for img in "${core_imgs[@]}"; do
-    nerd pull "$img"
-  done
+  local rt; rt="$(pick_runtime)"
+  [[ "$rt" != "none" ]] || err "未找到可用镜像运行时（docker 或 containerd+nerdctl）"
 
-  echo "[INFO] 保存离线包 → $out"
-  mkdir -p "$(dirname "$out")"
-  nerd save -o "$out" "${core_imgs[@]}"
-
-  echo "[OK] 完成：$out 已生成"
+  log "拉取核心镜像（runtime=$rt）…"
+  case "$rt" in
+    docker)
+      for i in "${imgs[@]}"; do docker pull "$i"; done
+      log "保存镜像 → $out_tar"
+      docker save -o "$out_tar" "${imgs[@]}"
+      ;;
+    nerdctl-default)
+      for i in "${imgs[@]}"; do sudo nerdctl --address /run/containerd/containerd.sock pull "$i"; done
+      log "保存镜像 → $out_tar"
+      sudo nerdctl --address /run/containerd/containerd.sock save -o "$out_tar" "${imgs[@]}"
+      ;;
+  esac
+  [[ -s "$out_tar" ]] || err "未生成镜像包：$out_tar"
 }
 
-########################################
-# 写 node‑exporter YAML → addons/node-exporter.yaml
-########################################
-generate_node_exporter_yaml() {
-  local ADDON_DIR=${BASE_DIR}/addons
-  mkdir -p "$ADDON_DIR"
-
-  cat > "${ADDON_DIR}/node-exporter.yaml" <<'EOF'
+write_node_exporter_yaml() {
+  cat > "${BASE_DIR}/addons/node-exporter.yaml" <<'YAML'
 apiVersion: v1
 kind: ServiceAccount
-metadata:
-  name: node-exporter
-  namespace: kube-system
+metadata: {name: node-exporter, namespace: kube-system}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata: {name: node-exporter}
 rules:
 - apiGroups: [""]
-  resources: ["nodes", "nodes/proxy", "services", "endpoints"]
-  verbs: ["get", "list", "watch"]
+  resources: ["nodes","nodes/proxy","services","endpoints"]
+  verbs: ["get","list","watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -86,9 +97,7 @@ subjects:
 ---
 apiVersion: apps/v1
 kind: DaemonSet
-metadata:
-  name: node-exporter
-  namespace: kube-system
+metadata: {name: node-exporter, namespace: kube-system}
 spec:
   selector: {matchLabels: {app: node-exporter}}
   template:
@@ -101,13 +110,9 @@ spec:
       - name: node-exporter
         image: docker.io/rancher/mirrored-prometheus-node-exporter:v1.3.1
         imagePullPolicy: IfNotPresent
-        args:
-          - "--path.procfs=/host/proc"
-          - "--path.sysfs=/host/sys"
-          - "--path.rootfs=/host/root"
+        args: ["--path.procfs=/host/proc","--path.sysfs=/host/sys","--path.rootfs=/host/root"]
         securityContext: {privileged: true}
-        resources:
-          requests: {cpu: "50m", memory: "30Mi"}
+        resources: {requests: {cpu: "50m", memory: "30Mi"}}
         volumeMounts:
         - {name: proc,   mountPath: /host/proc,  readOnly: true}
         - {name: sys,    mountPath: /host/sys,   readOnly: true}
@@ -119,42 +124,26 @@ spec:
 ---
 apiVersion: v1
 kind: Service
-metadata:
-  name: node-exporter
-  namespace: kube-system
-  labels: {app: node-exporter}
+metadata: {name: node-exporter, namespace: kube-system, labels: {app: node-exporter}}
 spec:
   clusterIP: None
   selector: {app: node-exporter}
-  ports:
-  - {name: metrics, port: 9100, targetPort: 9100}
-EOF
-  echo "[OK] 生成 ${ADDON_DIR}/node-exporter.yaml"
+  ports: [{name: metrics, port: 9100, targetPort: 9100}]
+YAML
 }
 
-########################################
-# 写 kube‑state‑metrics YAML → addons/kube-state-metrics.yaml
-########################################
-generate_kube_state_metrics_yaml() {
-  local ADDON_DIR=${BASE_DIR}/addons
-  mkdir -p "$ADDON_DIR"
-
-  cat > "${ADDON_DIR}/kube-state-metrics.yaml" <<'EOF'
+write_ksm_yaml() {
+  cat > "${BASE_DIR}/addons/kube-state-metrics.yaml" <<'YAML'
 apiVersion: v1
 kind: ServiceAccount
-metadata:
-  name: kube-state-metrics
-  namespace: kube-system
+metadata: {name: kube-state-metrics, namespace: kube-system}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata: {name: kube-state-metrics}
 rules:
 - apiGroups: [""]
-  resources:
-    ["pods","nodes","namespaces","services","endpoints",
-     "persistentvolumes","persistentvolumeclaims",
-     "configmaps","secrets","limitranges","replicationcontrollers"]
+  resources: ["pods","nodes","namespaces","services","endpoints","persistentvolumes","persistentvolumeclaims","configmaps","secrets","limitranges","replicationcontrollers"]
   verbs: ["get","list","watch"]
 - apiGroups: ["apps"]
   resources: ["statefulsets","daemonsets","deployments","replicasets"]
@@ -174,9 +163,7 @@ subjects:
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata:
-  name: kube-state-metrics
-  namespace: kube-system
+metadata: {name: kube-state-metrics, namespace: kube-system}
 spec:
   replicas: 1
   selector: {matchLabels: {app: kube-state-metrics}}
@@ -189,283 +176,161 @@ spec:
         image: docker.io/rancher/mirrored-kube-state-metrics-kube-state-metrics:v2.12.0
         imagePullPolicy: IfNotPresent
         ports:
-        - {name: metrics,    containerPort: 8080}
-        - {name: telemetry,  containerPort: 8081}
-        resources:
-          requests: {cpu: "40m", memory: "60Mi"}
+        - {name: metrics,   containerPort: 8080}
+        - {name: telemetry, containerPort: 8081}
+        resources: {requests: {cpu: "40m", memory: "60Mi"}}
 ---
 apiVersion: v1
 kind: Service
-metadata:
-  name: kube-state-metrics
-  namespace: kube-system
-  labels: {app: kube-state-metrics}
+metadata: {name: kube-state-metrics, namespace: kube-system, labels: {app: kube-state-metrics}}
 spec:
   selector: {app: kube-state-metrics}
   ports:
   - {name: metrics,   port: 8080, targetPort: 8080}
   - {name: telemetry, port: 8081, targetPort: 8081}
-EOF
-  echo "[OK] 生成 ${ADDON_DIR}/kube-state-metrics.yaml"
+YAML
 }
 
-for ARCH in "${ARCH_LIST[@]}"; do
-  echo -e "\n[INFO] 准备架构：${ARCH}"
-
-  safe_copy "${K3S_URL_BASE}/k3s" "${BASE_DIR}/bin/k3s-${ARCH}"
-  chmod +x "${BASE_DIR}/bin/k3s-${ARCH}"
-
-  safe_copy "https://dl.k8s.io/release/v1.29.1/bin/linux/${ARCH}/kubectl" "${BASE_DIR}/bin/kubectl-${ARCH}"
-  chmod +x "${BASE_DIR}/bin/kubectl-${ARCH}"
-
-  TMP_HELM="/tmp/helm-${ARCH}.tgz"
-  safe_copy "https://get.helm.sh/helm-${HELM_VERSION}-linux-${ARCH}.tar.gz" "$TMP_HELM"
-  tar -xzf "$TMP_HELM" -C /tmp
-  mv "/tmp/linux-${ARCH}/helm" "${BASE_DIR}/bin/helm-${ARCH}"
-  chmod +x "${BASE_DIR}/bin/helm-${ARCH}"
-
-  safe_copy "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz" \
-    "/tmp/nerdctl-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"
-  tar -xzf "/tmp/nerdctl-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz" -C /tmp
-  cp "/tmp/nerdctl" "${BASE_DIR}/bin/nerdctl-${ARCH}"
-  chmod +x "${BASE_DIR}/bin/nerdctl-${ARCH}"
-
-  safe_copy "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz" \
-    "${BASE_DIR}/cni-plugins/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz"
-
-  export_airgap_images "$ARCH"
-
-  generate_node_exporter_yaml
-  generate_kube_state_metrics_yaml
-done
-
-safe_copy "https://get.k3s.io" "${BASE_DIR}/install/k3s-official-install.sh"
-chmod +x "${BASE_DIR}/install/k3s-official-install.sh"
-
-# 生成 install-server.sh
-cat > "${BASE_DIR}/install-server.sh" <<'EOF'
-#!/bin/bash
-set -e
-
+write_install_server() {
+  cat > "${BASE_DIR}/install-server.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
 ARCH=$(uname -m)
-case "$ARCH" in
-  x86_64 | amd64)  ARCH="amd64"  ;;   # Intel/AMD 64 位
-  aarch64 | arm64) ARCH="arm64"  ;;   # ARM 64 位
-  *)
-    echo "[ERROR] 不支持的架构：$ARCH"
-    exit 1
-    ;;
-esac
+case "$ARCH" in x86_64|amd64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; *) echo "Unsupported arch: $ARCH"; exit 1;; esac
 
-# 路径定义
 BIN_DIR="./bin"
-K3S_BIN="${BIN_DIR}/k3s-${ARCH}"
-HELM_BIN="${BIN_DIR}/helm-${ARCH}"
-KUBECTL_BIN="${BIN_DIR}/kubectl-${ARCH}"
-NERDCTL_BIN="${BIN_DIR}/nerdctl-${ARCH}"
+install_bin(){ sudo cp "$1" "$2"; sudo chmod +x "$2"; echo " ↳ $2"; }
 
-echo "[INFO] 安装 CLI 工具（${ARCH}）到 /usr/local/bin"
-
-install_bin() {
-  local src=$1
-  local dst=$2
-  echo " ↳ $dst"
-  sudo cp "$src" "$dst"
-  sudo chmod +x "$dst"
-}
-
-install_bin "$K3S_BIN" /usr/local/bin/k3s
-install_bin "$HELM_BIN" /usr/local/bin/helm
-install_bin "$KUBECTL_BIN" /usr/local/bin/kubectl
-install_bin "$NERDCTL_BIN" /usr/local/bin/nerdctl
+echo "[INFO] 安装 CLI → /usr/local/bin"
+install_bin "${BIN_DIR}/k3s-${ARCH}" /usr/local/bin/k3s
+install_bin "${BIN_DIR}/helm-${ARCH}" /usr/local/bin/helm
+install_bin "${BIN_DIR}/kubectl-${ARCH}" /usr/local/bin/kubectl
+install_bin "${BIN_DIR}/nerdctl-${ARCH}" /usr/local/bin/nerdctl
 
 echo "[INFO] 执行官方离线安装脚本"
 INSTALL_K3S_SKIP_DOWNLOAD=true \
-INSTALL_K3S_EXEC="server \
-  --write-kubeconfig-mode 644 \
-  --disable=traefik,servicelb,local-storage \
-  --kube-apiserver-arg=service-node-port-range=0-50000" \
+INSTALL_K3S_EXEC="server --write-kubeconfig-mode 644 --disable=traefik,servicelb,local-storage --kube-apiserver-arg=service-node-port-range=0-50000" \
 bash "install/k3s-official-install.sh"
 
-echo "[INFO] 准备 airgap 镜像"
-sudo nerdctl             \
---namespace k8s.io  \
---address /run/k3s/containerd/containerd.sock load -i images/k3s-airgap-images-amd64.tar
+echo "[INFO] 加载 airgap 镜像"
+sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock load -i "images/k3s-airgap-images-${ARCH}.tar" || true
 
-echo "[INFO] 等待 K3s 启动..."
-sleep 5
-
-echo "[INFO] 应用默认组件（如存在）"
-mkdir -pv ~/.kube/
-cp -v /etc/rancher/k3s/k3s.yaml ~/.kube/config
+echo "[INFO] 应用默认组件（若失败可忽略）"
+mkdir -p ~/.kube && cp -f /etc/rancher/k3s/k3s.yaml ~/.kube/config || true
 kubectl apply -f addons/node-exporter.yaml || true
 kubectl apply -f addons/kube-state-metrics.yaml || true
 
 echo "[SUCCESS] 离线 K3s 安装完成 ✅"
-EOF
-
-chmod +x "${BASE_DIR}/install-server.sh"
-
-# 生成 install-agent.sh
-cat > "${BASE_DIR}/install-agent.sh" <<'EOF'
-#!/bin/bash
-set -e
-
-ARCH=$(uname -m)
-case "$ARCH" in
-  x86_64 | amd64)  ARCH="amd64"  ;;
-  aarch64 | arm64) ARCH="arm64"  ;;
-  *)
-    echo "[ERROR] 不支持的架构：$ARCH"
-    exit 1
-    ;;
-esac
-
-if [[ -z "$K3S_TOKEN" || -z "$K3S_URL" ]]; then
-  echo "[ERROR] 你必须设置环境变量 K3S_TOKEN 和 K3S_URL"
-  echo "例如："
-  echo "  export K3S_TOKEN=K10xxxxxxxx"
-  echo "  export K3S_URL=https://<server-ip>:6443"
-  exit 1
-fi
-
-echo "[INFO] 安装 CLI 工具（${ARCH}）到 /usr/local/bin"
-
-# 路径定义
-BIN_DIR="./bin"
-K3S_BIN="${BIN_DIR}/k3s-${ARCH}"
-NERDCTL_BIN="${BIN_DIR}/nerdctl-${ARCH}"
-
-
-install_bin() {
-  local src=$1
-  local dst=$2
-  echo " ↳ $dst"
-  sudo cp "$src" "$dst"
-  sudo chmod +x "$dst"
+SH
+  chmod +x "${BASE_DIR}/install-server.sh"
 }
 
-echo "[INFO] 安装 CLI 工具（${ARCH}）到 /usr/local/bin"
+write_install_agent() {
+  cat > "${BASE_DIR}/install-agent.sh" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+ARCH=$(uname -m)
+case "$ARCH" in x86_64|amd64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; *) echo "Unsupported arch: $ARCH"; exit 1;; esac
+[[ -n "${K3S_TOKEN:-}" && -n "${K3S_URL:-}" ]] || { echo "[ERROR] 需要设置 K3S_TOKEN 与 K3S_URL"; exit 1; }
 
-install_bin "$K3S_BIN" /usr/local/bin/k3s
-install_bin "$NERDCTL_BIN" /usr/local/bin/nerdctl
+BIN_DIR="./bin"
+install_bin(){ sudo cp "$1" "$2"; sudo chmod +x "$2"; echo " ↳ $2"; }
 
-sudo chmod +x /usr/local/bin/k3s
-sudo chmod +x /usr/local/bin/neddctl
+echo "[INFO] 安装 CLI → /usr/local/bin"
+install_bin "${BIN_DIR}/k3s-${ARCH}" /usr/local/bin/k3s
+install_bin "${BIN_DIR}/nerdctl-${ARCH}" /usr/local/bin/nerdctl
 
-echo "[INFO] 执行官方 agent 安装脚本（使用离线模式）"
-INSTALL_K3S_SKIP_DOWNLOAD=true \
-INSTALL_K3S_EXEC="agent" \
-bash install/k3s-official-install.sh
+echo "[INFO] 执行官方 agent 安装脚本（离线）"
+INSTALL_K3S_SKIP_DOWNLOAD=true INSTALL_K3S_EXEC="agent" bash install/k3s-official-install.sh
 
-echo "[INFO] 准备 airgap 镜像"
-sudo nerdctl             \
---namespace k8s.io  \
---address /run/k3s/containerd/containerd.sock load -i images/k3s-airgap-images-${ARCH}.tar
+echo "[INFO] 加载 airgap 镜像"
+sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock load -i "images/k3s-airgap-images-${ARCH}.tar" || true
 
-echo "[SUCCESS] Agent 节点已完成离线安装 ✅"
+echo "[SUCCESS] Agent 节点离线安装完成 ✅"
+SH
+  chmod +x "${BASE_DIR}/install-agent.sh"
+}
 
-EOF
+write_readme() {
+  cat > "${BASE_DIR}/README.md" <<EOF
+# K3s 离线安装包（${VERSION}，支持 ${ARCH}）
 
-chmod +x "${BASE_DIR}/install-agent.sh"
-echo "[OK] 已生成 install-agent.sh ✅"
+包含：
+- k3s (${VERSION})
+- kubectl (${KUBECTL_VERSION})
+- helm (${HELM_VERSION})
+- cni-plugins (${CNI_VERSION})
+- nerdctl (${NERDCTL_VERSION})
+- airgap 镜像包 \`images/k3s-airgap-images-${ARCH}.tar\`
+- 默认组件 YAML：node-exporter / kube-state-metrics
+- 安装脚本：install-server.sh / install-agent.sh
 
-cat > "${BASE_DIR}/README.md" <<EOF
-# K3s 离线安装包（v${VERSION}，支持 amd64 / arm64）
-
-## 📦 包含内容
-
-- ✅ **K3s**（v${VERSION}）
-- ✅ **kubectl / helm CLI**
-- ✅ **cni-plugins** v${CNI_VERSION}
-- ✅ **nerdctl** v${NERDCTL_VERSION} CLI（可连接 K3s 内置 containerd）
-- ✅ **airgap 镜像包** \`images/k3s-airgap-images-\${ARCH}.tar\`
-
-k3s-offline-package 包含：
-
-  - pause:3.6
-  - coredns:1.10.1
-  - metrics-server:v0.6.3
-  - node-exporter:v1.3.1
-  - kube-state-metrics:v2.12.0
-  - 其他 rancher/k3s 默认依赖组件
-- ✅ **默认组件 YAML**
-  - \`addons/metrics-server.yaml\`
-  - \`addons/node-exporter.yaml\`
-  - \`addons/kube-state-metrics.yaml\`
-- ✅ **install-server.sh 安装脚本**
-  - 调用官方 install.sh，自动加载 airgap 镜像
-  - 支持设置 \`INSTALL_K3S_EXEC\` 追加参数
-- ✅ **install-agent.sh  Agent 安装脚本**
-  - 调用官方 install.sh，自动加载 airgap 镜像
-  - 支持设置 \`INSTALL_K3S_EXEC,K3S_URL,K3S_TOKEN\` 追加参数
-
----
-
-## 🚀 使用方法
-
-### 1. 上传目录到离线节点（如 /opt/k3s-offline-package）
-
+## 使用
 \`\`\`bash
-scp -r k3s-offline-package/ user@remote:/opt/
-\`\`\`
-
-### 2. 安装执行
-
-\`\`\`bash
-cd /opt/k3s-offline-package
-bash ./install-server.sh
-\`\`\`
-
-\`\`\`bash
-cd /opt/k3s-offline-package
+tar -xzvf k3s-offline-package-${ARCH}.tar.gz
+cd k3s-offline-package
+bash install-server.sh
+# 或者：
 export K3S_URL=https://<server-ip>:6443
 export K3S_TOKEN=K10xxxxxxxx
-bash ./install-agent.sh
+bash install-agent.sh
 \`\`\`
-
-### 3. 验证安装状态
-
-\`\`\`bash
-kubectl get nodes
-kubectl get pods -A
-\`\`\`
-
----
-
-## 🛠️ 使用 nerdctl 操作 K3s 内部 containerd
-
-\`\`\`bash
-./bin/nerdctl-\$(uname -m) \\
-  --namespace k8s.io \\
-  --address /run/k3s/containerd/containerd.sock \\
-  images
-\`\`\`
-
----
-
-## 📂 目录结构示例
-
-\`\`\`
-${BASE_DIR}/
-├── bin/
-│   ├── k3s-(amd64/arm64)
-│   ├── helm-(amd64/arm64)
-│   ├── kubectl-(amd64/arm64)
-│   └── nerdctl-(amd64/arm64)
-├── images/
-│   └── k3s-airgap-images-amd64.tar
-├── addons/
-│   ├── metrics-server.yaml
-│   ├── node-exporter.yaml
-│   └── kube-state-metrics.yaml
-├── install-agent.sh
-├── install-server.sh
-├── README.md
-\`\`\`
-
----
 EOF
+}
 
-echo -e "\n✅ [DONE] 离线安装包构建完成：${BASE_DIR}/"
-tree "${BASE_DIR}" || ls -R "${BASE_DIR}"
+# ====== 构建开始 ======
+log "版本：k3s=${VERSION} kubectl=${KUBECTL_VERSION} helm=${HELM_VERSION} cni=${CNI_VERSION} nerdctl=${NERDCTL_VERSION} arch=${ARCH}"
+
+rm -rf "${BASE_DIR}"
+mkdir -p "${BASE_DIR}/"{bin,images,cni-plugins,addons,registry/docker.io,registry/ghcr.io,install}
+
+# 核心二进制
+download "${K3S_URL_BASE}/k3s"                "${BASE_DIR}/bin/k3s-${ARCH}"
+chmod +x "${BASE_DIR}/bin/k3s-${ARCH}"
+
+download "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" "${BASE_DIR}/bin/kubectl-${ARCH}"
+chmod +x "${BASE_DIR}/bin/kubectl-${ARCH}"
+
+TMP_HELM="/tmp/helm-${HELM_VERSION}-${ARCH}.tgz"
+download "https://get.helm.sh/helm-${HELM_VERSION}-linux-${ARCH}.tar.gz" "$TMP_HELM"
+tar -xzf "$TMP_HELM" -C /tmp
+mv "/tmp/linux-${ARCH}/helm" "${BASE_DIR}/bin/helm-${ARCH}"
+chmod +x "${BASE_DIR}/bin/helm-${ARCH}"
+
+TMP_NERD="/tmp/nerdctl-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz"
+download "https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-${ARCH}.tar.gz" "$TMP_NERD"
+tar -xzf "$TMP_NERD" -C /tmp
+cp "/tmp/nerdctl" "${BASE_DIR}/bin/nerdctl-${ARCH}"
+chmod +x "${BASE_DIR}/bin/nerdctl-${ARCH}"
+
+download "https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz" \
+         "${BASE_DIR}/cni-plugins/cni-plugins-linux-${ARCH}-${CNI_VERSION}.tgz"
+
+# 安装器脚本
+download "https://get.k3s.io" "${BASE_DIR}/install/k3s-official-install.sh"
+chmod +x "${BASE_DIR}/install/k3s-official-install.sh"
+
+# YAML 与镜像
+write_node_exporter_yaml
+write_ksm_yaml
+pull_and_save_images "${BASE_DIR}/images/k3s-airgap-images-${ARCH}.tar"
+
+# 友好文档与执行脚本
+write_install_server
+write_install_agent
+write_readme
+
+# 打包（与流水线期望名称一致）
+OUT_A="k3s-offline-package-${ARCH}.tar.gz"
+log "打包 → ${OUT_A}"
+tar -czf "${OUT_A}" "${BASE_DIR}"
+
+# 兼容 build Job 当前上传的名称（内容相同）
+OUT_B="offline-package-k3s-installer.tar.gz"
+cp -f "${OUT_A}" "${OUT_B}"
+log "同时生成（兼容名）→ ${OUT_B}"
+
+# 列目录
+log "构建完成"
+tar -tzf "${OUT_A}" >/dev/null
+tree "${BASE_DIR}" || true
