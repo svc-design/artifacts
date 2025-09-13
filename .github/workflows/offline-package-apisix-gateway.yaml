@@ -1,0 +1,150 @@
+name: Build Offline APISIX Gateway Installer
+
+on:
+  push:
+    paths:
+      - 'gitops/scripts/kong-gateway/deploy-kong-gateway.sh'
+      - '.github/workflows/offline-package-apisix-gateway.yaml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to use/sync (e.g., v0.1.0). Leave empty to use offline-apisix-gateway-<run_number>"
+        required: false
+        type: string
+      chart_version:
+        description: "Override helm chart version for kong/ingress (e.g., 1.2.3). Leave empty to auto-resolve"
+        required: false
+        type: string
+
+permissions:
+  contents: write   # 需要创建/上传 Release 资产
+
+concurrency:
+  group: build-offline-apisix-gateway
+  cancel-in-progress: false
+
+jobs:
+  build-offline-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    outputs:
+      chart_version: ${{ steps.resolve.outputs.chart_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (curl, jq, helm)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y curl jq
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
+
+      - name: Add helm repo
+        run: |
+          set -euo pipefail
+          helm repo add kong https://charts.konghq.com
+          helm repo update
+
+      - name: Resolve latest chart version
+        id: resolve
+        env:
+          OVERRIDE_CHART_VERSION: ${{ github.event.inputs.chart_version }}
+        run: |
+          set -euo pipefail
+          if [ -n "${OVERRIDE_CHART_VERSION}" ]; then
+            CHART_VERSION="${OVERRIDE_CHART_VERSION}"
+          else
+            CHART_VERSION=$(helm search repo kong/ingress --versions | awk 'NR==2{print $2}')
+          fi
+          echo "chart_version=${CHART_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare directories
+        run: |
+          set -euo pipefail
+          mkdir -p offline-installer/{images,charts,scripts,manifests}
+
+      - name: Download Gateway API manifests
+        run: |
+          set -euo pipefail
+          curl -L https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.1.0/standard-install.yaml -o offline-installer/manifests/gateway-api-standard-install.yaml
+
+      - name: Pull & export images from chart
+        env:
+          CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
+        run: |
+          set -euo pipefail
+          helm template kong kong/ingress --version "${CHART_VERSION}" > manifest.yaml
+          images=$(grep -oP 'image:\s*\K[^\s]+' manifest.yaml | sort -u)
+          for img in $images; do
+            docker pull "$img"
+            safe=$(echo $img | tr '/:' '-_')
+            docker save "$img" -o offline-installer/images/${safe}.tar
+          done
+
+      - name: Download Helm chart (kong/ingress ${{ steps.resolve.outputs.chart_version }})
+        env:
+          CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
+        run: |
+          set -euo pipefail
+          helm pull kong/ingress --version="${CHART_VERSION}" --untar --untardir offline-installer/charts
+
+      - name: Stage deployment script
+        run: |
+          set -euo pipefail
+          mkdir -p offline-installer/scripts
+          cp gitops/scripts/kong-gateway/deploy-kong-gateway.sh offline-installer/scripts/
+
+      - name: Pack offline installer
+        run: |
+          set -euo pipefail
+          tar -czvf offline-setup-apisix-gateway-${{ matrix.arch }}.tar.gz -C offline-installer .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-setup-apisix-gateway-${{ matrix.arch }}
+          path: offline-setup-apisix-gateway-${{ matrix.arch }}.tar.gz
+
+  publish-release:
+    needs: build-offline-installer
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-apisix-gateway-{0}', github.run_number) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Build ${{ env.TAG_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-apisix-gateway-amd64
+          path: release-artifacts
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-apisix-gateway-arm64
+          path: release-artifacts
+
+      - name: Upload offline installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            release-artifacts/offline-setup-apisix-gateway-amd64.tar.gz
+            release-artifacts/offline-setup-apisix-gateway-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
