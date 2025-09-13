@@ -3,8 +3,8 @@ name: Build Offline K3s Installer
 on:
   push:
     paths:
-      - 'scripts/make_k3s_offline_package.sh'
       - 'scripts/resolve_k3s_versions.sh'
+      - 'scripts/make_k3s_offline_package.sh'
       - '.github/workflows/offline-package-k3s-installer.yaml'
   workflow_dispatch:
 
@@ -20,12 +20,6 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Install dependencies
         run: |
