@@ -4,7 +4,8 @@ on:
   push:
     paths:
       - 'scripts/make_k3s_offline_package.sh'
-      - '.github/workflows/build-k3s-offline-installer.yml'
+      - 'scripts/resolve_k3s_versions.sh'
+      - '.github/workflows/offline-package-k3s-installer.yaml'
   workflow_dispatch:
 
 jobs:
@@ -13,6 +14,8 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     runs-on: ubuntu-latest
+    outputs:
+      k3s_version: ${{ steps.resolve.outputs.version }}
 
     steps:
       - name: Checkout Repo
@@ -27,7 +30,7 @@ jobs:
       - name: Install dependencies
         run: |
           export NERDCTL_VERSION=2.0.4
-          sudo apt-get update && sudo apt-get install -y curl tar tree
+          sudo apt-get update && sudo apt-get install -y curl jq tar tree
           # 安装 K3s
           curl -sfL https://get.k3s.io | sh -
           # 设置 kubeconfig
@@ -35,7 +38,8 @@ jobs:
           sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
           sudo chown $USER:$USER $HOME/.kube/config
           # 安装 nerdctl
-          sudo curl -LO https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz
+          sudo curl -LO https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/\
+            nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz
           sudo tar -C /usr/local/bin -xzf nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz
           sudo chmod +x /usr/local/bin/nerdctl
 
@@ -47,10 +51,18 @@ jobs:
           sudo nerdctl --version
           sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock ps
 
+      - name: Resolve latest k3s version
+        id: resolve
+        run: |
+          set -euo pipefail
+          bash scripts/resolve_k3s_versions.sh
+
       - name: Run Offline Package Builder
+        env:
+          K3S_VERSION: ${{ steps.resolve.outputs.version }}
         run: |
           chmod +x scripts/make_k3s_offline_package.sh
-          ARCH=${{ matrix.arch }} ./scripts/make_k3s_offline_package.sh
+          ARCH=${{ matrix.arch }} VERSION=${K3S_VERSION} ./scripts/make_k3s_offline_package.sh
 
       - name: Compress Offline Installer
         run: |
@@ -92,7 +104,7 @@ jobs:
     needs: test-k3s-installer
     runs-on: ubuntu-latest
     env:
-      tag_name: offline-k3s-${{ github.run_number }}
+      tag_name: offline-k3s-${{ needs.build-k3s-installer.outputs.k3s_version }}
 
     steps:
       - uses: actions/checkout@v4
@@ -129,3 +141,15 @@ jobs:
             release-artifacts/k3s-offline-package-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Prune old releases (keep last 3)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          releases=$(gh release list --limit 100 --json tagName,createdAt --jq 'sort_by(.createdAt) | reverse | .[3:] | .[].tagName')
+          if [[ -n "$releases" ]]; then
+            for tag in $releases; do
+              gh release delete "$tag" -y
+            done
+          fi
