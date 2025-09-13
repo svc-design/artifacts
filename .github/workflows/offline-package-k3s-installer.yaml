@@ -7,6 +7,9 @@ on:
       - 'scripts/make_k3s_offline_package.sh'
       - '.github/workflows/offline-package-k3s-installer.yaml'
   workflow_dispatch:
+    
+env:
+  NERDCTL_VERSION: "2.1.4"
 
 jobs:
   build-k3s-installer:
@@ -18,32 +21,26 @@ jobs:
       k3s_version: ${{ steps.resolve.outputs.version }}
 
     steps:
-      - name: Checkout Repo
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Prepare toolchain (curl/jq/tar/tree + nerdctl)
         run: |
-          export NERDCTL_VERSION=2.1.4
-          sudo apt-get update && sudo apt-get install -y curl jq tar tree
-          # 安装 K3s
-          curl -sfL https://get.k3s.io | sh -
-          # 设置 kubeconfig
-          mkdir -p $HOME/.kube
-          sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
-          sudo chown $USER:$USER $HOME/.kube/config
-          # 安装 nerdctl
-          sudo curl -LO https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/\
-            nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz
-          sudo tar -C /usr/local/bin -xzf nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y curl jq tar tree
+
+          NURL="https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-amd64.tar.gz"
+          TGZ="/tmp/nerdctl-${NERDCTL_VERSION}.tgz"
+          echo "Downloading: ${NURL}"
+          curl -fSL --retry 3 --retry-connrefused --connect-timeout 15 "${NURL}" -o "${TGZ}"
+          # 可选校验：如需严格校验，取消下面两行的注释
+          # curl -fSL "${NURL}.sha256" -o "${TGZ}.sha256"
+          # (cd /tmp && sha256sum -c "$(basename ${TGZ}).sha256") || { echo "SHA256 mismatch"; exit 1; }
+
+          sudo tar -C /usr/local/bin -xzf "${TGZ}"
           sudo chmod +x /usr/local/bin/nerdctl
-
-          # k3s 测试
-          kubectl get nodes
-          kubectl get pods -A
-
-          # nerdctl 测试
           sudo nerdctl --version
-          sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock ps
 
       - name: Resolve latest k3s version
         id: resolve
@@ -51,22 +48,32 @@ jobs:
           set -euo pipefail
           bash scripts/resolve_k3s_versions.sh
 
-      - name: Run Offline Package Builder
+      # 如果你的 make 脚本会用到 ARCH，可在这里设置；
+      # 如果离线包与架构无关，可不传 ARCH。
+      - name: Build offline package
         env:
           K3S_VERSION: ${{ steps.resolve.outputs.version }}
         run: |
+          set -euo pipefail
           chmod +x scripts/make_k3s_offline_package.sh
-          ARCH=${{ matrix.arch }} VERSION=${K3S_VERSION} ./scripts/make_k3s_offline_package.sh
+          # 如需指定架构：ARCH=amd64 或 ARCH=arm64
+          # ARCH=amd64 VERSION="${K3S_VERSION}" ./scripts/make_k3s_offline_package.sh
+          VERSION="${K3S_VERSION}" ./scripts/make_k3s_offline_package.sh
 
-      - name: Compress Offline Installer
+      - name: Pack final installer
         run: |
-          tar czvf k3s-offline-package-${{ matrix.arch }}.tar.gz k3s-offline-package
+          set -euo pipefail
+          # 假设脚本产出目录为 k3s-offline-package
+          test -d k3s-offline-package
+          tar czf offline-package-k3s-installer.tar.gz k3s-offline-package
+          ls -lh offline-package-k3s-installer.tar.gz
 
-      - name: Upload Artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: k3s-offline-package-${{ matrix.arch }}
-          path: k3s-offline-package-${{ matrix.arch }}.tar.gz
+          name: offline-package-k3s-installer
+          path: offline-package-k3s-installer.tar.gz
+          if-no-files-found: error
 
   test-k3s-installer:
     needs: build-k3s-installer
