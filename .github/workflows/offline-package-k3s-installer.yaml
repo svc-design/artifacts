@@ -29,7 +29,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          export NERDCTL_VERSION=2.0.4
+          export NERDCTL_VERSION=2.1.4
           sudo apt-get update && sudo apt-get install -y curl jq tar tree
           # 安装 K3s
           curl -sfL https://get.k3s.io | sh -
