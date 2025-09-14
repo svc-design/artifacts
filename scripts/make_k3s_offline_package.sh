@@ -285,7 +285,11 @@ rm -rf "${BASE_DIR}"
 mkdir -p "${BASE_DIR}/"{bin,images,cni-plugins,addons,registry/docker.io,registry/ghcr.io,install}
 
 # 核心二进制
-download "${K3S_URL_BASE}/k3s"                "${BASE_DIR}/bin/k3s-${ARCH}"
+K3S_BIN="k3s"
+if [[ "${ARCH}" != "amd64" ]]; then
+  K3S_BIN="k3s-${ARCH}"
+fi
+download "${K3S_URL_BASE}/${K3S_BIN}"                "${BASE_DIR}/bin/k3s-${ARCH}"
 chmod +x "${BASE_DIR}/bin/k3s-${ARCH}"
 
 download "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${ARCH}/kubectl" "${BASE_DIR}/bin/kubectl-${ARCH}"
