@@ -210,6 +210,7 @@ check_images(){
     exit 1
   fi
 }
+
 check_images(){
   echo "[INFO] 验证已加载镜像架构"
   local out
