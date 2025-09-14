@@ -4,7 +4,8 @@ set -euo pipefail
 ########################################
 # Config (可用环境变量覆盖)
 ########################################
-MASTER_IP="${MASTER_IP:-${NodeIP:-192.168.124.77}}"
+# 优先使用显式传入的 MASTER_IP，其次尝试 NodeIP，再自动探测本机 IP
+MASTER_IP="${MASTER_IP:-${NodeIP:-$(hostname -I | awk '{print $1}')}}"
 MASTER_USER="${MASTER_USER:-root}"
 MASTER_SSH_KEY="${MASTER_SSH_KEY:-/root/.ssh/id_rsa}"
 
@@ -18,8 +19,24 @@ IMAGES_TAR="${IMAGES_TAR:-images/sealos-images.tar}"
 ########################################
 # 可选：安装 sealos 二进制（离线包）
 ########################################
-if [[ -f "sealos_5.0.1_linux_amd64.tar.gz" ]]; then
-  tar -xpvf sealos_5.0.1_linux_amd64.tar.gz
+# 自动探测架构并解压对应的 sealos 离线包
+ARCH="$(uname -m)"
+case "$ARCH" in
+  x86_64|amd64)
+    ARCH=amd64
+    ;;
+  aarch64|arm64)
+    ARCH=arm64
+    ;;
+  *)
+    echo "Unsupported architecture: $ARCH" >&2
+    exit 1
+    ;;
+esac
+
+SEALOS_TARBALL="${SEALOS_TARBALL:-sealos_${SEALOS_VERSION:-5.0.1}_linux_${ARCH}.tar.gz}"
+if [[ -f "$SEALOS_TARBALL" ]]; then
+  tar -xpvf "$SEALOS_TARBALL"
   install -m 0755 sealos /usr/local/bin/sealos
   install -m 0755 sealctl /usr/local/bin/ || true
   install -m 0755 image-cri-shim /usr/local/bin/ || true

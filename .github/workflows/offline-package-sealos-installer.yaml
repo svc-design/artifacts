@@ -71,7 +71,7 @@ jobs:
     needs: build-offline-installer
     strategy:
       matrix:
-        arch: [amd64]
+        arch: [amd64, arm64]
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifact
