@@ -172,7 +172,8 @@ jobs:
         run: |
           set -euo pipefail
           cd offline-test
-          bash scripts/ingress-installer.sh
+          export KUBECONFIG=$HOME/.kube/config
+          sudo -E bash scripts/ingress-installer.sh
           sleep 10
           helm list -A
           kubectl -n ingress get pods
