@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'gitops/scripts/kong-gateway/deploy-kong-gateway.sh'
+      - 'gitops/scripts/kong-gateway/configure-example-app.sh'
       - '.github/workflows/offline-package-kong-gateway.yaml'
   workflow_dispatch:
     inputs:
@@ -63,11 +64,12 @@ jobs:
           set -euo pipefail
           mkdir -p offline-installer/{images,charts,scripts,bin}
 
-      - name: Stage deploy script
+      - name: Stage scripts
         run: |
           set -euo pipefail
           cp gitops/scripts/kong-gateway/deploy-kong-gateway.sh offline-installer/scripts/
-          chmod +x offline-installer/scripts/deploy-kong-gateway.sh
+          cp gitops/scripts/kong-gateway/configure-example-app.sh offline-installer/scripts/
+          chmod +x offline-installer/scripts/deploy-kong-gateway.sh offline-installer/scripts/configure-example-app.sh
 
       - name: Download nerdctl binary for ${{ matrix.arch }}
         run: |
