@@ -66,6 +66,7 @@ jobs:
         with:
           name: sealos-offline-package-${{ matrix.arch }}
           path: sealos-offline-package-${{ matrix.arch }}.tar.gz
+          if-no-files-found: error
 
   test-offline-installer:
     needs: build-offline-installer
@@ -119,21 +120,21 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: sealos-offline-package-amd64
-          path: release-artifacts
+          path: release-artifacts/amd64
 
       - name: Download arm64 artifact
         uses: actions/download-artifact@v4
         with:
           name: sealos-offline-package-arm64
-          path: release-artifacts
+          path: release-artifacts/arm64
 
       - name: Upload offline installers to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            release-artifacts/sealos-offline-package-amd64.tar.gz
-            release-artifacts/sealos-offline-package-arm64.tar.gz
+            release-artifacts/amd64/sealos-offline-package-amd64.tar.gz
+            release-artifacts/arm64/sealos-offline-package-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -158,8 +159,8 @@ jobs:
           ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
           echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
           rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            release-artifacts/sealos-offline-package-amd64.tar.gz \
-            release-artifacts/sealos-offline-package-arm64.tar.gz \
+            release-artifacts/amd64/sealos-offline-package-amd64.tar.gz \
+            release-artifacts/arm64/sealos-offline-package-arm64.tar.gz \
             "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
