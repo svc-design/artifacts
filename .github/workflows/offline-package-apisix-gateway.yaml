@@ -3,7 +3,7 @@ name: Build Offline APISIX Gateway Installer
 on:
   push:
     paths:
-      - 'gitops/scripts/kong-gateway/deploy-kong-gateway.sh'
+      - 'gitops/scripts/apisix-gateway/deploy-apisix-gateway.sh'
       - '.github/workflows/offline-package-apisix-gateway.yaml'
   workflow_dispatch:
     inputs:
@@ -12,7 +12,7 @@ on:
         required: false
         type: string
       chart_version:
-        description: "Override helm chart version for kong/ingress (e.g., 1.2.3). Leave empty to auto-resolve"
+        description: "Override helm chart version for apisix (e.g., 1.2.3). Leave empty to auto-resolve"
         required: false
         type: string
 
@@ -45,7 +45,7 @@ jobs:
       - name: Add helm repo
         run: |
           set -euo pipefail
-          helm repo add kong https://charts.konghq.com
+          helm repo add apisix https://charts.apiseven.com
           helm repo update
 
       - name: Resolve latest chart version
@@ -57,7 +57,7 @@ jobs:
           if [ -n "${OVERRIDE_CHART_VERSION}" ]; then
             CHART_VERSION="${OVERRIDE_CHART_VERSION}"
           else
-            CHART_VERSION=$(helm search repo kong/ingress --versions | awk 'NR==2{print $2}')
+            CHART_VERSION=$(helm search repo apisix/apisix --versions | awk 'NR==2{print $2}')
           fi
           echo "chart_version=${CHART_VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -76,7 +76,7 @@ jobs:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
         run: |
           set -euo pipefail
-          helm template kong kong/ingress --version "${CHART_VERSION}" > manifest.yaml
+          helm template apisix apisix/apisix --version "${CHART_VERSION}" > manifest.yaml
           images=$(grep -oP 'image:\s*\K[^\s]+' manifest.yaml | sort -u)
           for img in $images; do
             docker pull "$img"
@@ -84,18 +84,18 @@ jobs:
             docker save "$img" -o offline-installer/images/${safe}.tar
           done
 
-      - name: Download Helm chart (kong/ingress ${{ steps.resolve.outputs.chart_version }})
+      - name: Download Helm chart (apisix/apisix ${{ steps.resolve.outputs.chart_version }})
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
         run: |
           set -euo pipefail
-          helm pull kong/ingress --version="${CHART_VERSION}" --untar --untardir offline-installer/charts
+          helm pull apisix/apisix --version="${CHART_VERSION}" --untar --untardir offline-installer/charts
 
       - name: Stage deployment script
         run: |
           set -euo pipefail
           mkdir -p offline-installer/scripts
-          cp gitops/scripts/kong-gateway/deploy-kong-gateway.sh offline-installer/scripts/
+          cp gitops/scripts/apisix-gateway/deploy-apisix-gateway.sh offline-installer/scripts/
 
       - name: Pack offline installer
         run: |
