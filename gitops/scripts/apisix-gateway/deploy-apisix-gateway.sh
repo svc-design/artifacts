@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ingress_ip=`hostname -I | awk '{print $1}'`
+ingress_ip=$(hostname -I | awk '{print $1}')
 
-cat > values.yaml <<'EOF'
+cat > values.yaml <<EOF
 service:
   type: NodePort
   externalIPs:
-    - $ingress_ip
+    - ${ingress_ip}
   http:
     enabled: true
     servicePort: 80
@@ -47,7 +47,8 @@ EOF
 
 helm repo add apisix https://charts.apiseven.com || true
 helm repo update
-kubectl create ns ingress || true
+
+kubectl get ns ingress >/dev/null 2>&1 || kubectl create ns ingress
 
 # 只安装 APISIX 网关（无 etcd / 无 admin / 无 ingress-controller）
 helm upgrade --install apisix apisix/apisix \
