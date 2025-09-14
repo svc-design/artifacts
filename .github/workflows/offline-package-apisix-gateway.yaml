@@ -131,20 +131,20 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: offline-setup-apisix-gateway-amd64
-          path: release-artifacts
+          path: release-artifacts/amd64
 
       - name: Download arm64 artifact
         uses: actions/download-artifact@v4
         with:
           name: offline-setup-apisix-gateway-arm64
-          path: release-artifacts
+          path: release-artifacts/arm64
 
       - name: Upload offline installers to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            release-artifacts/offline-setup-apisix-gateway-amd64.tar.gz
-            release-artifacts/offline-setup-apisix-gateway-arm64.tar.gz
+            release-artifacts/amd64/offline-setup-apisix-gateway-amd64.tar.gz
+            release-artifacts/arm64/offline-setup-apisix-gateway-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
