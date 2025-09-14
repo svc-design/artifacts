@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 <INGRESS_IP>"
-  exit 1
-fi
-
-ingress_ip=$1
+ingress_ip=`hostname -I | awk '{print $1}'`
 
 cat > values.yaml <<'EOF'
 service:
   type: NodePort
   externalIPs:
-    - __INGRESS_IP__
+    - $ingress_ip
   http:
     enabled: true
     servicePort: 80
@@ -49,10 +44,6 @@ apisix:
       ipList:
         - 127.0.0.1/32
 EOF
-
-# 注入外部 IP
-sed -i'' -e "s#__INGRESS_IP__#${ingress_ip}#g" values.yaml 2>/dev/null || \
-perl -pi -e "s#__INGRESS_IP__#${ingress_ip}#g" values.yaml
 
 helm repo add apisix https://charts.apiseven.com || true
 helm repo update
