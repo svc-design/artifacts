@@ -150,6 +150,8 @@ jobs:
           mkdir -p $HOME/.kube
           sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
           sudo chown $USER:$USER $HOME/.kube/config
+          sudo mkdir -p /root/.kube
+          sudo cp /etc/rancher/k3s/k3s.yaml /root/.kube/config
           kubectl get nodes
           kubectl version --client=true
 
@@ -172,10 +174,10 @@ jobs:
         run: |
           set -euo pipefail
           cd offline-test
-          bash scripts/ingress-installer.sh
+          sudo bash scripts/ingress-installer.sh
           sleep 10
-          helm list -A
-          kubectl -n ingress get pods
+          sudo helm list -A
+          sudo kubectl -n ingress get pods
 
   publish-release:
     needs: test-offline-installer
