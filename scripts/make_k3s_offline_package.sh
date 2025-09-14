@@ -59,7 +59,13 @@ pull_and_save_images() {
   log "拉取核心镜像（runtime=$rt）…"
   case "$rt" in
     docker)
-      for i in "${imgs[@]}"; do docker pull --platform=linux/${ARCH} "$i"; done
+      for i in "${imgs[@]}"; do
+        docker rmi -f "$i" >/dev/null 2>&1 || true
+        docker pull --platform=linux/${ARCH} "$i"
+        local arch
+        arch=$(docker image inspect "$i" --format '{{.Architecture}}')
+        [[ "$arch" == "$ARCH" ]] || err "镜像 $i 架构不匹配：$arch"
+      done
       log "保存镜像 → $out_tar"
       docker save -o "$out_tar" "${imgs[@]}"
       ;;
@@ -70,6 +76,20 @@ pull_and_save_images() {
       ;;
   esac
   [[ -s "$out_tar" ]] || err "未生成镜像包：$out_tar"
+
+  if command -v jq >/dev/null 2>&1; then
+    local tmp cfg arch_in_tar
+    tmp=$(mktemp -d)
+    tar -xf "$out_tar" -C "$tmp" manifest.json
+    for cfg in $(jq -r '.[].Config' "$tmp/manifest.json"); do
+      tar -xf "$out_tar" -C "$tmp" "$cfg"
+      arch_in_tar=$(jq -r '.architecture' "$tmp/$cfg")
+      [[ "$arch_in_tar" == "$ARCH" ]] || err "镜像包架构不匹配：$arch_in_tar"
+    done
+    rm -rf "$tmp"
+  else
+    log "jq 未安装，跳过镜像包架构校验"
+  fi
 }
 
 write_node_exporter_yaml() {
@@ -200,27 +220,6 @@ case "$ARCH" in x86_64|amd64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; *) echo "
 
 BIN_DIR="./bin"
 install_bin(){ sudo cp "$1" "$2"; sudo chmod +x "$2"; echo " ↳ $2"; }
-check_images(){
-  echo "[INFO] 验证已加载镜像架构"
-  local out
-  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
-  echo "$out"
-  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
-    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
-    exit 1
-  fi
-}
-
-check_images(){
-  echo "[INFO] 验证已加载镜像架构"
-  local out
-  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
-  echo "$out"
-  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
-    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
-    exit 1
-  fi
-}
 check_images(){
   echo "[INFO] 验证已加载镜像架构"
   local out

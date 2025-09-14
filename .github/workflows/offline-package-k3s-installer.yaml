@@ -57,6 +57,23 @@ jobs:
             chmod +x scripts/make_k3s_offline_package.sh
             ./scripts/make_k3s_offline_package.sh
 
+      - name: Validate airgap image tar
+        run: |
+          set -euo pipefail
+          TAR="k3s-offline-package/images/k3s-airgap-images-${{ matrix.arch }}.tar"
+          tmp=$(mktemp -d)
+          tar -xf "$TAR" -C "$tmp" manifest.json
+          configs=$(jq -r '.[].Config' "$tmp/manifest.json")
+          for cfg in $configs; do
+            tar -xf "$TAR" -C "$tmp" "$cfg"
+            arch=$(jq -r '.architecture' "$tmp/$cfg")
+            if [ "$arch" != "${{ matrix.arch }}" ]; then
+              echo "unexpected arch $arch in $cfg" >&2
+              exit 1
+            fi
+          done
+          rm -rf "$tmp"
+
       - name: Pack final installer
         run: |
           set -euo pipefail
