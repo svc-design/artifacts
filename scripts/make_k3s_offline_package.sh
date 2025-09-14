@@ -59,14 +59,14 @@ pull_and_save_images() {
   log "拉取核心镜像（runtime=$rt）…"
   case "$rt" in
     docker)
-      for i in "${imgs[@]}"; do docker pull "$i"; done
+      for i in "${imgs[@]}"; do docker pull --platform=linux/${ARCH} "$i"; done
       log "保存镜像 → $out_tar"
       docker save -o "$out_tar" "${imgs[@]}"
       ;;
     nerdctl-default)
-      for i in "${imgs[@]}"; do sudo nerdctl --address /run/containerd/containerd.sock pull "$i"; done
+      for i in "${imgs[@]}"; do sudo nerdctl --address /run/containerd/containerd.sock --platform=linux/${ARCH} pull "$i"; done
       log "保存镜像 → $out_tar"
-      sudo nerdctl --address /run/containerd/containerd.sock save -o "$out_tar" "${imgs[@]}"
+      sudo nerdctl --address /run/containerd/containerd.sock --platform=linux/${ARCH} save -o "$out_tar" "${imgs[@]}"
       ;;
   esac
   [[ -s "$out_tar" ]] || err "未生成镜像包：$out_tar"
@@ -200,6 +200,36 @@ case "$ARCH" in x86_64|amd64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; *) echo "
 
 BIN_DIR="./bin"
 install_bin(){ sudo cp "$1" "$2"; sudo chmod +x "$2"; echo " ↳ $2"; }
+check_images(){
+  echo "[INFO] 验证已加载镜像架构"
+  local out
+  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
+  echo "$out"
+  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
+    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
+    exit 1
+  fi
+}
+check_images(){
+  echo "[INFO] 验证已加载镜像架构"
+  local out
+  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
+  echo "$out"
+  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
+    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
+    exit 1
+  fi
+}
+check_images(){
+  echo "[INFO] 验证已加载镜像架构"
+  local out
+  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
+  echo "$out"
+  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
+    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
+    exit 1
+  fi
+}
 
 echo "[INFO] 安装 CLI → /usr/local/bin"
 install_bin "${BIN_DIR}/k3s-${ARCH}" /usr/local/bin/k3s
@@ -220,6 +250,8 @@ mkdir -p ~/.kube && cp -f /etc/rancher/k3s/k3s.yaml ~/.kube/config || true
 kubectl apply -f addons/node-exporter.yaml || true
 kubectl apply -f addons/kube-state-metrics.yaml || true
 
+check_images
+
 echo "[SUCCESS] 离线 K3s 安装完成 ✅"
 SH
   chmod +x "${BASE_DIR}/install-server.sh"
@@ -235,6 +267,16 @@ case "$ARCH" in x86_64|amd64) ARCH=amd64;; aarch64|arm64) ARCH=arm64;; *) echo "
 
 BIN_DIR="./bin"
 install_bin(){ sudo cp "$1" "$2"; sudo chmod +x "$2"; echo " ↳ $2"; }
+check_images(){
+  echo "[INFO] 验证已加载镜像架构"
+  local out
+  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
+  echo "$out"
+  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
+    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
+    exit 1
+  fi
+}
 
 echo "[INFO] 安装 CLI → /usr/local/bin"
 install_bin "${BIN_DIR}/k3s-${ARCH}" /usr/local/bin/k3s
@@ -245,6 +287,8 @@ INSTALL_K3S_SKIP_DOWNLOAD=true INSTALL_K3S_EXEC="agent" bash install/k3s-officia
 
 echo "[INFO] 加载 airgap 镜像"
 sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock load -i "images/k3s-airgap-images-${ARCH}.tar" || true
+
+check_images
 
 echo "[SUCCESS] Agent 节点离线安装完成 ✅"
 SH

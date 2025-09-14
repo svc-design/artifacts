@@ -91,6 +91,11 @@ jobs:
           cd test-dir
           tar -xzvf offline-package-k3s-installer-${{ matrix.arch }}.tar.gz
 
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
       - name: Verify k3s binary arch
         run: |
           set -euo pipefail
@@ -101,6 +106,22 @@ jobs:
           else
             file "$BIN" | grep -q 'aarch64'
           fi
+
+      - name: Verify image platforms
+        run: |
+          set -euo pipefail
+          TAR="test-dir/k3s-offline-package/images/k3s-airgap-images-${{ matrix.arch }}.tar"
+          tmp=$(mktemp -d)
+          tar -xf "$TAR" -C "$tmp" manifest.json
+          configs=$(jq -r '.[].Config' "$tmp/manifest.json")
+          for cfg in $configs; do
+            tar -xf "$TAR" -C "$tmp" "$cfg"
+            arch=$(jq -r '.architecture' "$tmp/$cfg")
+            if [ "$arch" != "${{ matrix.arch }}" ]; then
+              echo "unexpected arch $arch in $cfg" >&2
+              exit 1
+            fi
+          done
 
       - name: Setup K3s and Test
         if: matrix.arch == 'amd64'
