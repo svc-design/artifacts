@@ -77,10 +77,11 @@ jobs:
         run: |
           set -euo pipefail
           helm template apisix apisix/apisix --version "${CHART_VERSION}" > manifest.yaml
-          images=$(grep -oP 'image:\s*\K[^\s]+' manifest.yaml | sort -u)
+          images=$(grep -oP 'image:\s*\K[^\s]+' manifest.yaml | tr -d '"' | sort -u)
           for img in $images; do
+            [ -z "$img" ] && continue
             docker pull "$img"
-            safe=$(echo $img | tr '/:' '-_')
+            safe=$(echo "$img" | tr '/:' '-_')
             docker save "$img" -o offline-installer/images/${safe}.tar
           done
 
