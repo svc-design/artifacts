@@ -39,14 +39,14 @@ kubectl patch svc kong-gateway-proxy -n kong \
           "targetPort": 8000,
           "protocol": "TCP",
           "name": "http",
-          "nodePort": 80
+          "nodePort": 30080
         },
         {
           "port": 443,
           "targetPort": 8443,
           "protocol": "TCP",
           "name": "https",
-          "nodePort": 443
+          "nodePort": 30443
         }
       ]
     }
