@@ -211,6 +211,27 @@ check_images(){
   fi
 }
 
+check_images(){
+  echo "[INFO] 验证已加载镜像架构"
+  local out
+  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
+  echo "$out"
+  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
+    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
+    exit 1
+  fi
+}
+check_images(){
+  echo "[INFO] 验证已加载镜像架构"
+  local out
+  out=$(sudo nerdctl --namespace k8s.io --address /run/k3s/containerd/containerd.sock images -a --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.Platform}}')
+  echo "$out"
+  if echo "$out" | awk '{print $3}' | grep -v "linux/${ARCH}" >/dev/null; then
+    echo "[ERROR] 发现非 ${ARCH} 架构镜像" >&2
+    exit 1
+  fi
+}
+
 echo "[INFO] 安装 CLI → /usr/local/bin"
 install_bin "${BIN_DIR}/k3s-${ARCH}" /usr/local/bin/k3s
 install_bin "${BIN_DIR}/helm-${ARCH}" /usr/local/bin/helm
