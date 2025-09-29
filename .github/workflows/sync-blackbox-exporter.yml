@@ -96,9 +96,6 @@ jobs:
         asset_suffix:
           - "linux-amd64.tar.gz"
           - "linux-arm64.tar.gz"
-          - "linux-armv7.tar.gz"
-          - "linux-armv6.tar.gz"
-          - "windows-amd64.zip"
           - "darwin-amd64.tar.gz"
           - "darwin-arm64.tar.gz"
     env:
