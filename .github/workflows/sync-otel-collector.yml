@@ -20,14 +20,19 @@ concurrency:
 
 jobs:
   prep:
-    name: Resolve tag & remote check
+    name: Resolve tag & remote check (${{ matrix.vps_host }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
     env:
       GH_REPO: open-telemetry/opentelemetry-collector-releases
       GH_TOKEN: ${{ github.token }}          # 用内置 token，无需自建 PAT
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/otel/OpenTelemetry/
     outputs:
       tag: ${{ steps.resolve.outputs.tag }}
@@ -91,24 +96,36 @@ jobs:
           fi
 
   sync-one:
-    name: Sync ${{ matrix.asset_prefix }}_${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.tag }}
+    name: Sync ${{ matrix.asset_prefix }}_${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.tag }} (${{ matrix.vps_host }})
     needs: prep
     if: needs.prep.outputs.exists == 'false'   # 远端已存在则整个矩阵跳过
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
+        asset:
+          - otelcol-contrib_linux_amd64
+          - otelcol-contrib_linux_arm64
+          - opampsupervisor_linux_amd64
+          - opampsupervisor_linux_arm64
         include:
-          - asset_prefix: "otelcol-contrib"
+          - asset: otelcol-contrib_linux_amd64
+            asset_prefix: "otelcol-contrib"
             asset_suffix: "linux_amd64.tar.gz"
             release_tag_prefix: ""
-          - asset_prefix: "otelcol-contrib"
+          - asset: otelcol-contrib_linux_arm64
+            asset_prefix: "otelcol-contrib"
             asset_suffix: "linux_arm64.tar.gz"
             release_tag_prefix: ""
-          - asset_prefix: "opampsupervisor"
+          - asset: opampsupervisor_linux_amd64
+            asset_prefix: "opampsupervisor"
             asset_suffix: "linux_amd64"
             release_tag_prefix: "cmd/opampsupervisor/"
-          - asset_prefix: "opampsupervisor"
+          - asset: opampsupervisor_linux_arm64
+            asset_prefix: "opampsupervisor"
             asset_suffix: "linux_arm64"
             release_tag_prefix: "cmd/opampsupervisor/"
     env:
@@ -116,7 +133,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}          # 继续使用内置 token
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/otel/OpenTelemetry
       TAG: ${{ needs.prep.outputs.tag }}
       VERSION: ${{ needs.prep.outputs.version }}
@@ -177,14 +194,19 @@ jobs:
             "releases/${TAG}/${{ steps.has_asset.outputs.asset }}" "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
-    name: Remote retention (keep latest 10 v0.*)
+    name: Remote retention (keep latest 10 v0.*) (${{ matrix.vps_host }})
     needs: [prep, sync-one]
     if: needs.prep.outputs.exists == 'false'   # 只有新增版本时才清理
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
     env:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/otel/OpenTelemetry/
     steps:
       - name: Init SSH
