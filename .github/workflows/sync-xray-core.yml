@@ -43,19 +43,7 @@ jobs:
         id: latest
         run: |
           set -euo pipefail
-          gh api -H "Accept: application/vnd.github+json" \
-            "/repos/${GH_REPO}/releases?per_page=100" \
-          | jq -r '.[].tag_name' \
-          | grep -E '^v25(\.|$)' \
-          | sort -V -r \
-          | head -n 1 > /tmp/tag.txt
-
-          if [ ! -s /tmp/tag.txt ]; then
-            echo "No v25.* tags found." >&2
-            exit 1
-          fi
-
-          TAG=$(cat /tmp/tag.txt)
+          TAG=$(./scripts/resolve_github_repo_release.sh "${GH_REPO}" '^v25(\.|$)' 'v25.*')
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Latest tag: $TAG"
 
