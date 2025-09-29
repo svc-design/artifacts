@@ -15,14 +15,19 @@ concurrency:
 
 jobs:
   prep:
-    name: Resolve latest tag & remote check
+    name: Resolve latest tag & remote check (${{ matrix.vps_host }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
     env:
       GH_REPO: XTLS/Xray-core
       GH_TOKEN: ${{ github.token }}          # 用内置 token，无需自建 PAT
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/xray-core
     outputs:
       tag: ${{ steps.latest.outputs.tag }}
@@ -70,20 +75,23 @@ jobs:
           fi
 
   sync-one:
-    name: Sync ${{ matrix.asset }} for ${{ needs.prep.outputs.tag }}
+    name: Sync ${{ matrix.asset }} for ${{ needs.prep.outputs.tag }} (${{ matrix.vps_host }})
     needs: prep
     if: needs.prep.outputs.exists == 'false'   # 远端已存在则整个矩阵跳过
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
         asset: [ "Xray-linux-64.zip", "Xray-macos-64.zip", "Xray-windows-64.zip" ]
     env:
       GH_REPO: XTLS/Xray-core
       GH_TOKEN: ${{ github.token }}          # 继续使用内置 token
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/xray-core
       TAG: ${{ needs.prep.outputs.tag }}
     steps:
@@ -140,14 +148,19 @@ jobs:
             "releases/${TAG}/${{ matrix.asset }}" "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
-    name: Remote retention (keep latest 10 v25.*)
+    name: Remote retention (keep latest 10 v25.*) (${{ matrix.vps_host }})
     needs: [prep, sync-one]
     if: needs.prep.outputs.exists == 'false'   # 只有新增版本时才清理
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
     env:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/xray-core
     steps:
       - name: Init SSH

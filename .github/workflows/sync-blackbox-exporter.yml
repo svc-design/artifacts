@@ -14,14 +14,19 @@ concurrency:
 
 jobs:
   prep:
-    name: Resolve latest tag & remote check
+    name: Resolve latest tag & remote check (${{ matrix.vps_host }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
     env:
       GH_REPO: prometheus/blackbox_exporter
       GH_TOKEN: ${{ github.token }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/prometheus/blackbox_exporter
     outputs:
       tag: ${{ steps.latest.outputs.tag }}
@@ -74,13 +79,16 @@ jobs:
           fi
 
   sync-one:
-    name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.version }}
+    name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.version }} (${{ matrix.vps_host }})
     needs: prep
     if: needs.prep.outputs.exists == 'false'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
         asset_suffix:
           - "linux-amd64.tar.gz"
           - "linux-arm64.tar.gz"
@@ -91,7 +99,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/prometheus/blackbox_exporter
       TAG: ${{ needs.prep.outputs.tag }}
       VERSION: ${{ needs.prep.outputs.version }}
@@ -150,14 +158,19 @@ jobs:
             "releases/${VERSION}/${{ steps.has_asset.outputs.asset }}" "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
-    name: Remote retention (keep latest 10 v0.*)
+    name: Remote retention (keep latest 10 v0.*) (${{ matrix.vps_host }})
     needs: [prep, sync-one]
     if: needs.prep.outputs.exists == 'false'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
     env:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
-      VPS_HOST: ${{ secrets.VPS_HOST }}
+      VPS_HOST: ${{ matrix.vps_host }}
       REMOTE_ROOT: /data/update-server/prometheus/blackbox_exporter
     steps:
       - name: Init SSH
