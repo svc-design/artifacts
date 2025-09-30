@@ -1,0 +1,199 @@
+name: Sync vultr-cli latest (matrix)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2 * * *" # <-- 这是 UTC 02:00。若需 JST 02:00，请改为 "0 17 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-vultr-cli-latest
+  cancel-in-progress: false
+
+jobs:
+  prep:
+    name: Resolve latest tag & remote check (${{ matrix.vps_host }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
+    env:
+      GH_REPO: vultr/vultr-cli
+      GH_TOKEN: ${{ github.token }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ matrix.vps_host }}
+      REMOTE_ROOT: /data/update-server/iac/vultr-cli/
+    outputs:
+      tag: ${{ steps.latest.outputs.tag }}
+      version: ${{ steps.latest.outputs.version }}
+      exists: ${{ steps.remotecheck.outputs.exists }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure GitHub CLI & deps
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y gh jq rsync
+          gh --version
+          jq --version
+          rsync --version | head -n1
+
+      - name: Resolve latest tag (semver)
+        id: latest
+        run: |
+          set -euo pipefail
+          TAG=$(./scripts/resolve_github_repo_release.sh "${GH_REPO}" '^v[0-9]+\.[0-9]+\.[0-9]+$' 'v*.*.*')
+          VERSION=${TAG#v}
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Latest tag: $TAG (version: $VERSION)"
+
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Check remote existing version dir
+        id: remotecheck
+        env:
+          VERSION: ${{ steps.latest.outputs.version }}
+        run: |
+          set -euo pipefail
+          REMOTE_DIR="${REMOTE_ROOT%/}/${VERSION}"
+          if ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "test -d '${REMOTE_DIR}'"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Remote already has ${REMOTE_DIR}, skip whole sync."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Remote does not have ${REMOTE_DIR}, will sync."
+          fi
+
+  sync-one:
+    name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.version }} (${{ matrix.vps_host }})
+    needs: prep
+    if: needs.prep.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
+        asset_suffix:
+          - "linux_amd64.tar.gz"
+          - "macOS_arm64.tar.gz"
+    env:
+      GH_REPO: vultr/vultr-cli
+      GH_TOKEN: ${{ github.token }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ matrix.vps_host }}
+      REMOTE_ROOT: /data/update-server/iac/vultr-cli/
+      TAG: ${{ needs.prep.outputs.tag }}
+      VERSION: ${{ needs.prep.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure GitHub CLI & deps
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y gh jq rsync
+          gh --version
+
+      - name: Check asset exists via GitHub CLI
+        id: has_asset
+        run: |
+          set -euo pipefail
+          ASSET="vultr_${TAG}_${{ matrix.asset_suffix }}"
+          echo "Checking asset $ASSET for tag ${TAG}"
+          if gh release view "${TAG}" --repo "${GH_REPO}" --json assets \
+             | jq -r '.assets[].name' | grep -Fxq "$ASSET"; then
+            echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Asset $ASSET not found for ${TAG}, will skip."
+          fi
+
+      - name: Download asset
+        if: steps.has_asset.outputs.exists == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p "releases/${VERSION}"
+          gh release download "${TAG}" \
+            --repo "${GH_REPO}" \
+            --pattern "${{ steps.has_asset.outputs.asset }}" \
+            --dir "releases/${VERSION}"
+
+      - name: Init SSH
+        if: steps.has_asset.outputs.exists == 'true'
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync this asset to remote
+        if: steps.has_asset.outputs.exists == 'true'
+        run: |
+          set -euo pipefail
+          REMOTE_DIR="${REMOTE_ROOT%/}/${VERSION}"
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
+          echo "Rsync releases/${VERSION}/${{ steps.has_asset.outputs.asset }} -> ${VPS_HOST}:${REMOTE_DIR}/"
+          rsync -av -e "ssh -i ~/.ssh/id_rsa" \
+            "releases/${VERSION}/${{ steps.has_asset.outputs.asset }}" "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
+
+  retention:
+    name: Remote retention (keep latest 10) (${{ matrix.vps_host }})
+    needs: [prep, sync-one]
+    if: needs.prep.outputs.exists == 'false'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        vps_host:
+          - cn-homepage.svc.plus
+          - global-homepage.svc.plus
+    env:
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ matrix.vps_host }}
+      REMOTE_ROOT: /data/update-server/iac/vultr-cli/
+    steps:
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prune old versions on remote (keep 10)
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
+            set -euo pipefail
+            cd "'"${REMOTE_ROOT}"'" || exit 0
+            keep=10
+            mapfile -t all < <(ls -1 | grep -E "^[0-9]+\\.[0-9]+\\.[0-9]+$" | sort -V -r || true)
+            if [ "${#all[@]}" -le "$keep" ]; then
+              echo "Nothing to prune. Count=${#all[@]}"
+              exit 0
+            fi
+            to_delete=("${all[@]:keep}")
+            echo "Pruning old versions: ${to_delete[*]}"
+            for d in "${to_delete[@]}"; do
+              rm -rf -- "$d"
+            done
+          '
