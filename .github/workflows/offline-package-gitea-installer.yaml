@@ -67,18 +67,18 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf "${OFFLINE_DIR}"
-          mkdir -p "${OFFLINE_DIR}"/{images,charts,scripts,metadata}
+          mkdir -p "${OFFLINE_DIR}"/{images,charts,metadata}
 
       - name: Stage installer script
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
         run: |
           set -euo pipefail
-          cat <<'SCRIPT' > "${OFFLINE_DIR}/scripts/install-gitea.sh"
+          cat <<'SCRIPT' > "${OFFLINE_DIR}/install-gitea.sh"
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CHART_DIR="${ROOT_DIR}/charts/gitea"
 IMAGES_DIR="${ROOT_DIR}/images"
 RELEASE_NAME="${RELEASE_NAME:-gitea}"
@@ -186,6 +186,13 @@ EOFMETA
           set -euo pipefail
           cd offline-test
           tar -tzf offline-package-gitea-${{ matrix.arch }}.tar.gz > /dev/null
+
+      - name: Verify install script layout
+        run: |
+          set -euo pipefail
+          cd offline-test
+          tar -xvpf offline-package-gitea-${{ matrix.arch }}.tar.gz
+          test -f gitea-offline-package/install-gitea.sh
 
   publish-release:
     needs: test-offline-installer
