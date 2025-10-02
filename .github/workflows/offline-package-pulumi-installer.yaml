@@ -107,14 +107,15 @@ fi
 SCRIPT
           chmod +x "${WORKDIR}/scripts/install-pulumi.sh"
 
-          tar -czf "pulumi-offline-package-${ARCH}.tar.gz" "${WORKDIR}"
-          ls -lh "pulumi-offline-package-${ARCH}.tar.gz"
+          OUTPUT_ARCHIVE="offline-package-pulumi-${ARCH}.tar.gz"
+          tar -czf "${OUTPUT_ARCHIVE}" "${WORKDIR}"
+          ls -lh "${OUTPUT_ARCHIVE}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: pulumi-offline-package-${{ matrix.arch }}
-          path: pulumi-offline-package-${{ matrix.arch }}.tar.gz
+          path: offline-package-pulumi-${{ matrix.arch }}.tar.gz
           if-no-files-found: error
 
   test-offline-installer:
@@ -134,7 +135,7 @@ SCRIPT
         run: |
           set -euo pipefail
           cd test-dir
-          tar -xzvf pulumi-offline-package-${{ matrix.arch }}.tar.gz
+          tar -xzvf offline-package-pulumi-${{ matrix.arch }}.tar.gz
 
       - name: Verify Pulumi bundle
         env:
@@ -190,8 +191,8 @@ SCRIPT
         with:
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            release-artifacts/amd64/pulumi-offline-package-amd64.tar.gz
-            release-artifacts/arm64/pulumi-offline-package-arm64.tar.gz
+            release-artifacts/amd64/offline-package-pulumi-amd64.tar.gz
+            release-artifacts/arm64/offline-package-pulumi-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -216,8 +217,8 @@ SCRIPT
           ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
           echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
           rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            release-artifacts/amd64/pulumi-offline-package-amd64.tar.gz \
-            release-artifacts/arm64/pulumi-offline-package-arm64.tar.gz \
+            release-artifacts/amd64/offline-package-pulumi-amd64.tar.gz \
+            release-artifacts/arm64/offline-package-pulumi-arm64.tar.gz \
             "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
