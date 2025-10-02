@@ -12,6 +12,7 @@ ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
   keep=3
   mapfile -t all < <(ls -1 | grep -E "^(offline-pulumi-|v[0-9]+\.)" | sort -V -r || true)
   if [[ "${#all[@]}" -le "${keep}" ]]; then
+
     echo "Nothing to prune. Count=${#all[@]}"
     exit 0
   fi

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
 ARCH="${MATRIX_ARCH:-}"
 if [[ -z "${ARCH}" ]]; then
   echo "MATRIX_ARCH environment variable is required" >&2
@@ -10,6 +11,7 @@ fi
 cd test-dir/pulumi-offline-package
 
 test -f VERSION
+
 
 if [[ "${ARCH}" == "amd64" ]]; then
   ./bin/pulumi version

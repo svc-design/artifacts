@@ -36,12 +36,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install deps (curl, jq, helm)
-        run: |
-          set -euo pipefail
-          sudo apt-get update -y
-          sudo apt-get install -y curl jq
-          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-          helm version
+        run: script/install-offline-gitlab-deps.sh
 
       - name: Add helm repo
         run: |
@@ -53,14 +48,7 @@ jobs:
         id: resolve
         env:
           OVERRIDE_CHART_VERSION: ${{ github.event.inputs.chart_version }}
-        run: |
-          set -euo pipefail
-          if [ -n "${OVERRIDE_CHART_VERSION}" ]; then
-            CHART_VERSION="${OVERRIDE_CHART_VERSION}"
-          else
-            CHART_VERSION=$(helm search repo gitlab/gitlab --versions | awk 'NR==2{print $2}')
-          fi
-          echo "chart_version=${CHART_VERSION}" >> "$GITHUB_OUTPUT"
+        run: script/resolve-gitlab-chart-version.sh
 
       - name: Prepare directories
         run: |
@@ -71,45 +59,7 @@ jobs:
       - name: Stage installer script
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
-        run: |
-          set -euo pipefail
-          cat <<'SCRIPT' > offline-installer/scripts/install-gitlab.sh
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHART_DIR="${ROOT_DIR}/charts/gitlab"
-IMAGES_DIR="${ROOT_DIR}/images"
-RELEASE_NAME="${RELEASE_NAME:-gitlab}"
-NAMESPACE="${NAMESPACE:-gitlab}"
-
-if command -v nerdctl >/dev/null 2>&1; then
-  LOADER="nerdctl"
-elif command -v docker >/dev/null 2>&1; then
-  LOADER="docker"
-else
-  echo "Either docker or nerdctl is required to load images." >&2
-  exit 1
-fi
-
-for tar in "${IMAGES_DIR}"/*.tar; do
-  [ -f "$tar" ] || continue
-  echo "Loading image: $tar"
-  "$LOADER" load -i "$tar"
-done
-
-echo "Installing/Upgrading GitLab release ${RELEASE_NAME} in namespace ${NAMESPACE}"
-helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
-  --namespace "${NAMESPACE}" \
-  --create-namespace \
-  "$@"
-SCRIPT
-          chmod +x offline-installer/scripts/install-gitlab.sh
-          cat <<EOFMETA > offline-installer/metadata/INFO
-chart: gitlab/gitlab
-chart_version: ${CHART_VERSION}
-created_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-EOFMETA
+        run: script/stage-gitlab-offline-installer.sh
 
       - name: Download nerdctl binary for ${{ matrix.arch }}
         run: |
@@ -120,25 +70,8 @@ EOFMETA
       - name: Pull & export required images
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
-        run: |
-          set -euo pipefail
-          PLATFORM="linux/${{ matrix.arch }}"
-          helm template gitlab gitlab/gitlab --version "${CHART_VERSION}" > manifest.yaml
-          mapfile -t images < <(grep -oP 'image:\s*"?\K([^"\s]+)' manifest.yaml | sort -u || true)
-          rm -f manifest.yaml
-          for img in "${images[@]}"; do
-            [ -n "$img" ] || continue
-            if [[ "$img" == *"{{"* ]]; then
-              continue
-            fi
-            echo "Pulling $img for ${PLATFORM}"
-            if ! docker pull --platform "${PLATFORM}" "$img"; then
-              echo "::warning::Failed to pull $img for ${PLATFORM}, skipping" >&2
-              continue
-            fi
-            safe=$(echo "$img" | tr '/:' '-_')
-            docker save "$img" -o "offline-installer/images/${safe}.tar"
-          done
+          ARCH: ${{ matrix.arch }}
+        run: script/pull-and-export-gitlab-images.sh
 
       - name: Download Helm chart
         env:

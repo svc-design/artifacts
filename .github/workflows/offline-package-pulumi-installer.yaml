@@ -47,8 +47,10 @@ jobs:
 
       - name: Build offline Pulumi package
         env:
+          ARCH: ${{ matrix.arch }}
           PULUMI_VERSION: ${{ steps.resolve.outputs.version }}
           MATRIX_ARCH: ${{ matrix.arch }}
+
         run: script/build-offline-pulumi-package.sh
 
       - name: Upload artifact
@@ -81,8 +83,10 @@ jobs:
 
       - name: Verify Pulumi bundle
         env:
+          ARCH: ${{ matrix.arch }}
           PULUMI_VERSION: ${{ needs.build-offline-installer.outputs.version }}
           MATRIX_ARCH: ${{ matrix.arch }}
+
         run: script/verify-pulumi-bundle.sh
 
   publish-release:

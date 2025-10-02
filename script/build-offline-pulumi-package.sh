@@ -1,9 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+
 ARCH="${MATRIX_ARCH:-}"
 if [[ -z "${ARCH}" ]]; then
   echo "MATRIX_ARCH environment variable is required" >&2
+  
+PULUMI_VERSION="${PULUMI_VERSION:?PULUMI_VERSION is required}"
+ARCH="${ARCH:-}"
+
+if [ -z "${ARCH}" ]; then
+  echo "ARCH environment variable is required" >&2
   exit 1
 fi
 
