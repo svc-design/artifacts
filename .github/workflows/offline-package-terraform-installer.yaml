@@ -43,62 +43,13 @@ jobs:
         id: resolve
         env:
           OVERRIDE_VERSION: ${{ github.event.inputs.terraform_version }}
-        run: |
-          set -euo pipefail
-          if [ -n "${OVERRIDE_VERSION}" ]; then
-            VERSION="${OVERRIDE_VERSION}"
-          else
-            VERSION=$(curl -fsSL https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r '.current_version')
-          fi
-          echo "Resolved Terraform version: ${VERSION}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        run: script/resolve-terraform-version.sh
 
       - name: Build offline Terraform package
         env:
           TERRAFORM_VERSION: ${{ steps.resolve.outputs.version }}
-        run: |
-          set -euo pipefail
-          ARCH="${{ matrix.arch }}"
-          WORKDIR="terraform-offline-package"
-          rm -rf "${WORKDIR}"
-          mkdir -p "${WORKDIR}/"{bin,scripts,docs}
-
-          BASE_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}"
-          ARCHIVE="terraform_${TERRAFORM_VERSION}_linux_${ARCH}.zip"
-          echo "Downloading ${BASE_URL}/${ARCHIVE}"
-          curl -fSL "${BASE_URL}/${ARCHIVE}" -o "${ARCHIVE}"
-
-          unzip -d "${WORKDIR}/bin" "${ARCHIVE}"
-          rm -f "${ARCHIVE}"
-
-          echo "${TERRAFORM_VERSION}" > "${WORKDIR}/VERSION"
-
-          cat <<'SCRIPT' > "${WORKDIR}/scripts/install-terraform.sh"
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN="${ROOT_DIR}/bin/terraform"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
-
-usage() {
-  cat <<USAGE
-Usage: $(basename "$0") [--install]
-  --install    Copy terraform binary into ${INSTALL_DIR}
-USAGE
-}
-
-if [[ "${1:-}" == "--install" ]]; then
-  sudo install -m 0755 "$BIN" "${INSTALL_DIR}/terraform"
-  echo "Terraform installed to ${INSTALL_DIR}/terraform"
-else
-  usage
-fi
-SCRIPT
-          chmod +x "${WORKDIR}/scripts/install-terraform.sh"
-
-          tar -czf "terraform-offline-package-${ARCH}.tar.gz" "${WORKDIR}"
-          ls -lh "terraform-offline-package-${ARCH}.tar.gz"
+          ARCH: ${{ matrix.arch }}
+        run: script/build-offline-terraform-package.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -129,16 +80,8 @@ SCRIPT
       - name: Verify Terraform bundle
         env:
           TERRAFORM_VERSION: ${{ needs.build-offline-installer.outputs.version }}
-        run: |
-          set -euo pipefail
-          cd test-dir/terraform-offline-package
-          test -f VERSION
-          if [ "${{ matrix.arch }}" = "amd64" ]; then
-            ./bin/terraform version
-            ./bin/terraform version | grep "Terraform v${TERRAFORM_VERSION}"
-          else
-            file ./bin/terraform | grep -E "ARM|aarch64"
-          fi
+          ARCH: ${{ matrix.arch }}
+        run: script/verify-terraform-bundle.sh
 
   publish-release:
     needs: test-offline-installer
@@ -200,15 +143,7 @@ SCRIPT
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Rsync release assets to remote
-        run: |
-          set -euo pipefail
-          REMOTE_DIR="${REMOTE_ROOT}/${TAG_NAME}"
-          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
-          echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
-          rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            release-artifacts/amd64/terraform-offline-package-amd64.tar.gz \
-            release-artifacts/arm64/terraform-offline-package-arm64.tar.gz \
-            "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
+        run: script/rsync-release-assets.sh
 
   retention:
     name: Remote retention (keep latest 3)
@@ -229,20 +164,4 @@ SCRIPT
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Prune old versions on remote (keep 3)
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
-            set -euo pipefail
-            cd "'"${REMOTE_ROOT}"'" || exit 0
-            keep=3
-            mapfile -t all < <(ls -1 | grep -E "^(offline-terraform-|v[0-9]+\.)" | sort -V -r || true)
-            if [ "${#all[@]}" -le "$keep" ]; then
-              echo "Nothing to prune. Count=${#all[@]}"
-              exit 0
-            fi
-            to_delete=("${all[@]:keep}")
-            echo "Pruning old versions: ${to_delete[*]}"
-            for d in "${to_delete[@]}"; do
-              rm -rf -- "$d"
-            done
-          '
+        run: script/prune-remote-versions.sh
