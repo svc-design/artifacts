@@ -1,0 +1,286 @@
+name: Build Offline Gitea Installer
+
+on:
+  push:
+    paths:
+      - '.github/workflows/offline-package-gitea-installer.yaml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to use/sync (e.g., v1.21.10). Leave empty to use offline-gitea-<run_number>"
+        required: false
+        type: string
+      chart_version:
+        description: "Override Helm chart version for gitea-charts/gitea. Leave empty to auto-resolve"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-offline-gitea
+  cancel-in-progress: false
+
+jobs:
+  build-offline-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    env:
+      NERDCTL_VERSION: "2.0.3"
+    outputs:
+      chart_version: ${{ steps.resolve.outputs.chart_version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (curl, jq, helm)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y curl jq
+          curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          helm version
+
+      - name: Add helm repo
+        run: |
+          set -euo pipefail
+          helm repo add gitea-charts https://dl.gitea.io/charts/ --force-update
+          helm repo update
+
+      - name: Resolve chart version
+        id: resolve
+        env:
+          OVERRIDE_CHART_VERSION: ${{ github.event.inputs.chart_version }}
+        run: |
+          set -euo pipefail
+          if [ -n "${OVERRIDE_CHART_VERSION}" ]; then
+            CHART_VERSION="${OVERRIDE_CHART_VERSION}"
+          else
+            CHART_VERSION=$(helm search repo gitea-charts/gitea --versions | awk 'NR==2{print $2}')
+          fi
+          echo "chart_version=${CHART_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare directories
+        run: |
+          set -euo pipefail
+          rm -rf offline-installer
+          mkdir -p offline-installer/{images,charts,scripts,metadata}
+
+      - name: Stage installer script
+        env:
+          CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
+        run: |
+          set -euo pipefail
+          cat <<'SCRIPT' > offline-installer/scripts/install-gitea.sh
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CHART_DIR="${ROOT_DIR}/charts/gitea"
+IMAGES_DIR="${ROOT_DIR}/images"
+RELEASE_NAME="${RELEASE_NAME:-gitea}"
+NAMESPACE="${NAMESPACE:-gitea}"
+
+if command -v nerdctl >/dev/null 2>&1; then
+  LOADER="nerdctl"
+elif command -v docker >/dev/null 2>&1; then
+  LOADER="docker"
+else
+  echo "Either docker or nerdctl is required to load images." >&2
+  exit 1
+fi
+
+for tar in "${IMAGES_DIR}"/*.tar; do
+  [ -f "$tar" ] || continue
+  echo "Loading image: $tar"
+  "$LOADER" load -i "$tar"
+done
+
+echo "Installing/Upgrading Gitea release ${RELEASE_NAME} in namespace ${NAMESPACE}"
+helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
+  --namespace "${NAMESPACE}" \
+  --create-namespace \
+  "$@"
+SCRIPT
+          chmod +x offline-installer/scripts/install-gitea.sh
+          cat <<EOFMETA > offline-installer/metadata/INFO
+chart: gitea-charts/gitea
+chart_version: ${CHART_VERSION}
+created_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
+EOFMETA
+
+      - name: Download nerdctl binary for ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          wget https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-${{ matrix.arch }}.tar.gz \
+            -O offline-installer/nerdctl.tar.gz
+
+      - name: Pull & export required images
+        env:
+          CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
+        run: |
+          set -euo pipefail
+          PLATFORM="linux/${{ matrix.arch }}"
+          helm template gitea gitea-charts/gitea --version "${CHART_VERSION}" > manifest.yaml
+          mapfile -t images < <(grep -oP 'image:\s*"?\K([^"\s]+)' manifest.yaml | sort -u || true)
+          rm -f manifest.yaml
+          for img in "${images[@]}"; do
+            [ -n "$img" ] || continue
+            if [[ "$img" == *"{{"* ]]; then
+              continue
+            fi
+            echo "Pulling $img for ${PLATFORM}"
+            if ! docker pull --platform "${PLATFORM}" "$img"; then
+              echo "::warning::Failed to pull $img for ${PLATFORM}, skipping" >&2
+              continue
+            fi
+            safe=$(echo "$img" | tr '/:' '-_')
+            docker save "$img" -o "offline-installer/images/${safe}.tar"
+          done
+
+      - name: Download Helm chart
+        env:
+          CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
+        run: |
+          set -euo pipefail
+          helm pull gitea-charts/gitea --version "${CHART_VERSION}" --untar --untardir offline-installer/charts
+
+      - name: Package offline installer
+        run: |
+          set -euo pipefail
+          tar -czf offline-setup-gitea-${{ matrix.arch }}.tar.gz -C offline-installer .
+          ls -lh offline-setup-gitea-${{ matrix.arch }}.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-setup-gitea-${{ matrix.arch }}
+          path: offline-setup-gitea-${{ matrix.arch }}.tar.gz
+
+  test-offline-installer:
+    needs: build-offline-installer
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-gitea-${{ matrix.arch }}
+          path: offline-test
+
+      - name: Verify offline package integrity
+        run: |
+          set -euo pipefail
+          cd offline-test
+          tar -tzf offline-setup-gitea-${{ matrix.arch }}.tar.gz > /dev/null
+
+  publish-release:
+    needs: test-offline-installer
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-gitea-{0}', github.run_number) }}
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: /data/update-server/gitea
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Build ${{ env.TAG_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-gitea-amd64
+          path: release-artifacts/amd64
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-setup-gitea-arm64
+          path: release-artifacts/arm64
+
+      - name: Upload offline installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            release-artifacts/amd64/offline-setup-gitea-amd64.tar.gz
+            release-artifacts/arm64/offline-setup-gitea-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure deps (rsync, ssh)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -y
+          sudo apt-get install -y rsync openssh-client
+
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Rsync release assets to remote
+        run: |
+          set -euo pipefail
+          REMOTE_DIR="${REMOTE_ROOT}/${TAG_NAME}"
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
+          echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
+          rsync -av -e "ssh -i ~/.ssh/id_rsa" \
+            release-artifacts/amd64/offline-setup-gitea-amd64.tar.gz \
+            release-artifacts/arm64/offline-setup-gitea-arm64.tar.gz \
+            "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
+
+  retention:
+    name: Remote retention (keep latest 3)
+    needs: publish-release
+    runs-on: ubuntu-latest
+    env:
+      RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
+      RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
+      VPS_HOST: ${{ secrets.VPS_HOST }}
+      REMOTE_ROOT: /data/update-server/gitea
+    steps:
+      - name: Init SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prune old versions on remote (keep 3)
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
+            set -euo pipefail
+            cd "'"${REMOTE_ROOT}"'" || exit 0
+            keep=3
+            mapfile -t all < <(ls -1 | grep -E "^(offline-gitea-|v[0-9]+\.)" | sort -V -r || true)
+            if [ "${#all[@]}" -le "$keep" ]; then
+              echo "Nothing to prune. Count=${#all[@]}"
+              exit 0
+            fi
+            to_delete=("${all[@]:keep}")
+            echo "Pruning old versions: ${to_delete[*]}"
+            for d in "${to_delete[@]}"; do
+              rm -rf -- "$d"
+            done
+          '
