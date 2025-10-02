@@ -105,6 +105,14 @@ helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
   --create-namespace \
   "$@"
 SCRIPT
+          chmod +x "${OFFLINE_DIR}/scripts/install-gitea.sh"
+          cat <<'ROOTSCRIPT' > "${OFFLINE_DIR}/install-gitea.sh"
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "${SCRIPT_DIR}/scripts/install-gitea.sh" "$@"
+ROOTSCRIPT
           chmod +x "${OFFLINE_DIR}/install-gitea.sh"
           cat <<EOFMETA > "${OFFLINE_DIR}/metadata/INFO"
 chart: gitea-charts/gitea
