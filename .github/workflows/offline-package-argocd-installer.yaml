@@ -53,14 +53,7 @@ jobs:
         id: resolve
         env:
           OVERRIDE_CHART_VERSION: ${{ github.event.inputs.chart_version }}
-        run: |
-          set -euo pipefail
-          if [ -n "${OVERRIDE_CHART_VERSION}" ]; then
-            CHART_VERSION="${OVERRIDE_CHART_VERSION}"
-          else
-            CHART_VERSION=$(helm search repo argo/argo-cd --versions | awk 'NR==2{print $2}')
-          fi
-          echo "chart_version=${CHART_VERSION}" >> "$GITHUB_OUTPUT"
+        run: bash scripts/offline-argocd/resolve_chart_version.sh
 
       - name: Prepare directories
         run: |
@@ -71,45 +64,7 @@ jobs:
       - name: Stage installer script
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
-        run: |
-          set -euo pipefail
-          cat <<'SCRIPT' > argocd-offline-package/scripts/install-argocd.sh
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHART_DIR="${ROOT_DIR}/charts/argo-cd"
-IMAGES_DIR="${ROOT_DIR}/images"
-RELEASE_NAME="${RELEASE_NAME:-argo-cd}"
-NAMESPACE="${NAMESPACE:-argocd}"
-
-if command -v nerdctl >/dev/null 2>&1; then
-  LOADER="nerdctl"
-elif command -v docker >/dev/null 2>&1; then
-  LOADER="docker"
-else
-  echo "Either docker or nerdctl is required to load images." >&2
-  exit 1
-fi
-
-for tar in "${IMAGES_DIR}"/*.tar; do
-  [ -f "$tar" ] || continue
-  echo "Loading image: $tar"
-  "$LOADER" load -i "$tar"
-done
-
-echo "Installing/Upgrading Argo CD release ${RELEASE_NAME} in namespace ${NAMESPACE}"
-helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
-  --namespace "${NAMESPACE}" \
-  --create-namespace \
-  "$@"
-SCRIPT
-          chmod +x argocd-offline-package/scripts/install-argocd.sh
-          cat <<EOFMETA > argocd-offline-package/metadata/INFO
-chart: argo/argo-cd
-chart_version: ${CHART_VERSION}
-created_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
-EOFMETA
+        run: bash scripts/offline-argocd/stage_installer.sh
 
       - name: Download nerdctl binary for ${{ matrix.arch }}
         run: |
@@ -120,25 +75,8 @@ EOFMETA
       - name: Pull & export required images
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
-        run: |
-          set -euo pipefail
-          PLATFORM="linux/${{ matrix.arch }}"
-          helm template argo argo/argo-cd --version "${CHART_VERSION}" > manifest.yaml
-          mapfile -t images < <(grep -oP 'image:\s*"?\K([^"\s]+)' manifest.yaml | sort -u || true)
-          rm -f manifest.yaml
-          for img in "${images[@]}"; do
-            [ -n "$img" ] || continue
-            if [[ "$img" == *"{{"* ]]; then
-              continue
-            fi
-            echo "Pulling $img for ${PLATFORM}"
-            if ! docker pull --platform "${PLATFORM}" "$img"; then
-              echo "::warning::Failed to pull $img for ${PLATFORM}, skipping" >&2
-              continue
-            fi
-            safe=$(echo "$img" | tr '/:' '-_')
-            docker save "$img" -o "argocd-offline-package/images/${safe}.tar"
-          done
+          MATRIX_ARCH: ${{ matrix.arch }}
+        run: bash scripts/offline-argocd/pull_and_export_images.sh
 
       - name: Download Helm chart
         env:
@@ -238,15 +176,7 @@ EOFMETA
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Rsync release assets to remote
-        run: |
-          set -euo pipefail
-          REMOTE_DIR="${REMOTE_ROOT}/${TAG_NAME}"
-          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
-          echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
-          rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            release-artifacts/amd64/offline-package-argocd-amd64.tar.gz \
-            release-artifacts/arm64/offline-package-argocd-arm64.tar.gz \
-            "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
+        run: bash scripts/offline-argocd/rsync_release_assets.sh
 
   retention:
     name: Remote retention (keep latest 3)
@@ -267,20 +197,4 @@ EOFMETA
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Prune old versions on remote (keep 3)
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
-            set -euo pipefail
-            cd "'"${REMOTE_ROOT}"'" || exit 0
-            keep=3
-            mapfile -t all < <(ls -1 | grep -E "^(offline-argocd-|v[0-9]+\.)" | sort -V -r || true)
-            if [ "${#all[@]}" -le "$keep" ]; then
-              echo "Nothing to prune. Count=${#all[@]}"
-              exit 0
-            fi
-            to_delete=("${all[@]:keep}")
-            echo "Pruning old versions: ${to_delete[*]}"
-            for d in "${to_delete[@]}"; do
-              rm -rf -- "$d"
-            done
-          '
+        run: bash scripts/offline-argocd/prune_remote_versions.sh
