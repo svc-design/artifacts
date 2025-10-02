@@ -65,15 +65,15 @@ jobs:
       - name: Prepare directories
         run: |
           set -euo pipefail
-          rm -rf offline-installer
-          mkdir -p offline-installer/{images,charts,scripts,metadata}
+          rm -rf argocd-offline-package
+          mkdir -p argocd-offline-package/{images,charts,scripts,metadata}
 
       - name: Stage installer script
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
         run: |
           set -euo pipefail
-          cat <<'SCRIPT' > offline-installer/scripts/install-argocd.sh
+          cat <<'SCRIPT' > argocd-offline-package/scripts/install-argocd.sh
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -104,8 +104,8 @@ helm upgrade --install "${RELEASE_NAME}" "${CHART_DIR}" \
   --create-namespace \
   "$@"
 SCRIPT
-          chmod +x offline-installer/scripts/install-argocd.sh
-          cat <<EOFMETA > offline-installer/metadata/INFO
+          chmod +x argocd-offline-package/scripts/install-argocd.sh
+          cat <<EOFMETA > argocd-offline-package/metadata/INFO
 chart: argo/argo-cd
 chart_version: ${CHART_VERSION}
 created_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -115,7 +115,7 @@ EOFMETA
         run: |
           set -euo pipefail
           wget https://github.com/containerd/nerdctl/releases/download/v${NERDCTL_VERSION}/nerdctl-${NERDCTL_VERSION}-linux-${{ matrix.arch }}.tar.gz \
-            -O offline-installer/nerdctl.tar.gz
+            -O argocd-offline-package/nerdctl.tar.gz
 
       - name: Pull & export required images
         env:
@@ -137,7 +137,7 @@ EOFMETA
               continue
             fi
             safe=$(echo "$img" | tr '/:' '-_')
-            docker save "$img" -o "offline-installer/images/${safe}.tar"
+            docker save "$img" -o "argocd-offline-package/images/${safe}.tar"
           done
 
       - name: Download Helm chart
@@ -145,19 +145,19 @@ EOFMETA
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
         run: |
           set -euo pipefail
-          helm pull argo/argo-cd --version "${CHART_VERSION}" --untar --untardir offline-installer/charts
+          helm pull argo/argo-cd --version "${CHART_VERSION}" --untar --untardir argocd-offline-package/charts
 
       - name: Package offline installer
         run: |
           set -euo pipefail
-          tar -czf offline-setup-argocd-${{ matrix.arch }}.tar.gz -C offline-installer .
-          ls -lh offline-setup-argocd-${{ matrix.arch }}.tar.gz
+          tar -czf offline-package-argocd-${{ matrix.arch }}.tar.gz -C . argocd-offline-package
+          ls -lh offline-package-argocd-${{ matrix.arch }}.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: offline-setup-argocd-${{ matrix.arch }}
-          path: offline-setup-argocd-${{ matrix.arch }}.tar.gz
+          name: offline-package-argocd-${{ matrix.arch }}
+          path: offline-package-argocd-${{ matrix.arch }}.tar.gz
 
   test-offline-installer:
     needs: build-offline-installer
@@ -169,14 +169,14 @@ EOFMETA
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: offline-setup-argocd-${{ matrix.arch }}
+          name: offline-package-argocd-${{ matrix.arch }}
           path: offline-test
 
       - name: Verify offline package integrity
         run: |
           set -euo pipefail
           cd offline-test
-          tar -tzf offline-setup-argocd-${{ matrix.arch }}.tar.gz > /dev/null
+          tar -tzf offline-package-argocd-${{ matrix.arch }}.tar.gz > /dev/null
 
   publish-release:
     needs: test-offline-installer
@@ -204,13 +204,13 @@ EOFMETA
       - name: Download amd64 artifact
         uses: actions/download-artifact@v4
         with:
-          name: offline-setup-argocd-amd64
+          name: offline-package-argocd-amd64
           path: release-artifacts/amd64
 
       - name: Download arm64 artifact
         uses: actions/download-artifact@v4
         with:
-          name: offline-setup-argocd-arm64
+          name: offline-package-argocd-arm64
           path: release-artifacts/arm64
 
       - name: Upload offline installers to GitHub Release
@@ -218,8 +218,8 @@ EOFMETA
         with:
           tag_name: ${{ env.TAG_NAME }}
           files: |
-            release-artifacts/amd64/offline-setup-argocd-amd64.tar.gz
-            release-artifacts/arm64/offline-setup-argocd-arm64.tar.gz
+            release-artifacts/amd64/offline-package-argocd-amd64.tar.gz
+            release-artifacts/arm64/offline-package-argocd-arm64.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -244,8 +244,8 @@ EOFMETA
           ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
           echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
           rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            release-artifacts/amd64/offline-setup-argocd-amd64.tar.gz \
-            release-artifacts/arm64/offline-setup-argocd-arm64.tar.gz \
+            release-artifacts/amd64/offline-package-argocd-amd64.tar.gz \
+            release-artifacts/arm64/offline-package-argocd-arm64.tar.gz \
             "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
 
   retention:
