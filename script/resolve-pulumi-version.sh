@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-OVERRIDE_VERSION="${OVERRIDE_VERSION:-}"
-
-if [ -n "${OVERRIDE_VERSION}" ]; then
+if [[ -n "${OVERRIDE_VERSION:-}" ]]; then
   VERSION="${OVERRIDE_VERSION}"
 else
   VERSION=$(curl -fsSL https://api.github.com/repos/pulumi/pulumi/releases?per_page=100 \
@@ -14,7 +12,7 @@ else
     | tail -n 1)
 fi
 
-if [ -z "${VERSION}" ]; then
+if [[ -z "${VERSION}" ]]; then
   echo "Failed to resolve Pulumi version" >&2
   exit 1
 fi
