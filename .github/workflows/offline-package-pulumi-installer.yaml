@@ -43,73 +43,13 @@ jobs:
         id: resolve
         env:
           OVERRIDE_VERSION: ${{ github.event.inputs.pulumi_version }}
-        run: |
-          set -euo pipefail
-          if [ -n "${OVERRIDE_VERSION}" ]; then
-            VERSION="${OVERRIDE_VERSION}"
-          else
-            VERSION=$(curl -fsSL https://api.github.com/repos/pulumi/pulumi/releases?per_page=100 \
-              | jq -r '.[].tag_name' \
-              | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
-              | sed 's/^v//' \
-              | sort -V \
-              | tail -n 1)
-          fi
-          if [ -z "${VERSION}" ]; then
-            echo "Failed to resolve Pulumi version" >&2
-            exit 1
-          fi
-          echo "Resolved Pulumi version: ${VERSION}"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+        run: script/resolve-pulumi-version.sh
 
       - name: Build offline Pulumi package
         env:
           PULUMI_VERSION: ${{ steps.resolve.outputs.version }}
-        run: |
-          set -euo pipefail
-          ARCH="${{ matrix.arch }}"
-          case "$ARCH" in
-            amd64) ASSET_ARCH="x64" ;;
-            arm64) ASSET_ARCH="arm64" ;;
-            *) echo "Unsupported arch: $ARCH" >&2; exit 1 ;;
-          esac
-          WORKDIR="pulumi-offline-package"
-          rm -rf "${WORKDIR}"
-          mkdir -p "${WORKDIR}" "${WORKDIR}/scripts"
-
-          ARCHIVE="pulumi-v${PULUMI_VERSION}-linux-${ASSET_ARCH}.tar.gz"
-          URL="https://get.pulumi.com/releases/sdk/${ARCHIVE}"
-          echo "Downloading ${URL}"
-          curl -fSL "${URL}" -o "${ARCHIVE}"
-
-          tar -xzvf "${ARCHIVE}" -C "${WORKDIR}" --strip-components=1
-          rm -f "${ARCHIVE}"
-
-          echo "${PULUMI_VERSION}" > "${WORKDIR}/VERSION"
-
-          cat <<'SCRIPT' > "${WORKDIR}/scripts/install-pulumi.sh"
-#!/usr/bin/env bash
-set -euo pipefail
-
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BIN_DIR="${ROOT_DIR}/bin"
-INSTALL_DIR="${INSTALL_DIR:-/usr/local/bin}"
-
-if [[ "${1:-}" == "--install" ]]; then
-  sudo install -m 0755 "${BIN_DIR}"/* "${INSTALL_DIR}/"
-  echo "Pulumi binaries installed to ${INSTALL_DIR}"
-else
-  cat <<USAGE
-Usage: $(basename "$0") --install
-  --install    Copy Pulumi CLI binaries into ${INSTALL_DIR}
-USAGE
-fi
-SCRIPT
-          chmod +x "${WORKDIR}/scripts/install-pulumi.sh"
-
-          OUTPUT_ARCHIVE="offline-package-pulumi-${ARCH}.tar.gz"
-          tar -czf "${OUTPUT_ARCHIVE}" "${WORKDIR}"
-          ls -lh "${OUTPUT_ARCHIVE}"
+          MATRIX_ARCH: ${{ matrix.arch }}
+        run: script/build-offline-pulumi-package.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -125,6 +65,8 @@ SCRIPT
         arch: [amd64, arm64]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -140,16 +82,8 @@ SCRIPT
       - name: Verify Pulumi bundle
         env:
           PULUMI_VERSION: ${{ needs.build-offline-installer.outputs.version }}
-        run: |
-          set -euo pipefail
-          cd test-dir/pulumi-offline-package
-          test -f VERSION
-          if [ "${{ matrix.arch }}" = "amd64" ]; then
-            ./bin/pulumi version
-            ./bin/pulumi version | grep "v${PULUMI_VERSION}"
-          else
-            file ./bin/pulumi | grep -E "ARM|aarch64"
-          fi
+          MATRIX_ARCH: ${{ matrix.arch }}
+        run: script/verify-pulumi-bundle.sh
 
   publish-release:
     needs: test-offline-installer
@@ -211,15 +145,7 @@ SCRIPT
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Rsync release assets to remote
-        run: |
-          set -euo pipefail
-          REMOTE_DIR="${REMOTE_ROOT}/${TAG_NAME}"
-          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" "mkdir -p '${REMOTE_DIR}'"
-          echo "Rsync -> ${VPS_HOST}:${REMOTE_DIR}/"
-          rsync -av -e "ssh -i ~/.ssh/id_rsa" \
-            release-artifacts/amd64/offline-package-pulumi-amd64.tar.gz \
-            release-artifacts/arm64/offline-package-pulumi-arm64.tar.gz \
-            "${RSYNC_SSH_USER}@${VPS_HOST}:${REMOTE_DIR}/"
+        run: script/rsync-release-assets.sh
 
   retention:
     name: Remote retention (keep latest 3)
@@ -231,6 +157,8 @@ SCRIPT
       VPS_HOST: ${{ secrets.VPS_HOST }}
       REMOTE_ROOT: /data/update-server/pulumi
     steps:
+      - uses: actions/checkout@v4
+
       - name: Init SSH
         run: |
           set -euo pipefail
@@ -240,20 +168,4 @@ SCRIPT
           ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Prune old versions on remote (keep 3)
-        run: |
-          set -euo pipefail
-          ssh -i ~/.ssh/id_rsa "${RSYNC_SSH_USER}@${VPS_HOST}" bash -lc '
-            set -euo pipefail
-            cd "'"${REMOTE_ROOT}"'" || exit 0
-            keep=3
-            mapfile -t all < <(ls -1 | grep -E "^(offline-pulumi-|v[0-9]+\.)" | sort -V -r || true)
-            if [ "${#all[@]}" -le "$keep" ]; then
-              echo "Nothing to prune. Count=${#all[@]}"
-              exit 0
-            fi
-            to_delete=("${all[@]:keep}")
-            echo "Pruning old versions: ${to_delete[*]}"
-            for d in "${to_delete[@]}"; do
-              rm -rf -- "$d"
-            done
-          '
+        run: script/prune-remote-versions.sh
