@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  flowise:
+    image: flowiseai/flowise:__FLOWISE_TAG__
+    container_name: flowise-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      FLOWISE_USERNAME: admin
+      FLOWISE_PASSWORD: changeme
+      DATABASE_PATH: /data/flowise.sqlite
+    volumes:
+      - flowise-data:/data
+
+volumes:
+  flowise-data:

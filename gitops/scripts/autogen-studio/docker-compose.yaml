@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  autogen-studio:
+    image: autogenstudio/autogen-studio:__AUTOGEN_TAG__
+    container_name: autogen-studio
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    environment:
+      AUTOGEN_STUDIO_HOST: 0.0.0.0
+      AUTOGEN_STUDIO_PORT: 9090
+      AUTOGEN_STUDIO_LOG_LEVEL: info
+    volumes:
+      - autogen-data:/data
+
+volumes:
+  autogen-data:

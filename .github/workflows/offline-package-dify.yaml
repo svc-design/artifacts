@@ -1,0 +1,192 @@
+name: Build Offline Dify Installer
+
+on:
+  push:
+    paths:
+      - 'gitops/scripts/dify/**'
+      - '.github/workflows/offline-package-dify.yaml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to use/sync (e.g., v0.1.0). Leave empty to use offline-dify-<run_number>"
+        required: false
+        type: string
+      dify_tag:
+        description: "Dify container tag (default: latest)"
+        required: false
+        type: string
+      postgres_tag:
+        description: "Postgres image tag (default: 15-alpine)"
+        required: false
+        type: string
+      redis_tag:
+        description: "Redis image tag (default: 7-alpine)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-offline-dify
+  cancel-in-progress: false
+
+jobs:
+  build-offline-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    outputs:
+      dify_tag: ${{ steps.resolve.outputs.dify_tag }}
+      postgres_tag: ${{ steps.resolve.outputs.postgres_tag }}
+      redis_tag: ${{ steps.resolve.outputs.redis_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tags
+        id: resolve
+        env:
+          INPUT_DIFY_TAG: ${{ github.event.inputs.dify_tag }}
+          INPUT_POSTGRES_TAG: ${{ github.event.inputs.postgres_tag }}
+          INPUT_REDIS_TAG: ${{ github.event.inputs.redis_tag }}
+        run: |
+          set -euo pipefail
+          DIFY_TAG=${INPUT_DIFY_TAG:-latest}
+          POSTGRES_TAG=${INPUT_POSTGRES_TAG:-15-alpine}
+          REDIS_TAG=${INPUT_REDIS_TAG:-7-alpine}
+          {
+            echo "dify_tag=${DIFY_TAG}"
+            echo "postgres_tag=${POSTGRES_TAG}"
+            echo "redis_tag=${REDIS_TAG}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare directories
+        run: |
+          set -euo pipefail
+          rm -rf offline-installer
+          mkdir -p offline-installer/{images,scripts}
+
+      - name: Stage compose file and scripts
+        env:
+          DIFY_TAG: ${{ steps.resolve.outputs.dify_tag }}
+          POSTGRES_TAG: ${{ steps.resolve.outputs.postgres_tag }}
+          REDIS_TAG: ${{ steps.resolve.outputs.redis_tag }}
+        run: |
+          set -euo pipefail
+          cp gitops/scripts/dify/docker-compose.yaml offline-installer/docker-compose.yaml
+          sed -i "s/__DIFY_TAG__/${DIFY_TAG}/g" offline-installer/docker-compose.yaml
+          sed -i "s/__POSTGRES_TAG__/${POSTGRES_TAG}/g" offline-installer/docker-compose.yaml
+          sed -i "s/__REDIS_TAG__/${REDIS_TAG}/g" offline-installer/docker-compose.yaml
+          cp gitops/scripts/dify/deploy-dify.sh offline-installer/scripts/
+          chmod +x offline-installer/scripts/deploy-dify.sh
+          cat <<'README' > offline-installer/README.md
+# Offline Dify Installer
+
+This archive contains container images and helper assets for deploying Dify with Docker Compose.
+
+## Contents
+- `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
+- `images/`: Pre-pulled container images saved as tar archives.
+- `scripts/deploy-dify.sh`: Helper script to load the images and manage the compose stack.
+
+## Usage
+1. Extract the archive on a host with Docker/nerdctl available.
+2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-dify.sh load-images` to import the images with nerdctl.
+3. Start the stack: `./scripts/deploy-dify.sh up`.
+4. Access the Dify web UI at http://localhost:8080.
+
+Adjust the compose file as needed before running the helper script.
+README
+
+      - name: Pull & export container images
+        env:
+          DIFY_TAG: ${{ steps.resolve.outputs.dify_tag }}
+          POSTGRES_TAG: ${{ steps.resolve.outputs.postgres_tag }}
+          REDIS_TAG: ${{ steps.resolve.outputs.redis_tag }}
+        run: |
+          set -euo pipefail
+          images=(
+            "langgenius/dify-api:${DIFY_TAG}"
+            "langgenius/dify-worker:${DIFY_TAG}"
+            "langgenius/dify-web:${DIFY_TAG}"
+            "langgenius/dify-nginx:${DIFY_TAG}"
+            "postgres:${POSTGRES_TAG}"
+            "redis:${REDIS_TAG}"
+          )
+          for image in "${images[@]}"; do
+            docker pull "$image"
+            safe=$(echo "$image" | tr '/:' '-_')
+            docker save "$image" -o "offline-installer/images/${safe}.tar"
+          done
+
+      - name: Package offline installer
+        run: |
+          set -euo pipefail
+          tar -czf offline-package-dify-${{ matrix.arch }}.tar.gz -C offline-installer .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-package-dify-${{ matrix.arch }}
+          path: offline-package-dify-${{ matrix.arch }}.tar.gz
+
+  test-offline-installer:
+    needs: build-offline-installer
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-package-dify-${{ matrix.arch }}
+          path: offline-test
+
+      - name: Verify archive integrity
+        run: |
+          set -euo pipefail
+          cd offline-test
+          tar -tzf offline-package-dify-${{ matrix.arch }}.tar.gz > /dev/null
+
+  publish-release:
+    needs: test-offline-installer
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-dify-{0}', github.run_number) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Build ${{ env.TAG_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-package-dify-amd64
+          path: release-artifacts/amd64
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-package-dify-arm64
+          path: release-artifacts/arm64
+
+      - name: Upload offline installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            release-artifacts/amd64/offline-package-dify-amd64.tar.gz
+            release-artifacts/arm64/offline-package-dify-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
