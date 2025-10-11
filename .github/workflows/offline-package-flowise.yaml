@@ -1,0 +1,159 @@
+name: Build Offline Flowise Installer
+
+on:
+  push:
+    paths:
+      - 'gitops/scripts/flowise/**'
+      - '.github/workflows/offline-package-flowise.yaml'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to use/sync (e.g., v0.1.0). Leave empty to use offline-flowise-<run_number>"
+        required: false
+        type: string
+      flowise_tag:
+        description: "Flowise container tag (default: latest)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-offline-flowise
+  cancel-in-progress: false
+
+jobs:
+  build-offline-installer:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    outputs:
+      flowise_tag: ${{ steps.resolve.outputs.flowise_tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        id: resolve
+        env:
+          INPUT_FLOWISE_TAG: ${{ github.event.inputs.flowise_tag }}
+        run: |
+          set -euo pipefail
+          FLOWISE_TAG=${INPUT_FLOWISE_TAG:-latest}
+          echo "flowise_tag=${FLOWISE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare directories
+        run: |
+          set -euo pipefail
+          rm -rf offline-installer
+          mkdir -p offline-installer/{images,scripts}
+
+      - name: Stage compose file and scripts
+        env:
+          FLOWISE_TAG: ${{ steps.resolve.outputs.flowise_tag }}
+        run: |
+          set -euo pipefail
+          cp gitops/scripts/flowise/docker-compose.yaml offline-installer/docker-compose.yaml
+          sed -i "s/__FLOWISE_TAG__/${FLOWISE_TAG}/g" offline-installer/docker-compose.yaml
+          cp gitops/scripts/flowise/deploy-flowise.sh offline-installer/scripts/
+          chmod +x offline-installer/scripts/deploy-flowise.sh
+          cat <<'README' > offline-installer/README.md
+# Offline Flowise Installer
+
+This archive contains container images and helper assets for deploying Flowise with Docker Compose.
+
+## Contents
+- `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
+- `images/`: Pre-pulled container images saved as tar archives.
+- `scripts/deploy-flowise.sh`: Helper script to load the images and manage the compose stack.
+
+## Usage
+1. Extract the archive on a host with Docker/nerdctl available.
+2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-flowise.sh load-images` to import the images with nerdctl.
+3. Start the stack: `./scripts/deploy-flowise.sh up`.
+4. Access the Flowise UI at http://localhost:3000.
+
+Adjust the compose file as needed before running the helper script.
+README
+
+      - name: Pull & export container images
+        env:
+          FLOWISE_TAG: ${{ steps.resolve.outputs.flowise_tag }}
+        run: |
+          set -euo pipefail
+          image="flowiseai/flowise:${FLOWISE_TAG}"
+          docker pull "$image"
+          safe=$(echo "$image" | tr '/:' '-_')
+          docker save "$image" -o "offline-installer/images/${safe}.tar"
+
+      - name: Package offline installer
+        run: |
+          set -euo pipefail
+          tar -czf offline-package-flowise-${{ matrix.arch }}.tar.gz -C offline-installer .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-package-flowise-${{ matrix.arch }}
+          path: offline-package-flowise-${{ matrix.arch }}.tar.gz
+
+  test-offline-installer:
+    needs: build-offline-installer
+    strategy:
+      matrix:
+        arch: [amd64]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-package-flowise-${{ matrix.arch }}
+          path: offline-test
+
+      - name: Verify archive integrity
+        run: |
+          set -euo pipefail
+          cd offline-test
+          tar -tzf offline-package-flowise-${{ matrix.arch }}.tar.gz > /dev/null
+
+  publish-release:
+    needs: test-offline-installer
+    runs-on: ubuntu-latest
+    env:
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-flowise-{0}', github.run_number) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Build ${{ env.TAG_NAME }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download amd64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-package-flowise-amd64
+          path: release-artifacts/amd64
+
+      - name: Download arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: offline-package-flowise-arm64
+          path: release-artifacts/arm64
+
+      - name: Upload offline installers to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ env.TAG_NAME }}
+          files: |
+            release-artifacts/amd64/offline-package-flowise-amd64.tar.gz
+            release-artifacts/arm64/offline-package-flowise-arm64.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,72 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:__POSTGRES_TAG__
+    container_name: dify-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dify
+      POSTGRES_USER: dify
+      POSTGRES_PASSWORD: dify
+    volumes:
+      - dify-postgres:/var/lib/postgresql/data
+  redis:
+    image: redis:__REDIS_TAG__
+    container_name: dify-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - dify-redis:/data
+  dify-api:
+    image: langgenius/dify-api:__DIFY_TAG__
+    container_name: dify-api
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DATABASE_URL: postgresql+psycopg://dify:dify@postgres:5432/dify
+      REDIS_URL: redis://redis:6379/0
+      WEB_URL: http://localhost:8080
+      WORKER_QUEUE_BROKER_URL: redis://redis:6379/1
+      WORKER_QUEUE_BACKEND_URL: redis://redis:6379/2
+    volumes:
+      - dify-storage:/app/storage
+  dify-worker:
+    image: langgenius/dify-worker:__DIFY_TAG__
+    container_name: dify-worker
+    restart: unless-stopped
+    depends_on:
+      - redis
+      - dify-api
+    environment:
+      REDIS_URL: redis://redis:6379/1
+      WORKER_QUEUE_BACKEND_URL: redis://redis:6379/2
+      API_URL: http://dify-api:5001
+  dify-web:
+    image: langgenius/dify-web:__DIFY_TAG__
+    container_name: dify-web
+    restart: unless-stopped
+    depends_on:
+      - dify-api
+    environment:
+      VITE_API_URL: http://dify-nginx
+      VITE_APP_ENV: production
+  dify-nginx:
+    image: langgenius/dify-nginx:__DIFY_TAG__
+    container_name: dify-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - dify-api
+      - dify-web
+    environment:
+      API_HOST: dify-api:5001
+      WEB_HOST: dify-web:3000
+
+volumes:
+  dify-postgres:
+  dify-redis:
+  dify-storage:
