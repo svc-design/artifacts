@@ -124,7 +124,7 @@ jobs:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
-      REMOTE_ROOT: /data/update-server/argocd
+      REMOTE_ROOT: /data/update-server/offline-package/argocd/
     steps:
       - uses: actions/checkout@v4
 
