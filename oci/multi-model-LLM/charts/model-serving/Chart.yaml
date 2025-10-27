@@ -1,0 +1,14 @@
+apiVersion: v2
+name: model-serving
+version: 0.1.0
+kubeVersion: ">=1.25.0"
+description: Multi-model LLM serving (vLLM / SGLang / Ollama) with one API host & path routing
+home: https://github.com/svc-design/artifacts
+keywords:
+  - llm
+  - vllm
+  - sglang
+  - ollama
+  - cuda
+  - gpu
+type: application
