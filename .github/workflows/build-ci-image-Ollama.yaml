@@ -1,0 +1,29 @@
+name: build image ollama
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/base/cuda/Ollama/Dockerfile'
+      - '.github/workflows/build-ci-image-Ollama.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  IMAGE_REPO: "artifact.svc.plus"
+
+jobs:
+  build-ollama:
+    name: Build Ollama image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker'
+      registry_addr: "harbor.onwalk.net"
+      dockerfile_path: 'oci/base/cuda/Ollama'
+      image_name: 'public/base/cuda/ollama'
+      image_tag: 'latest'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}

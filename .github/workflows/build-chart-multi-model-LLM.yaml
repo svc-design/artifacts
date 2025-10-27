@@ -1,0 +1,36 @@
+name: build chart multi-model llm
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/multi-model-LLM/**'
+      - '.github/workflows/build-chart-multi-model-LLM.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  CHART_DIR: oci/multi-model-LLM/charts/model-serving
+
+jobs:
+  lint-and-package:
+    name: Lint and package Helm chart
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.4
+      - name: Helm lint
+        run: helm lint $CHART_DIR
+      - name: Helm package
+        run: helm package $CHART_DIR --version 0.1.0 --app-version 0.1.0 -d oci/multi-model-LLM/charts
+      - name: Upload chart artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: model-serving-chart
+          path: oci/multi-model-LLM/charts/model-serving-0.1.0.tgz

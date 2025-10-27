@@ -1,0 +1,18 @@
+{{- $root := . -}}
+{{- range $m := .Values.models }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "model-serving.fullname" $root }}-{{ $m.name }}
+  labels:
+    app.kubernetes.io/name: {{ $m.name }}
+spec:
+  type: {{ $root.Values.service.type | default "ClusterIP" }}
+  selector:
+    app.kubernetes.io/name: {{ $m.name }}
+  ports:
+    - name: http
+      port: {{ $root.Values.service.port | default 80 }}
+      targetPort: {{ if eq $m.engine "vllm" }}8000{{ else if eq $m.engine "sglang" }}30000{{ else }}11434{{ end }}
+---
+{{- end }}

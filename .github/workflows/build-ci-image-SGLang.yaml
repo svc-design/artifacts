@@ -1,0 +1,29 @@
+name: build image cuda sglang
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/base/cuda/SGLang/Dockerfile'
+      - '.github/workflows/build-ci-image-SGLang.yaml'
+  workflow_dispatch:
+    branches:
+      - main
+
+env:
+  IMAGE_REPO: "artifact.svc.plus"
+
+jobs:
+  build-sglang:
+    name: Build CUDA SGLang image
+    uses: svc-design/actions/.github/workflows/build-images.yaml@main
+    with:
+      method: 'docker'
+      registry_addr: "harbor.onwalk.net"
+      dockerfile_path: 'oci/base/cuda/SGLang'
+      image_name: 'public/base/cuda/sglang'
+      image_tag: 'cuda12'
+    secrets:
+      artifactory_sa: ${{ secrets.REPO_USER }}
+      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}

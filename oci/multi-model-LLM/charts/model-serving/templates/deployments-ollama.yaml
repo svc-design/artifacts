@@ -1,0 +1,58 @@
+{{- $root := . -}}
+{{- range $m := .Values.models }}
+{{- if eq $m.engine "ollama" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "model-serving.fullname" $root }}-{{ $m.name }}
+  labels:
+    app.kubernetes.io/name: {{ $m.name }}
+    app.kubernetes.io/engine: ollama
+spec:
+  replicas: {{ $m.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $m.name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $m.name }}
+        app.kubernetes.io/engine: ollama
+    spec:
+      containers:
+        - name: {{ $m.name }}
+          image: {{ include "model-serving.image" (dict "Values" $root.Values "image" $m.image "tag" $m.tag) }}
+          imagePullPolicy: IfNotPresent
+          {{- if $m.env }}
+          env:
+          {{- range $m.env }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+          {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: 11434
+          {{- if $m.resources }}
+          resources:
+{{ toYaml $m.resources | nindent 12 }}
+          {{- else }}
+          resources: {}
+          {{- end }}
+      runtimeClassName: {{ $m.runtimeClassName | default "nvidia" }}
+      {{- if $m.nodeSelector }}
+      nodeSelector:
+{{ toYaml $m.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if $m.tolerations }}
+      tolerations:
+{{ toYaml $m.tolerations | nindent 8 }}
+      {{- end }}
+      {{- if $root.Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range $root.Values.imagePullSecrets }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+---
+{{- end }}
+{{- end }}
