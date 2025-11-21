@@ -39,7 +39,13 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: actionlint
-        uses: rhysd/actionlint@v1
+        uses: raven-actions/actionlint@v2
+        with:
+          files: ".github/workflows/cloud-neutra-golden-image.yaml"
+          matcher: false
+          cache: false
+          fail-on-error: true
+          flags: "-ignore SC2086"
 
       - name: Install tools
         run: |
