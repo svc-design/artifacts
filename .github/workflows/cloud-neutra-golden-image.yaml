@@ -79,15 +79,7 @@ jobs:
             ubuntu_version: "2204"
             cpu_arch: arm64
 
-    if: ${{
-      github.event_name == 'schedule' ||
-      (
-        github.event_name == 'workflow_dispatch' &&
-        github.event.inputs.edition == matrix.edition &&
-        github.event.inputs.ubuntu_version == matrix.ubuntu_version &&
-        github.event.inputs.cpu_arch == matrix.cpu_arch
-      )
-    }}
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.edition == matrix.edition && github.event.inputs.ubuntu_version == matrix.ubuntu_version && github.event.inputs.cpu_arch == matrix.cpu_arch) }}
 
     steps:
       - uses: actions/checkout@v4
