@@ -146,7 +146,8 @@ jobs:
 
     steps:
       - name: Placeholder test
-        run: echo "TODO: Future QA test (ssh boot, containerd, k3s, sealos etc.)"
+        run: |
+          echo "TODO: Future QA test (ssh boot, containerd, k3s, sealos etc.)"
 
   ##########################################################################
   # Stage 4 — AMI Replication + Retention
