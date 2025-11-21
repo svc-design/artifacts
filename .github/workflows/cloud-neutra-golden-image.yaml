@@ -1,0 +1,204 @@
+name: Cloud-Neutra Golden Image Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      edition:
+        description: "Golden Image Edition"
+        type: choice
+        options: ["base", "container", "k3s", "sealos", "sealos-gpu"]
+        default: "container"
+      ubuntu_version:
+        description: "Ubuntu LTS version"
+        type: choice
+        options: ["2204", "2404"]
+        default: "2404"
+      cpu_arch:
+        description: "CPU Architecture"
+        type: choice
+        options: ["amd64", "arm64"]
+        default: "amd64"
+
+  schedule:
+    - cron: "0 18 1 * *"   # 每月 1 号 UTC18:00
+
+env:
+  BASE_REGION: ap-northeast-1
+  TARGET_REGIONS: "ap-northeast-1 ap-east-1 us-west-1"
+  PROJECT_TAG: Cloud-Neutra
+  PACKER_TEMPLATE_ROOT: packer/Cloud-Neutra-VMs
+
+jobs:
+  ##########################################################################
+  # Stage 1 — Lint / Validate / Security
+  ##########################################################################
+  lint:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck jq
+
+      - name: Packer FMT
+        run: |
+          packer fmt -recursive .
+
+      - name: Packer Validate (ensure no syntax issue)
+        run: |
+          packer validate .
+
+      - name: gitleaks Scan
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --no-git -v
+
+  ##########################################################################
+  # Stage 2 — Build Golden Image
+  ##########################################################################
+  build:
+    name: Build Golden AMI
+    runs-on: ubuntu-latest
+    needs: lint
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - edition: base
+            ubuntu_version: "2204"
+            cpu_arch: amd64
+
+          - edition: base
+            ubuntu_version: "2204"
+            cpu_arch: arm64
+
+    if: >
+      github.event_name == 'schedule' ||
+      (
+        github.event_name == 'workflow_dispatch' &&
+        github.event.inputs.edition == matrix.edition &&
+        github.event.inputs.ubuntu_version == matrix.ubuntu_version &&
+        github.event.inputs.cpu_arch == matrix.cpu_arch
+      )
+
+    steps:
+      - uses: actions/checkout@v4
+
+      ####################################################################
+      # Credential (OIDC first, AK/SK fallback)
+      ####################################################################
+      - name: Configure AWS Credentials (OIDC + AK/SK fallback)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.BASE_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-access-key-id: ${{ secrets.AWS_ROOT_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ROOT_SECRET_ACCESS_KEY }}
+          mask-aws-account-id: true
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+
+      - name: Build AMI
+        id: packer_build
+        env:
+          EDITION: ${{ matrix.edition }}
+          UBUNTU_VERSION: ${{ matrix.ubuntu_version }}
+          CPU_ARCH: ${{ matrix.cpu_arch }}
+        run: |
+          TEMPLATE="${PACKER_TEMPLATE_ROOT}/${EDITION}/ubuntu-${UBUNTU_VERSION}-${EDITION}.pkr.hcl"
+
+          echo "Using template: $TEMPLATE"
+
+          packer build \
+            -color=false \
+            -var "cpu_arch=${CPU_ARCH}" \
+            -var "edition=${EDITION}" \
+            -var "ubuntu_version=${UBUNTU_VERSION}" \
+            "$TEMPLATE" | tee packer.log
+
+          AMI_ID=$(grep 'AMI:' packer.log | awk '{print $2}' | tail -n1 || true)
+
+          if [ -z "$AMI_ID" ]; then
+            echo "ERROR: Cannot parse AMI ID"
+            exit 1
+          fi
+
+          echo "ami_id=${AMI_ID}" >> $GITHUB_OUTPUT
+
+      - name: Upload Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: packer-build-log
+          path: packer.log
+
+  ##########################################################################
+  # Stage 3 — AMI QA Test
+  ##########################################################################
+  test:
+    name: Test Built AMI
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Placeholder test
+        run: echo "TODO: Future QA test (ssh boot, containerd, k3s, sealos etc.)"
+
+  ##########################################################################
+  # Stage 4 — AMI Replication + Retention
+  ##########################################################################
+  distribute:
+    name: Replicate & Retain AMI
+    runs-on: ubuntu-latest
+    needs: test
+
+    strategy:
+      matrix:
+        include:
+          - edition: base
+            ubuntu_version: "2204"
+            cpu_arch: amd64
+
+          - edition: base
+            ubuntu_version: "2204"
+            cpu_arch: arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.BASE_REGION }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-access-key-id: ${{ secrets.AWS_ROOT_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_ROOT_SECRET_ACCESS_KEY }}
+
+      - name: Distribute AMI
+        env:
+          BASE_REGION: ${{ env.BASE_REGION }}
+          TARGET_REGIONS: ${{ env.TARGET_REGIONS }}
+          PROJECT_TAG: ${{ env.PROJECT_TAG }}
+          EDITION: ${{ matrix.edition }}
+          UBUNTU_VERSION: ${{ matrix.ubuntu_version }}
+          CPU_ARCH: ${{ matrix.cpu_arch }}
+          AMI_ID: ${{ needs.build.outputs.ami_id }}
+        run: |
+          bash packer/scripts/common/ami-replicate.sh \
+            "$AMI_ID" "$EDITION" "$UBUNTU_VERSION" "$CPU_ARCH" \
+            "$BASE_REGION" "$TARGET_REGIONS" "$PROJECT_TAG"
+
+      - name: Retention
+        env:
+          TARGET_REGIONS: ${{ env.TARGET_REGIONS }}
+          PROJECT_TAG: ${{ env.PROJECT_TAG }}
+          EDITION: ${{ matrix.edition }}
+          UBUNTU_VERSION: ${{ matrix.ubuntu_version }}
+          CPU_ARCH: ${{ matrix.cpu_arch }}
+        run: |
+          bash packer/scripts/common/ami-retention.sh \
+            "$EDITION" "$UBUNTU_VERSION" "$CPU_ARCH" "$PROJECT_TAG" "$TARGET_REGIONS"

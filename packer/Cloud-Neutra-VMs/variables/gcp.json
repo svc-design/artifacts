@@ -1,0 +1,4 @@
+{
+  "gcp_project_id": "YOUR_GCP_PROJECT_ID",
+  "gcp_credentials_file": "YOUR_GCP_CREDENTIALS_FILE.json"
+}
