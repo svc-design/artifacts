@@ -1,0 +1,63 @@
+name: build image caddy
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/base/caddy/Dockerfile'
+      - '.github/workflows/build-ci-image-caddy.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'oci/base/caddy/Dockerfile'
+      - '.github/workflows/build-ci-image-caddy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/caddy-cloudflare
+
+jobs:
+  caddy:
+    name: Build caddy image with cloudflare dns
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: |
+          short_sha="$(git rev-parse --short HEAD)"
+          echo "SHORT_SHA=${short_sha}" >> "$GITHUB_ENV"
+          docker build \
+            -t "${IMAGE_NAME}:${short_sha}" \
+            -t "${IMAGE_NAME}:latest" \
+            oci/base/caddy
+
+      # Dockerfile 里已有一次 list-modules 自检, 但那是构建期的。这里再验一次
+      # 运行期的镜像: 构建缓存命中或多阶段拷贝出错时, 构建期通过而运行期缺模块
+      # 是可能的, 而这个模块缺失只有在真正签证书时才暴露。
+      - name: Verify cloudflare dns provider is present in the built image
+        run: |
+          set -euo pipefail
+          docker run --rm "${IMAGE_NAME}:${SHORT_SHA}" caddy list-modules \
+            | grep -q '^dns\.providers\.cloudflare$'
+          echo "dns.providers.cloudflare present"
+
+      # PR 只构建验证, 推送仅发生在 main push / 手动触发
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push "${IMAGE_NAME}:${SHORT_SHA}"
+          docker push "${IMAGE_NAME}:latest"
