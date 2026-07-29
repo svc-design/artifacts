@@ -1,0 +1,58 @@
+name: build image alpine-ansible-lint
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'oci/base/alpine-ansible-lint/**'
+      - '.github/workflows/build-ci-image-alpine-ansible-lint.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'oci/base/alpine-ansible-lint/**'
+      - '.github/workflows/build-ci-image-alpine-ansible-lint.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/alpine-ansible-lint
+
+jobs:
+  alpine-ansible-lint:
+    name: Build alpine-ansible-lint image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: |
+          short_sha="$(git rev-parse --short HEAD)"
+          echo "SHORT_SHA=${short_sha}" >> "$GITHUB_ENV"
+          docker build \
+            -t "${IMAGE_NAME}:${short_sha}" \
+            -t "${IMAGE_NAME}:latest" \
+            oci/base/alpine-ansible-lint
+
+      - name: Verify ansible-lint runs in the built image
+        run: |
+          set -euo pipefail
+          docker run --rm "${IMAGE_NAME}:${SHORT_SHA}" ansible-lint --version
+
+      # PR 只构建验证, 推送仅发生在 main push / 手动触发
+      - name: Push image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker push "${IMAGE_NAME}:${SHORT_SHA}"
+          docker push "${IMAGE_NAME}:latest"
