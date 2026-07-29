@@ -14,8 +14,16 @@ jobs:
   ansible-lint:
     runs-on: ubuntu-latest
 
+    # 原本指向 images.onwalk.net —— 那个私有 registry 已经解析不了
+    # (dial tcp: lookup images.onwalk.net: no such host), 于是本仓**每一个**
+    # PR 的 lint 都红, 红到没人再看它。改用组织自己的 GHCR, 镜像由同仓
+    # build-ci-image-alpine-ansible-lint.yml 从 oci/base/alpine-ansible-lint/
+    # 构建, 与 stunnel / caddy 等其余基础镜像同一套约定。
     container:
-      image: images.onwalk.net/public/base/alpine-ansible-ci-runner:0c09618
+      image: ghcr.io/ai-workspace-infra/alpine-ansible-lint:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout code
