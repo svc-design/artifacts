@@ -1,7 +1,8 @@
 FROM alpine:3.19 AS base
 
-ENV TERRAFORM_VERSION=1.7.5
-ENV ANSIBLE_VERSION=9.2.0
+ENV TERRAFORM_VERSION=1.15.8
+ENV VAULT_VERSION=2.0.3
+ENV ANSIBLE_VERSION=14.0.0
 
 RUN apk add --no-cache \
     python3 \
@@ -30,6 +31,17 @@ RUN case $(uname -m) in \
     unzip terraform.zip -d /usr/local/bin/ && \
     rm -f terraform.zip && \
     chmod +x /usr/local/bin/terraform
+
+# Install Vault CLI
+RUN case $(uname -m) in \
+        x86_64) ARCH=amd64 ;; \
+        aarch64) ARCH=arm64 ;; \
+        *) echo "Unsupported architecture" && exit 1 ;; \
+    esac && \
+    curl -fsSL https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_${ARCH}.zip -o vault.zip && \
+    unzip vault.zip -d /usr/local/bin/ && \
+    rm -f vault.zip && \
+    chmod +x /usr/local/bin/vault
 
 # Install Ansible and Python dependencies
 RUN python3 -m venv /opt/venv && \
