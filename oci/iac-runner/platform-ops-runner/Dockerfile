@@ -1,6 +1,7 @@
 FROM alpine:3.19 AS base
 
 ENV TERRAFORM_VERSION=1.15.8
+ENV OPENTOFU_VERSION=1.12.5
 ENV VAULT_VERSION=2.0.3
 ENV ANSIBLE_VERSION=14.0.0
 
@@ -31,6 +32,17 @@ RUN case $(uname -m) in \
     unzip terraform.zip -d /usr/local/bin/ && \
     rm -f terraform.zip && \
     chmod +x /usr/local/bin/terraform
+
+# Install OpenTofu CLI
+RUN case $(uname -m) in \
+        x86_64) ARCH=amd64 ;; \
+        aarch64) ARCH=arm64 ;; \
+        *) echo "Unsupported architecture" && exit 1 ;; \
+    esac && \
+    curl -fsSL https://github.com/opentofu/opentofu/releases/download/v${OPENTOFU_VERSION}/tofu_${OPENTOFU_VERSION}_linux_${ARCH}.zip -o tofu.zip && \
+    unzip tofu.zip -d /usr/local/bin/ && \
+    rm -f tofu.zip && \
+    chmod +x /usr/local/bin/tofu
 
 # Install Vault CLI
 RUN case $(uname -m) in \
