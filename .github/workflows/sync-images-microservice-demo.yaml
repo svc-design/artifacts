@@ -7,12 +7,19 @@ on:
     paths:
       - '.github/workflows/sync-images-microservice-demo.yaml'
   workflow_dispatch:
-    branches:
-      - main
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   alibabacloud-microservice-demo:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: build and push alibabacloud-microservice-demo images
@@ -41,7 +48,7 @@ jobs:
           docker push images.onwalk.net/public/microservice-demo/zuul-gateway:1.0.0-SNAPSHOT
 
   mysql:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: sync mysql 5.6 images
@@ -57,7 +64,7 @@ jobs:
           docker push images.onwalk.net/public/microservice-demo/mysql:5.6
 
   redis:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: sync redis images
@@ -73,7 +80,7 @@ jobs:
           docker push images.onwalk.net/public/microservice-demo/redis:latest
 
   nacos:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: sync nacos images

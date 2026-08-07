@@ -2,10 +2,19 @@ name: Build GPU K8s offline package
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3

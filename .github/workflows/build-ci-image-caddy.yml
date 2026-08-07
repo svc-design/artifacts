@@ -14,6 +14,15 @@ on:
       - 'oci/base/caddy/Dockerfile'
       - '.github/workflows/build-ci-image-caddy.yml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 permissions:
   contents: read
@@ -25,7 +34,7 @@ env:
 jobs:
   caddy:
     name: Build caddy image with cloudflare dns
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v7
 

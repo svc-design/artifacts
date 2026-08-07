@@ -10,12 +10,19 @@ on:
     paths:
       - '.github/workflows/sync-images-base-os.yaml'
   workflow_dispatch:
-    branches:
-      - main
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   busybox:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Base OS images

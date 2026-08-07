@@ -8,8 +8,6 @@ on:
       - 'oci/proxysql/Dockerfile'
       - '.github/workflows/build-ci-image-proxysql.yml'
   workflow_dispatch:
-    branches:
-      - main
 
 env:
   IMAGE_REPO: "artifact.svc.plus"

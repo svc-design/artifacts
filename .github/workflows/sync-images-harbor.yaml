@@ -10,12 +10,19 @@ on:
     paths:
       - '.github/workflows/sync-images-harbor.yaml'
   workflow_dispatch:
-    branches:
-      - main
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   harbor-core:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Harbor Core
@@ -31,7 +38,7 @@ jobs:
           docker push images.onwalk.net/public/goharbor/harbor-core:v2.12.0
 
   harbor-db:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Harbor DB
@@ -47,7 +54,7 @@ jobs:
           docker push images.onwalk.net/public/goharbor/harbor-db:v2.12.0
 
   harbor-jobservice:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Harbor Jobservice
@@ -63,7 +70,7 @@ jobs:
           docker push images.onwalk.net/public/goharbor/harbor-jobservice:v2.12.0
 
   harbor-portal:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Harbor Portal
@@ -79,7 +86,7 @@ jobs:
           docker push images.onwalk.net/public/goharbor/harbor-portal:v2.12.0
 
   redis-photon:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Redis Photon
@@ -95,7 +102,7 @@ jobs:
           docker push images.onwalk.net/public/goharbor/redis-photon:v2.12.0
 
   registry-photon:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Registry Photon
@@ -111,7 +118,7 @@ jobs:
           docker push images.onwalk.net/public/goharbor/registry-photon:v2.12.0
 
   harbor-registryctl:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Registry Photon
@@ -127,7 +134,7 @@ jobs:
           docker push images.onwalk.net/public/goharbor/harbor-registryctl:v2.12.0
 
   trivy-adapter:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Trivy Adapter

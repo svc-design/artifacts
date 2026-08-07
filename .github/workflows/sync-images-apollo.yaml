@@ -7,12 +7,19 @@ on:
     paths:
       - '.github/workflows/sync-images-apollo.yaml'
   workflow_dispatch:
-    branches:
-      - main
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   apollo-adminservice:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Apollo-adminservice image
@@ -28,7 +35,7 @@ jobs:
           docker push global-images.onwalk.net/public/apolloconfig/apollo-adminservice:2.3.0
 
   apollo-configservice:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Harbor DB
@@ -44,7 +51,7 @@ jobs:
           docker push global-images.onwalk.net/public/apolloconfig/apollo-configservice:2.3.0
 
   apollo-portal:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Harbor Jobservice
@@ -59,7 +66,7 @@ jobs:
           docker tag docker.io/apolloconfig/apollo-portal:2.3.0 global-images.onwalk.net/public/apolloconfig/apollo-portal:2.3.0
           docker push global-images.onwalk.net/public/apolloconfig/apollo-portal:2.3.0
   kubectl:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Kubectl Image
@@ -75,7 +82,7 @@ jobs:
           docker push images.onwalk.net/public/bitnami/kubectl:1.31
 
   velero:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Velero images

@@ -8,8 +8,15 @@ on:
       - 'oci/multi-model-LLM/**'
       - '.github/workflows/build-chart-multi-model-LLM.yaml'
   workflow_dispatch:
-    branches:
-      - main
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 env:
   CHART_DIR: oci/multi-model-LLM/charts/model-serving
@@ -17,7 +24,7 @@ env:
 jobs:
   lint-and-package:
     name: Lint and package Helm chart
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +35,8 @@ jobs:
       - name: Helm lint
         run: helm lint $CHART_DIR
       - name: Helm package
-        run: helm package $CHART_DIR --version 0.1.0 --app-version 0.1.0 -d oci/multi-model-LLM/charts
+        run: helm package $CHART_DIR --version 0.1.0 --app-version 0.1.0 -d 
+          oci/multi-model-LLM/charts
       - name: Upload chart artifact
         uses: actions/upload-artifact@v4
         with:

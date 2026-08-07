@@ -8,8 +8,6 @@ on:
       - 'base-images/go-runtime.Dockerfile'
       - '.github/workflows/build-go-runtime-base-images.yml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   build-go-runtime:

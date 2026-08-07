@@ -8,8 +8,6 @@ on:
       - 'base-images/node-runtime.Dockerfile'
       - '.github/workflows/build-node-runtime-base-images.yml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   build-node-runtime:

@@ -16,6 +16,14 @@ on:
         required: false
         type: string
 
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 permissions:
   contents: write
 
@@ -28,7 +36,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     outputs:
       autogen_tag: ${{ steps.resolve.outputs.autogen_tag }}
     steps:
@@ -59,23 +67,23 @@ jobs:
           cp gitops/scripts/autogen-studio/deploy-autogen-studio.sh offline-installer/scripts/
           chmod +x offline-installer/scripts/deploy-autogen-studio.sh
           cat <<'README' > offline-installer/README.md
-# Offline AutoGen Studio Installer
+          # Offline AutoGen Studio Installer
 
-This archive contains container images and helper assets for deploying AutoGen Studio with Docker Compose.
+          This archive contains container images and helper assets for deploying AutoGen Studio with Docker Compose.
 
-## Contents
-- `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
-- `images/`: Pre-pulled container images saved as tar archives.
-- `scripts/deploy-autogen-studio.sh`: Helper script to load the images and manage the compose stack.
+          ## Contents
+          - `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
+          - `images/`: Pre-pulled container images saved as tar archives.
+          - `scripts/deploy-autogen-studio.sh`: Helper script to load the images and manage the compose stack.
 
-## Usage
-1. Extract the archive on a host with Docker/nerdctl available.
-2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-autogen-studio.sh load-images` to import the images with nerdctl.
-3. Start the stack: `./scripts/deploy-autogen-studio.sh up`.
-4. Access AutoGen Studio at http://localhost:9090.
+          ## Usage
+          1. Extract the archive on a host with Docker/nerdctl available.
+          2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-autogen-studio.sh load-images` to import the images with nerdctl.
+          3. Start the stack: `./scripts/deploy-autogen-studio.sh up`.
+          4. Access AutoGen Studio at http://localhost:9090.
 
-Adjust the compose file as needed before running the helper script.
-README
+          Adjust the compose file as needed before running the helper script.
+          README
 
       - name: Pull & export container images
         env:
@@ -103,7 +111,7 @@ README
     strategy:
       matrix:
         arch: [amd64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -119,9 +127,10 @@ README
 
   publish-release:
     needs: test-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
-      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-autogen-studio-{0}', github.run_number) }}
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || 
+        format('offline-autogen-studio-{0}', github.run_number) }}
     steps:
       - uses: actions/checkout@v4
 

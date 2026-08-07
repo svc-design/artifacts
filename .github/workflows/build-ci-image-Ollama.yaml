@@ -8,8 +8,6 @@ on:
       - 'oci/base/cuda/Ollama/Dockerfile'
       - '.github/workflows/build-ci-image-Ollama.yaml'
   workflow_dispatch:
-    branches:
-      - main
 
 env:
   IMAGE_REPO: "artifact.svc.plus"

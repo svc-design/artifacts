@@ -15,6 +15,14 @@ on:
         required: false
         type: string
 
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 permissions:
   contents: write
 
@@ -27,7 +35,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     outputs:
       version: ${{ steps.resolve.outputs.version }}
     steps:
@@ -63,7 +71,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -79,15 +87,17 @@ jobs:
 
       - name: Verify Terraform bundle
         env:
-          TERRAFORM_VERSION: ${{ needs.build-offline-installer.outputs.version }}
+          TERRAFORM_VERSION: ${{ needs.build-offline-installer.outputs.version 
+            }}
           ARCH: ${{ matrix.arch }}
         run: script/verify-terraform-bundle.sh
 
   publish-release:
     needs: test-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
-      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-terraform-{0}', github.run_number) }}
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || 
+        format('offline-terraform-{0}', github.run_number) }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -148,7 +158,7 @@ jobs:
   retention:
     name: Remote retention (keep latest 3)
     needs: publish-release
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}

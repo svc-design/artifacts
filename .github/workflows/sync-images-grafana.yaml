@@ -7,12 +7,19 @@ on:
     paths:
       - '.github/workflows/sync-images-grafana.yaml'
   workflow_dispatch:
-    branches:
-      - main
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   grafana:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and grafana images
@@ -28,7 +35,7 @@ jobs:
           docker push images.onwalk.net/public/grafana/grafana:11.3.0
 
   grafana-agent:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and grafana agent images
@@ -44,7 +51,7 @@ jobs:
           docker push images.onwalk.net/public/grafana/agent:v0.42.0
 
   grafana-alloy:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and grafana images
@@ -60,7 +67,7 @@ jobs:
           docker push images.onwalk.net/public/grafana/alloy:v1.5.1
 
   configmap-reload:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and configmap-reload images

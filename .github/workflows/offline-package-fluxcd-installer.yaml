@@ -11,10 +11,19 @@ on:
         required: false
         type: string
       chart_version:
-        description: "Override Helm chart version for fluxcd-community/flux2. Leave empty to auto-resolve"
+        description: "Override Helm chart version for fluxcd-community/flux2. Leave
+          empty to auto-resolve"
         required: false
         type: string
 
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 permissions:
   contents: write
 
@@ -27,7 +36,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
       NERDCTL_VERSION: "2.0.3"
     outputs:

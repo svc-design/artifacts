@@ -7,7 +7,15 @@ on:
       - 'scripts/make_k3s_offline_package.sh'
       - '.github/workflows/offline-package-k3s-installer.yaml'
   workflow_dispatch:
-    
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 env:
   NERDCTL_VERSION: "2.1.4"
 
@@ -16,7 +24,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     outputs:
       k3s_version: ${{ steps.resolve.outputs.version }}
 
@@ -53,9 +61,9 @@ jobs:
           K3S_VERSION: ${{ steps.resolve.outputs.version }}
           ARCH: ${{ matrix.arch }}
         run: |
-            set -euo pipefail
-            chmod +x scripts/make_k3s_offline_package.sh
-            ./scripts/make_k3s_offline_package.sh
+          set -euo pipefail
+          chmod +x scripts/make_k3s_offline_package.sh
+          ./scripts/make_k3s_offline_package.sh
 
       - name: Validate airgap image tar
         run: |
@@ -94,7 +102,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
 
     steps:
       - name: Download Artifact
@@ -150,9 +158,10 @@ jobs:
 
   publish-release:
     needs: test-k3s-installer
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
-      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-k3s-{0}', github.run_number) }}
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || 
+        format('offline-k3s-{0}', github.run_number) }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}

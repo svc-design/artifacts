@@ -20,6 +20,14 @@ on:
         required: false
         type: string
 
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 permissions:
   contents: write
 
@@ -32,7 +40,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     outputs:
       n8n_tag: ${{ steps.resolve.outputs.n8n_tag }}
       postgres_tag: ${{ steps.resolve.outputs.postgres_tag }}
@@ -71,23 +79,23 @@ jobs:
           cp gitops/scripts/n8n/deploy-n8n.sh offline-installer/scripts/
           chmod +x offline-installer/scripts/deploy-n8n.sh
           cat <<'README' > offline-installer/README.md
-# Offline n8n Installer
+          # Offline n8n Installer
 
-This archive contains container images and helper assets for deploying n8n with Docker Compose.
+          This archive contains container images and helper assets for deploying n8n with Docker Compose.
 
-## Contents
-- `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
-- `images/`: Pre-pulled container images saved as tar archives.
-- `scripts/deploy-n8n.sh`: Helper script to load the images and manage the compose stack.
+          ## Contents
+          - `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
+          - `images/`: Pre-pulled container images saved as tar archives.
+          - `scripts/deploy-n8n.sh`: Helper script to load the images and manage the compose stack.
 
-## Usage
-1. Extract the archive on a host with Docker/nerdctl available.
-2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-n8n.sh load-images` to import the images with nerdctl.
-3. Start the stack: `./scripts/deploy-n8n.sh up`.
-4. Access the n8n UI at http://localhost:5678.
+          ## Usage
+          1. Extract the archive on a host with Docker/nerdctl available.
+          2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-n8n.sh load-images` to import the images with nerdctl.
+          3. Start the stack: `./scripts/deploy-n8n.sh up`.
+          4. Access the n8n UI at http://localhost:5678.
 
-Adjust the compose file as needed before running the helper script.
-README
+          Adjust the compose file as needed before running the helper script.
+          README
 
       - name: Pull & export container images
         env:
@@ -121,7 +129,7 @@ README
     strategy:
       matrix:
         arch: [amd64]
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -137,9 +145,10 @@ README
 
   publish-release:
     needs: test-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
-      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-n8n-{0}', github.run_number) }}
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || 
+        format('offline-n8n-{0}', github.run_number) }}
     steps:
       - uses: actions/checkout@v4
 
