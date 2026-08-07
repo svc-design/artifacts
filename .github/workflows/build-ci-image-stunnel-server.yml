@@ -14,6 +14,15 @@ on:
       - 'oci/stunnel-server/Dockerfile'
       - '.github/workflows/build-ci-image-stunnel-server.yml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 permissions:
   contents: read
@@ -25,7 +34,7 @@ env:
 jobs:
   stunnel-server:
     name: Build stunnel-server image
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v7
 

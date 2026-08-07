@@ -7,13 +7,22 @@ on:
     paths:
       - '.github/workflows/sync-images-opentelemetry.yaml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 env:
   VERSION: 1.12.0
 
 jobs:
   opentelemetry-collector:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Sync opentelemetry-collector image
@@ -28,7 +37,7 @@ jobs:
           docker tag otel/opentelemetry-collector-contrib:0.113.0 images.onwalk.net/public/opentelemetry/opentelemetry-collector-contrib:0.113.0
           docker push images.onwalk.net/public/opentelemetry/opentelemetry-collector-contrib:0.113.0
   jaegertracing:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Sync jaegertracing image
@@ -43,7 +52,7 @@ jobs:
           docker tag jaegertracing/all-in-one:1.53.0 images.onwalk.net/public/jaegertracing/all-in-one:1.53.0
           docker push images.onwalk.net/public/jaegertracing/all-in-one:1.53.0
   valkey:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Sync valkey image
@@ -59,7 +68,7 @@ jobs:
           docker push images.onwalk.net/public/opentelemetry/valkey:7.2-alpine
 
   flagd:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Sync flagd image

@@ -1,4 +1,4 @@
-name: Run Ansible Lint in Container 
+name: Run Ansible Lint in Container
 
 on:
   pull_request:
@@ -7,10 +7,19 @@ on:
       - '**/*.yaml'
       - '**/*.yml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   ansible-lint:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
 
     # 原本指向 images.onwalk.net —— 那个私有 registry 已经解析不了
     # (dial tcp: lookup images.onwalk.net: no such host), 于是本仓**每一个**
@@ -28,4 +37,5 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Run ansible-lint
-        run: echo ${{ secrets.VAULT_PASSWORD }} > ~/.vault_password && ansible-lint
+        run: echo ${{ secrets.VAULT_PASSWORD }} > ~/.vault_password && 
+          ansible-lint

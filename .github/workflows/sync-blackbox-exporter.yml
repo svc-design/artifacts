@@ -2,6 +2,15 @@ name: Sync blackbox_exporter latest v0.* (matrix)
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
   schedule:
     - cron: "0 2 * * *" # <-- 这是 UTC 02:00。若需 JST 02:00，请改为 "0 17 * * *"
 
@@ -15,7 +24,7 @@ concurrency:
 jobs:
   prep:
     name: Resolve latest tag & remote check (${{ matrix.vps_host }})
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     strategy:
       matrix:
         vps_host:
@@ -79,10 +88,11 @@ jobs:
           fi
 
   sync-one:
-    name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.version }} (${{ matrix.vps_host }})
+    name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.version }} 
+      (${{ matrix.vps_host }})
     needs: prep
     if: needs.prep.outputs.exists == 'false'
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     strategy:
       fail-fast: false
       matrix:
@@ -161,7 +171,7 @@ jobs:
     name: Remote retention (keep latest 10 v0.*) (${{ matrix.vps_host }})
     needs: [prep, sync-one]
     if: needs.prep.outputs.exists == 'false'
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     strategy:
       matrix:
         vps_host:

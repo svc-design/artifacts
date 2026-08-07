@@ -18,15 +18,24 @@ on:
         required: false
         default: '3650'
 
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 env:
   DOMAIN: ${{ github.event.inputs.domain || 'kube.registry.local' }}
   VALID_DAYS: ${{ github.event.inputs.valid_days || '3650' }}
   OUTPUT_DIR: ssl_certificates
-  TAG_NAME: ${{ github.ref_name != '' && github.ref_name || format('daily-{0}', github.run_number) }}
+  TAG_NAME: ${{ github.ref_name != '' && github.ref_name || format('daily-{0}', 
+    github.run_number) }}
 
 jobs:
   generate-cert:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     outputs:
       tag_name: ${{ env.TAG_NAME }}
     steps:
@@ -50,7 +59,7 @@ jobs:
 
   test-cert:
     needs: generate-cert
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - name: Download SSL Certificates
         uses: actions/download-artifact@v4
@@ -67,8 +76,9 @@ jobs:
 
   release-cert:
     needs: test-cert
-    if: startsWith(github.ref, 'refs/tags/release-') || github.event_name == 'workflow_dispatch'
-    runs-on: self-runner
+    if: startsWith(github.ref, 'refs/tags/release-') || github.event_name == 
+      'workflow_dispatch'
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - name: Download SSL Certificates
         uses: actions/download-artifact@v4
@@ -78,7 +88,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name != '' && github.ref_name || format('daily-{0}', github.run_number) }}
+          tag_name: ${{ github.ref_name != '' && github.ref_name || 
+            format('daily-{0}', github.run_number) }}
           name: >-
             ${{ startsWith(github.ref, 'refs/tags/')
               && format('Release {0}', github.ref_name)

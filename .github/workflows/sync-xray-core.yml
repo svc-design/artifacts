@@ -2,6 +2,15 @@ name: Sync Xray-core latest v25.* (matrix)
 
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
   schedule:
     - cron: "0 2 * * *" # <-- 这是 UTC 02:00。若需 JST 02:00，请改为 "0 17 * * *"
 
@@ -16,7 +25,7 @@ concurrency:
 jobs:
   prep:
     name: Resolve latest tag & remote check (${{ matrix.vps_host }})
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     strategy:
       matrix:
         vps_host:
@@ -75,17 +84,18 @@ jobs:
           fi
 
   sync-one:
-    name: Sync ${{ matrix.asset }} for ${{ needs.prep.outputs.tag }} (${{ matrix.vps_host }})
+    name: Sync ${{ matrix.asset }} for ${{ needs.prep.outputs.tag }} (${{ 
+      matrix.vps_host }})
     needs: prep
     if: needs.prep.outputs.exists == 'false'   # 远端已存在则整个矩阵跳过
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     strategy:
       fail-fast: false
       matrix:
         vps_host:
           - cn-homepage.svc.plus
           - global-homepage.svc.plus
-        asset: [ "Xray-linux-64.zip", "Xray-macos-64.zip", "Xray-windows-64.zip" ]
+        asset: ["Xray-linux-64.zip", "Xray-macos-64.zip", "Xray-windows-64.zip"]
     env:
       GH_REPO: XTLS/Xray-core
       GH_TOKEN: ${{ github.token }}          # 继续使用内置 token
@@ -151,7 +161,7 @@ jobs:
     name: Remote retention (keep latest 10 v25.*) (${{ matrix.vps_host }})
     needs: [prep, sync-one]
     if: needs.prep.outputs.exists == 'false'   # 只有新增版本时才清理
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     strategy:
       matrix:
         vps_host:

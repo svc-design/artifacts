@@ -12,10 +12,19 @@ on:
         required: false
         type: string
       chart_version:
-        description: "Override helm chart version for apisix (e.g., 1.2.3). Leave empty to auto-resolve"
+        description: "Override helm chart version for apisix (e.g., 1.2.3). Leave
+          empty to auto-resolve"
         required: false
         type: string
 
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 permissions:
   contents: write   # 需要创建/上传 Release 资产
 
@@ -28,7 +37,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     outputs:
       chart_version: ${{ steps.resolve.outputs.chart_version }}
     steps:
@@ -85,7 +94,8 @@ jobs:
             docker save "$img" -o offline-installer/images/${safe}.tar
           done
 
-      - name: Download Helm chart (apisix/apisix ${{ steps.resolve.outputs.chart_version }})
+      - name: Download Helm chart (apisix/apisix ${{ 
+          steps.resolve.outputs.chart_version }})
         env:
           CHART_VERSION: ${{ steps.resolve.outputs.chart_version }}
         run: |
@@ -111,9 +121,10 @@ jobs:
 
   publish-release:
     needs: build-offline-installer
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
-      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-apisix-gateway-{0}', github.run_number) }}
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || 
+        format('offline-apisix-gateway-{0}', github.run_number) }}
     steps:
       - uses: actions/checkout@v4
 

@@ -10,10 +10,19 @@ on:
     paths:
       - '.github/workflows/sync-images-openebs.yaml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   node-disk-manager:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Base OS images
@@ -29,7 +38,7 @@ jobs:
           docker push global-images.onwalk.net/private/deepflow-v6.3/openebs/node-disk-manager:2.0.0
 
   node-disk-operator:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Push images
@@ -45,7 +54,7 @@ jobs:
           docker push global-images.onwalk.net/private/deepflow-v6.3/openebs/node-disk-operator:2.0.0
 
   provisioner-localpv:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Push images

@@ -6,13 +6,22 @@ on:
       - 'scripts/pulp-installer.sh'
       - '.github/workflows/build-pulp-offline-installer.yml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   build-pulp-installer:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +64,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64]
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +108,7 @@ jobs:
 
   publish-release:
     needs: test-offline-installer
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
       tag_name: offline-pulp-${{ github.run_number }}
 

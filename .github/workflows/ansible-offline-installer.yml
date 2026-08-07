@@ -5,10 +5,19 @@ on:
     paths:
       - '.github/workflows/ansible-offline-installer.yml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 
 jobs:
   prepare-offline-package:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
 
     steps:
       - name: Checkout the repository
@@ -26,7 +35,8 @@ jobs:
         run: |
           sudo yum install -y python3 python3-pip
           pip3 install --download /tmp/offline_packages ansible
-        if: runner.os == 'Linux' && (startsWith(runner.os, 'rhel') || startsWith(runner.os, 'centos'))
+        if: runner.os == 'Linux' && (startsWith(runner.os, 'rhel') || 
+          startsWith(runner.os, 'centos'))
 
       # Create the installer package
       - name: Create ansible-offline-installer.tar.gz
@@ -53,7 +63,7 @@ jobs:
           path: ansible-offline-installer.tar.gz
 
   test-installer:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     needs: prepare-offline-package
     strategy:
       matrix:
@@ -85,7 +95,7 @@ jobs:
           ansible --version
 
   create-release:
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     needs: test-installer
     if: success()  # Only run if the test-installer job succeeds
 

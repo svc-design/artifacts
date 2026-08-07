@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag to use/sync (e.g., v3.127.0). Leave empty to use offline-pulumi-<run_number>"
+        description: "Release tag to use/sync (e.g., v3.127.0). Leave empty to use
+          offline-pulumi-<run_number>"
         required: false
         type: string
       pulumi_version:
@@ -15,6 +16,14 @@ on:
         required: false
         type: string
 
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
 permissions:
   contents: write
 
@@ -27,7 +36,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     outputs:
       version: ${{ steps.resolve.outputs.version }}
     steps:
@@ -65,7 +74,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -91,9 +100,10 @@ jobs:
 
   publish-release:
     needs: test-offline-installer
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
-      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-pulumi-{0}', github.run_number) }}
+      TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || 
+        format('offline-pulumi-{0}', github.run_number) }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
       VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -154,7 +164,7 @@ jobs:
   retention:
     name: Remote retention (keep latest 3)
     needs: publish-release
-    runs-on: self-runner
+    runs-on: ${{ inputs.runner || 'self-runner' }}
     env:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}
