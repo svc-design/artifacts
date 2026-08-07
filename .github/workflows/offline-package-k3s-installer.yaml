@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     outputs:
       k3s_version: ${{ steps.resolve.outputs.version }}
 
@@ -94,7 +94,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
 
     steps:
       - name: Download Artifact
@@ -150,7 +150,7 @@ jobs:
 
   publish-release:
     needs: test-k3s-installer
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-k3s-{0}', github.run_number) }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}

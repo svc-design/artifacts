@@ -8,8 +8,6 @@ on:
       - 'oci/PostgreSQL/backup/Dockerfile'
       - '.github/workflows/build-python-3.10-base-images.yml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   build-postgresql-backup-image:

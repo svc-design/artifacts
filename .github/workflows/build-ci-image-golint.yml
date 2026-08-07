@@ -8,8 +8,6 @@ on:
       - 'oci/base/alpine-golint/Dockerfile'
       - 'build-ci-image-eslint.yml/build-ci-image-golint.yml'
   workflow_dispatch:
-    branches:
-      - main
 env:
   IMAGE_REPO: "artifact.onwalk.net"
 

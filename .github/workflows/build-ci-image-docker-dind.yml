@@ -8,8 +8,6 @@ on:
       - 'oci/base/alpine-docker-dind/Dockerfile'
       - '.github/workflows/build-ci-image-docker-dind.yml'
   workflow_dispatch:
-    branches:
-      - main
 env:
   IMAGE_REPO: "artifact.onwalk.net"
 

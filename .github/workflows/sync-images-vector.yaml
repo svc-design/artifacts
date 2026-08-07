@@ -10,12 +10,10 @@ on:
     paths:
       - '.github/workflows/sync-images-vector.yaml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   vector:
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - uses: actions/checkout@v2
       - name: Initialize and Sync Vector images

@@ -21,7 +21,7 @@ concurrency:
 jobs:
   prep:
     name: Resolve tag & remote check (${{ matrix.vps_host }})
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     strategy:
       matrix:
         vps_host:
@@ -99,7 +99,7 @@ jobs:
     name: Sync ${{ matrix.asset_prefix }}_${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.tag }} (${{ matrix.vps_host }})
     needs: prep
     if: needs.prep.outputs.exists == 'false'   # 远端已存在则整个矩阵跳过
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     strategy:
       fail-fast: false
       matrix:
@@ -197,7 +197,7 @@ jobs:
     name: Remote retention (keep latest 10 v0.*) (${{ matrix.vps_host }})
     needs: [prep, sync-one]
     if: needs.prep.outputs.exists == 'false'   # 只有新增版本时才清理
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     strategy:
       matrix:
         vps_host:

@@ -31,7 +31,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     outputs:
       sealos_version: ${{ steps.resolve.outputs.sealos_version }}
       artifact-name: ${{ steps.upload-artifact.outputs.artifact-name }}
@@ -73,7 +73,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - name: Download Artifact
         uses: actions/download-artifact@v4
@@ -95,7 +95,7 @@ jobs:
 
   publish-release:
     needs: test-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-sealos-{0}', github.run_number) }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
@@ -166,7 +166,7 @@ jobs:
   retention:
     name: Remote retention (keep latest 3)
     needs: publish-release
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}

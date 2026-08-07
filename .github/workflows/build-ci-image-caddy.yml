@@ -25,7 +25,7 @@ env:
 jobs:
   caddy:
     name: Build caddy image with cloudflare dns
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - uses: actions/checkout@v7
 

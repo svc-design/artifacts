@@ -8,8 +8,6 @@ on:
       - 'base-images/openresty-geoip.Dockerfile'
       - '.github/workflows/build-openresty-geoip-base-images.yml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   build-openresty-geoip:

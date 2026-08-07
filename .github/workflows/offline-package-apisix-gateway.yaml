@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     outputs:
       chart_version: ${{ steps.resolve.outputs.chart_version }}
     steps:
@@ -111,7 +111,7 @@ jobs:
 
   publish-release:
     needs: build-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-apisix-gateway-{0}', github.run_number) }}
     steps:

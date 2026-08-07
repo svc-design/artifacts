@@ -8,8 +8,6 @@ on:
       - 'oci/base/alpine-ansible-lint/Dockerfile'
       - '.github/workflows/build-ci-image-ansible-runer.yml'
   workflow_dispatch:
-    branches:
-      - main
 env:
   IMAGE_REPO: "artifact.onwalk.net"
 

@@ -37,7 +37,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       GATEWAY_TAG: ${{ github.event.inputs.gateway_tag || '3.7' }}
       KIC_TAG: ${{ github.event.inputs.kic_tag || '3.2' }}
@@ -110,7 +110,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - uses: actions/checkout@v4
 
@@ -129,7 +129,7 @@ jobs:
 
   publish-release:
     needs: test-release
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-kong-gateway-{0}', github.run_number) }}
     steps:

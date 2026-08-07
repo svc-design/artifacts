@@ -5,12 +5,10 @@ on:
     paths:
       - '.github/workflows/ansible-offline-installer.yml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   prepare-offline-package:
-    runs-on: ubuntu-latest
+    runs-on: self-runner
 
     steps:
       - name: Checkout the repository
@@ -55,7 +53,7 @@ jobs:
           path: ansible-offline-installer.tar.gz
 
   test-installer:
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     needs: prepare-offline-package
     strategy:
       matrix:
@@ -87,7 +85,7 @@ jobs:
           ansible --version
 
   create-release:
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     needs: test-installer
     if: success()  # Only run if the test-installer job succeeds
 

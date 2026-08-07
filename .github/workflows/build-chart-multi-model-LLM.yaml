@@ -8,8 +8,6 @@ on:
       - 'oci/multi-model-LLM/**'
       - '.github/workflows/build-chart-multi-model-LLM.yaml'
   workflow_dispatch:
-    branches:
-      - main
 
 env:
   CHART_DIR: oci/multi-model-LLM/charts/model-serving
@@ -17,7 +15,7 @@ env:
 jobs:
   lint-and-package:
     name: Lint and package Helm chart
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - name: Checkout
         uses: actions/checkout@v4

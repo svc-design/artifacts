@@ -15,7 +15,7 @@ concurrency:
 jobs:
   prep:
     name: Resolve latest tag & remote check (${{ matrix.vps_host }})
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     strategy:
       matrix:
         vps_host:
@@ -82,7 +82,7 @@ jobs:
     name: Sync ${{ matrix.asset_suffix }} for ${{ needs.prep.outputs.version }} (${{ matrix.vps_host }})
     needs: prep
     if: needs.prep.outputs.exists == 'false'
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     strategy:
       fail-fast: false
       matrix:
@@ -159,7 +159,7 @@ jobs:
     name: Remote retention (keep latest 10) (${{ matrix.vps_host }})
     needs: [prep, sync-one]
     if: needs.prep.outputs.exists == 'false'
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     strategy:
       matrix:
         vps_host:

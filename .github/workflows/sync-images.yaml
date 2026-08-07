@@ -12,12 +12,10 @@ on:
       - 'charts'
       - '.github/workflows/sync-images.yaml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   sync-images:
-    runs-on: ubuntu-latest
+    runs-on: self-runner
 
     steps:
     - uses: actions/checkout@v2

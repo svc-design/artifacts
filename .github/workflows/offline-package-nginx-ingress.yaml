@@ -38,7 +38,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     outputs:
       image_tag: ${{ steps.resolve.outputs.image_tag }}
       chart_version: ${{ steps.resolve.outputs.chart_version }}
@@ -133,7 +133,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - uses: actions/checkout@v4
 
@@ -181,7 +181,7 @@ jobs:
 
   publish-release:
     needs: test-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-nginx-ingress-{0}', github.run_number) }}
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
@@ -253,7 +253,7 @@ jobs:
   retention:
     name: Remote retention (keep latest 3)
     needs: publish-release
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       RSYNC_SSH_KEY: ${{ secrets.RSYNC_SSH_KEY }}
       RSYNC_SSH_USER: ${{ secrets.RSYNC_SSH_USER }}

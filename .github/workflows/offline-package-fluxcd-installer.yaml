@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       NERDCTL_VERSION: "2.0.3"
     outputs:

@@ -36,7 +36,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     outputs:
       ragflow_tag: ${{ steps.resolve.outputs.ragflow_tag }}
       postgres_tag: ${{ steps.resolve.outputs.postgres_tag }}
@@ -81,23 +81,23 @@ jobs:
           cp gitops/scripts/ragflow/deploy-ragflow.sh offline-installer/scripts/
           chmod +x offline-installer/scripts/deploy-ragflow.sh
           cat <<'README' > offline-installer/README.md
-# Offline RAGFlow Installer
-
-This archive contains container images and helper assets for deploying RAGFlow with Docker Compose.
-
-## Contents
-- `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
-- `images/`: Pre-pulled container images saved as tar archives.
-- `scripts/deploy-ragflow.sh`: Helper script to load the images and manage the compose stack.
-
-## Usage
-1. Extract the archive on a host with Docker/nerdctl available.
-2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-ragflow.sh load-images` to import the images with nerdctl.
-3. Start the stack: `./scripts/deploy-ragflow.sh up`.
-4. Access the RAGFlow UI at http://localhost:3001.
-
-Adjust the compose file as needed before running the helper script. Configure external vector stores or storage services as required by your deployment.
-README
+          # Offline RAGFlow Installer
+          
+          This archive contains container images and helper assets for deploying RAGFlow with Docker Compose.
+          
+          ## Contents
+          - `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
+          - `images/`: Pre-pulled container images saved as tar archives.
+          - `scripts/deploy-ragflow.sh`: Helper script to load the images and manage the compose stack.
+          
+          ## Usage
+          1. Extract the archive on a host with Docker/nerdctl available.
+          2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-ragflow.sh load-images` to import the images with nerdctl.
+          3. Start the stack: `./scripts/deploy-ragflow.sh up`.
+          4. Access the RAGFlow UI at http://localhost:3001.
+          
+          Adjust the compose file as needed before running the helper script. Configure external vector stores or storage services as required by your deployment.
+          README
 
       - name: Pull & export container images
         env:
@@ -133,7 +133,7 @@ README
     strategy:
       matrix:
         arch: [amd64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -149,7 +149,7 @@ README
 
   publish-release:
     needs: test-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-ragflow-{0}', github.run_number) }}
     steps:

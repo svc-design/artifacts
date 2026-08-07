@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     outputs:
       flowise_tag: ${{ steps.resolve.outputs.flowise_tag }}
     steps:
@@ -59,23 +59,23 @@ jobs:
           cp gitops/scripts/flowise/deploy-flowise.sh offline-installer/scripts/
           chmod +x offline-installer/scripts/deploy-flowise.sh
           cat <<'README' > offline-installer/README.md
-# Offline Flowise Installer
-
-This archive contains container images and helper assets for deploying Flowise with Docker Compose.
-
-## Contents
-- `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
-- `images/`: Pre-pulled container images saved as tar archives.
-- `scripts/deploy-flowise.sh`: Helper script to load the images and manage the compose stack.
-
-## Usage
-1. Extract the archive on a host with Docker/nerdctl available.
-2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-flowise.sh load-images` to import the images with nerdctl.
-3. Start the stack: `./scripts/deploy-flowise.sh up`.
-4. Access the Flowise UI at http://localhost:3000.
-
-Adjust the compose file as needed before running the helper script.
-README
+          # Offline Flowise Installer
+          
+          This archive contains container images and helper assets for deploying Flowise with Docker Compose.
+          
+          ## Contents
+          - `docker-compose.yaml`: Reference deployment manifest configured for the packaged images.
+          - `images/`: Pre-pulled container images saved as tar archives.
+          - `scripts/deploy-flowise.sh`: Helper script to load the images and manage the compose stack.
+          
+          ## Usage
+          1. Extract the archive on a host with Docker/nerdctl available.
+          2. (Optional) Run `IMAGE_LOAD_TOOL=nerdctl ./scripts/deploy-flowise.sh load-images` to import the images with nerdctl.
+          3. Start the stack: `./scripts/deploy-flowise.sh up`.
+          4. Access the Flowise UI at http://localhost:3000.
+          
+          Adjust the compose file as needed before running the helper script.
+          README
 
       - name: Pull & export container images
         env:
@@ -103,7 +103,7 @@ README
     strategy:
       matrix:
         arch: [amd64]
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -119,7 +119,7 @@ README
 
   publish-release:
     needs: test-offline-installer
-    runs-on: ubuntu-latest
+    runs-on: self-runner
     env:
       TAG_NAME: ${{ github.event.inputs.tag != '' && github.event.inputs.tag || format('offline-flowise-{0}', github.run_number) }}
     steps:

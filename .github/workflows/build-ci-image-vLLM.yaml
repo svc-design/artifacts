@@ -8,8 +8,6 @@ on:
       - 'oci/base/cuda/vLLM/Dockerfile'
       - '.github/workflows/build-ci-image-vLLM.yaml'
   workflow_dispatch:
-    branches:
-      - main
 
 env:
   IMAGE_REPO: "artifact.svc.plus"

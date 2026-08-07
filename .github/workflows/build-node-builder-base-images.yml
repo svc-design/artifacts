@@ -8,8 +8,6 @@ on:
       - 'base-images/node-builder.Dockerfile'
       - '.github/workflows/build-node-builder-base-images.yml'
   workflow_dispatch:
-    branches:
-      - main
 
 jobs:
   build-node-builder:

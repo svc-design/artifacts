@@ -8,8 +8,6 @@ on:
       - 'oci/base/cuda/SGLang/Dockerfile'
       - '.github/workflows/build-ci-image-SGLang.yaml'
   workflow_dispatch:
-    branches:
-      - main
 
 env:
   IMAGE_REPO: "artifact.svc.plus"
