@@ -6,6 +6,7 @@ on:
     paths:
       - packer/ubuntu2604-systemd-agent-proxy.pkr.hcl
       - packer/scripts/setup-agent-proxy-runtime.sh
+      - packer/scripts/setup-observability-runtime.sh
       - packer/scripts/cleanup-golden-image.sh
       - .github/scripts/**
       - .github/workflows/packer-vultr-ubuntu2604-systemd-agent-proxy.yml

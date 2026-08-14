@@ -113,41 +113,4 @@ EOF
 
 sysctl --system || true
 
-# 7. Pre-install Observability Agents (Vector & Node Exporter)
-echo "Installing Observability Agents (Vector & Node Exporter)..."
-VECTOR_VERSION="0.41.1"
-ARCH_NAME="$(dpkg --print-architecture)"
-VECTOR_DEB_URL="https://github.com/vectordotdev/vector/releases/download/v${VECTOR_VERSION}/vector_${VECTOR_VERSION}-1_${ARCH_NAME}.deb"
-TEMP_OBS_DIR="$(mktemp -d)"
-
-if curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused "${VECTOR_DEB_URL}" -o "${TEMP_OBS_DIR}/vector.deb"; then
-  apt-get install -y "${TEMP_OBS_DIR}/vector.deb"
-  systemctl enable vector
-  echo "Vector v${VECTOR_VERSION} pre-installed successfully."
-fi
-
-NODE_EXPORTER_VERSION="1.8.2"
-NODE_EXPORTER_URL="https://github.com/prometheus/node_exporter/releases/download/v${NODE_EXPORTER_VERSION}/node_exporter-${NODE_EXPORTER_VERSION}.linux-${ARCH_NAME}.tar.gz"
-if curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused "${NODE_EXPORTER_URL}" | tar -xz -C "${TEMP_OBS_DIR}"; then
-  install -m 0755 "${TEMP_OBS_DIR}/node_exporter-${NODE_EXPORTER_VERSION}.linux-${ARCH_NAME}/node_exporter" /usr/local/bin/node_exporter
-  cat <<'EOF' > /etc/systemd/system/node_exporter.service
-[Unit]
-Description=Node Exporter
-After=network.target
-
-[Service]
-User=root
-ExecStart=/usr/local/bin/node_exporter --web.listen-address=0.0.0.0:9100
-Restart=always
-RestartSec=5s
-
-[Install]
-WantedBy=multi-user.target
-EOF
-  systemctl daemon-reload
-  systemctl enable node_exporter
-  echo "Node Exporter v${NODE_EXPORTER_VERSION} pre-installed successfully."
-fi
-rm -rf "${TEMP_OBS_DIR}"
-
 echo "Agent Proxy Production Runtime Setup Completed Successfully."

@@ -13,6 +13,11 @@
 
 手动运行时可选择 Vultr region、临时构建 VPS plan，并可用 `os_id` 覆盖动态 OS ID 解析。合并到 `main` 后，模板变更会自动走 UAT 发布。
 
+四套镜像都会预装观测运行时二进制：Vector、Node Exporter 和 Process Exporter；Web SaaS
+镜像额外预装 PostgreSQL Exporter。镜像只提供不可变二进制与 systemd unit，不写入任何
+运行时凭据，也不会在构建阶段启动依赖业务配置的 exporter。Agent Proxy 镜像明确不安装
+Docker，Docker 仅属于 Web SaaS 镜像。
+
 ## Vault prerequisites
 
 工作流使用 GitHub OIDC 登录 Vault，不从 GitHub Actions Secrets 读取 Vultr API key。UAT 需要在下面的 Vault 路径提供 `VULTR_API_KEY`：

@@ -6,6 +6,7 @@ on:
     paths:
       - packer/debian13-docker-compose-websaas.pkr.hcl
       - packer/scripts/setup-websaas-runtime.sh
+      - packer/scripts/setup-observability-runtime.sh
       - packer/scripts/cleanup-golden-image.sh
       - .github/scripts/**
       - .github/workflows/packer-vultr-debian13-docker-compose-websaas.yml
