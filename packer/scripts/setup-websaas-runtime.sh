@@ -7,6 +7,12 @@ echo "======================================================="
 
 export DEBIAN_FRONTEND=noninteractive
 
+# Ensure valid DNS resolvers exist
+if ! grep -q "nameserver" /etc/resolv.conf 2>/dev/null; then
+  echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+  echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+fi
+
 # 1. Update APT & install core production runtime packages
 apt-get update -y
 apt-get install -y --no-install-recommends \
@@ -25,8 +31,13 @@ apt-get install -y --no-install-recommends \
   sudo \
   htop \
   iptables \
-  ufw \
-  systemd-resolved
+  ufw
+
+# Ensure DNS remains valid after package installation
+if ! grep -q "nameserver" /etc/resolv.conf 2>/dev/null; then
+  echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+  echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+fi
 
 # 2. Configure Docker Repository & Install Production Docker Runtime
 # (Notice: Excludes developer plugins like docker-buildx-plugin)
@@ -39,7 +50,7 @@ if [ "$DISTRO_NAME" = "debian" ] && [ "$CODENAME" = "n/a" -o "$CODENAME" = "trix
   CODENAME="bookworm"
 fi
 
-curl -fsSL "https://download.docker.com/linux/${DISTRO_NAME}/gpg" | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused "https://download.docker.com/linux/${DISTRO_NAME}/gpg" | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 chmod a+r /etc/apt/keyrings/docker.gpg
 
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/${DISTRO_NAME} ${CODENAME} stable" \
@@ -55,8 +66,8 @@ apt-get install -y --no-install-recommends \
 systemctl enable docker
 
 # 3. Configure Caddy Official Repository & Install Caddy
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null
+curl -1sLf --retry 5 --retry-delay 2 --retry-connrefused 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf --retry 5 --retry-delay 2 --retry-connrefused 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list > /dev/null
 
 apt-get update -y
 apt-get install -y --no-install-recommends caddy || echo "Caddy fallback to standard apt if available"
