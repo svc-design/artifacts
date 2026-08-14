@@ -91,6 +91,10 @@ build {
   }
 
   provisioner "shell" {
+    script = "scripts/setup-observability-runtime.sh"
+  }
+
+  provisioner "shell" {
     script = "scripts/cleanup-golden-image.sh"
   }
 }
@@ -112,6 +116,10 @@ build {
 
   provisioner "shell" {
     script = "scripts/setup-agent-proxy-runtime.sh"
+  }
+
+  provisioner "shell" {
+    script = "scripts/setup-observability-runtime.sh"
   }
 
   provisioner "shell" {

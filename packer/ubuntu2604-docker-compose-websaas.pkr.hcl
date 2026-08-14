@@ -78,6 +78,11 @@ build {
   }
 
   provisioner "shell" {
+    script = "scripts/setup-observability-runtime.sh"
+    environment_vars = ["INSTALL_POSTGRES_EXPORTER=1"]
+  }
+
+  provisioner "shell" {
     script = "scripts/cleanup-golden-image.sh"
   }
 }
@@ -99,6 +104,11 @@ build {
 
   provisioner "shell" {
     script = "scripts/setup-websaas-runtime.sh"
+  }
+
+  provisioner "shell" {
+    script = "scripts/setup-observability-runtime.sh"
+    environment_vars = ["INSTALL_POSTGRES_EXPORTER=1"]
   }
 
   provisioner "shell" {
