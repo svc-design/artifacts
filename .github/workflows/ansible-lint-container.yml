@@ -11,15 +11,15 @@ on:
       runner:
         description: Runner to execute on
         required: true
-        default: self-runner
+        default: ubuntu-latest
         type: choice
         options:
-          - self-runner
           - ubuntu-latest
+          - self-runner
 
 jobs:
   ansible-lint:
-    runs-on: ${{ inputs.runner || 'self-runner' }}
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
 
     # 原本指向 images.onwalk.net —— 那个私有 registry 已经解析不了
     # (dial tcp: lookup images.onwalk.net: no such host), 于是本仓**每一个**

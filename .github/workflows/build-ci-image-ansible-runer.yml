@@ -18,11 +18,11 @@ on:
       runner:
         description: Runner to execute on
         required: true
-        default: self-runner
+        default: ubuntu-latest
         type: choice
         options:
-          - self-runner
           - ubuntu-latest
+          - self-runner
 
 permissions:
   contents: read
@@ -34,7 +34,7 @@ env:
 jobs:
   build:
     name: Build ansible runner image
-    runs-on: ${{ inputs.runner || 'self-runner' }}
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v4
 
