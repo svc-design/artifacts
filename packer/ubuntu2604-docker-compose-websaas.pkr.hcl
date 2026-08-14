@@ -34,7 +34,7 @@ variable "vultr_os_id" {
 
 variable "vultr_region_id" {
   type    = string
-  default = "ewr"
+  default = "nrt"
 }
 
 variable "vultr_plan_id" {

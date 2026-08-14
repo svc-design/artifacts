@@ -97,6 +97,39 @@ if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
   } >>"$GITHUB_OUTPUT"
 fi
 
+# Clean up historical Golden Image snapshots, keeping only the latest version
+echo "======================================================="
+echo " Cleaning up historical Golden Image snapshots on Vultr"
+echo " (Keeping latest: ${snapshot_id} - ${snapshot_description})"
+echo "======================================================="
+
+all_snapshots_json="$(curl --silent --show-error --fail --compressed \
+  --header "Authorization: Bearer ${VULTR_API_KEY}" \
+  --header "Content-Type: application/json" \
+  "https://api.vultr.com/v2/snapshots" || true)"
+
+if [[ -n "$all_snapshots_json" ]]; then
+  old_snapshot_ids=$(echo "$all_snapshots_json" | jq -r --arg current "$snapshot_id" --arg src1 "golden-${SOURCE_NAME}" --arg src2 "${SOURCE_NAME}-golden" '
+    .snapshots[]?
+    | select((.description | startswith($src1)) or (.description | contains($src1)) or (.description | contains($src2)))
+    | select(.id != $current)
+    | .id
+  ')
+
+  if [[ -n "$old_snapshot_ids" ]]; then
+    for old_id in $old_snapshot_ids; do
+      echo "Pruning older snapshot on Vultr: ${old_id}"
+      curl --silent --show-error --fail \
+        -X DELETE \
+        --header "Authorization: Bearer ${VULTR_API_KEY}" \
+        "https://api.vultr.com/v2/snapshots/${old_id}" || echo "Warning: failed to delete ${old_id}"
+      echo "Successfully purged older snapshot: ${old_id}"
+    done
+  else
+    echo "No older historical snapshots found for ${SOURCE_NAME}."
+  fi
+fi
+
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
   {
     echo "## Vultr Golden Image"

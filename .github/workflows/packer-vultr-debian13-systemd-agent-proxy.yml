@@ -15,7 +15,7 @@ on:
       region_id:
         description: Vultr region used for the temporary builder VPS
         required: true
-        default: ewr
+        default: nrt
         type: string
       plan_id:
         description: Vultr plan used for the temporary builder VPS
@@ -45,7 +45,7 @@ jobs:
       template: packer/debian13-systemd-agent-proxy.pkr.hcl
       source_name: debian13_systemd_agent_proxy
       os_regex: '^Debian 13'
-      region_id: ${{ inputs.region_id || 'ewr' }}
+      region_id: ${{ inputs.region_id || 'nrt' }}
       plan_id: ${{ inputs.plan_id || 'vc2-1c-2gb' }}
       os_id: ${{ inputs.os_id || '' }}
       runner: ${{ inputs.runner || 'ubuntu-latest' }}
