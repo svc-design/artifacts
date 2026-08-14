@@ -39,7 +39,7 @@ variable "vultr_region_id" {
 
 variable "vultr_plan_id" {
   type    = string
-  default = "vc2-2c-4gb"
+  default = "vc2-1c-2gb"
 }
 
 variable "vultr_snapshot_description" {

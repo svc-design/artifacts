@@ -20,7 +20,7 @@ on:
       plan_id:
         description: Vultr plan used for the temporary builder VPS
         required: true
-        default: vc2-2c-4gb
+        default: vc2-1c-2gb
         type: string
       os_id:
         description: Optional Vultr OS ID override; blank resolves Debian 13 x64
@@ -46,6 +46,6 @@ jobs:
       source_name: debian13_systemd_agent_proxy
       os_regex: '^Debian 13'
       region_id: ${{ inputs.region_id || 'ewr' }}
-      plan_id: ${{ inputs.plan_id || 'vc2-2c-4gb' }}
+      plan_id: ${{ inputs.plan_id || 'vc2-1c-2gb' }}
       os_id: ${{ inputs.os_id || '' }}
       runner: ${{ inputs.runner || 'ubuntu-latest' }}
