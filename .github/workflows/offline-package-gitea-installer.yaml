@@ -24,15 +24,6 @@ on:
           to auto-resolve"
         required: false
         type: string
-
-      runner:
-        description: Runner to execute on
-        required: true
-        default: self-runner
-        type: choice
-        options:
-          - self-runner
-          - ubuntu-latest
 permissions:
   contents: write
 
