@@ -7,6 +7,12 @@ echo "======================================================="
 
 export DEBIAN_FRONTEND=noninteractive
 
+# Ensure valid DNS resolvers exist
+if ! grep -q "nameserver" /etc/resolv.conf 2>/dev/null; then
+  echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+  echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+fi
+
 # 1. Update APT & install core production runtime packages
 apt-get update -y
 apt-get install -y --no-install-recommends \
@@ -27,8 +33,13 @@ apt-get install -y --no-install-recommends \
   unzip \
   iptables \
   iproute2 \
-  stunnel4 \
-  systemd-resolved
+  stunnel4
+
+# Ensure DNS remains valid after package installation
+if ! grep -q "nameserver" /etc/resolv.conf 2>/dev/null; then
+  echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+  echo "nameserver 8.8.8.8" >> /etc/resolv.conf
+fi
 
 # 2. Pre-create directories for Agent Proxy & Xray
 mkdir -p /etc/agent-proxy /var/log/agent-proxy /etc/xray /var/log/xray /etc/stunnel
@@ -40,7 +51,7 @@ XRAY_URL="https://github.com/XTLS/Xray-core/releases/download/${XRAY_VERSION}/Xr
 
 echo "Downloading Xray-core ${XRAY_VERSION}..."
 TEMP_DIR="$(mktemp -d)"
-if curl -fsSL "${XRAY_URL}" -o "${TEMP_DIR}/xray.zip"; then
+if curl -fsSL --retry 5 --retry-delay 2 --retry-connrefused "${XRAY_URL}" -o "${TEMP_DIR}/xray.zip"; then
   unzip -q "${TEMP_DIR}/xray.zip" -d "${TEMP_DIR}/xray"
   install -m 0755 "${TEMP_DIR}/xray/xray" /usr/local/bin/xray
   install -m 0644 "${TEMP_DIR}/xray/geoip.dat" /usr/local/bin/geoip.dat || true
