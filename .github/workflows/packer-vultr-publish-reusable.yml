@@ -57,6 +57,7 @@ jobs:
           method: jwt
           path: jwt
           role: github-actions-artifacts-uat
+          jwtGithubAudience: vault
           secrets: |
             kv/data/CICD/uat VULTR_API_KEY | VULTR_API_KEY
 
