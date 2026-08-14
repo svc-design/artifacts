@@ -34,7 +34,7 @@ variable "vultr_os_id" {
 
 variable "vultr_region_id" {
   type    = string
-  default = "ewr"
+  default = "nrt"
 }
 
 variable "vultr_plan_id" {
@@ -52,7 +52,7 @@ source "qemu" "debian13_docker_compose_websaas" {
   iso_checksum     = var.iso_checksum
   output_directory = "output-debian13-docker-compose-websaas"
   shutdown_command = "echo 'packer' | sudo -S shutdown -P now"
-  disk_size        = "20G"
+  disk_size        = "40G"
   format           = "qcow2"
   accelerator      = "kvm"
   ssh_username     = "packer"

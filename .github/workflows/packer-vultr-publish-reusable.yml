@@ -14,7 +14,7 @@ on:
         type: string
       region_id:
         required: false
-        default: ewr
+        default: nrt
         type: string
       plan_id:
         required: false
