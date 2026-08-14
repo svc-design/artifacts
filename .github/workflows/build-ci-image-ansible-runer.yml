@@ -6,13 +6,11 @@ on:
       - main
     paths:
       - 'oci/base/alpine-ansible-lint/**'
-      - '.github/workflows/build-ci-image-ansible-runer.yml'
   push:
     branches:
       - main
     paths:
       - 'oci/base/alpine-ansible-lint/**'
-      - '.github/workflows/build-ci-image-ansible-runer.yml'
   workflow_dispatch:
     inputs:
       runner:

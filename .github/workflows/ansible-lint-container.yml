@@ -4,8 +4,7 @@ on:
   pull_request:
     branches: ["main", "stable", "release/v*"]
     paths:
-      - '**/*.yaml'
-      - '**/*.yml'
+      - 'playbooks/**'
   workflow_dispatch:
     inputs:
       runner:
