@@ -1,4 +1,4 @@
-name: build images openresty-geoip
+name: build image openresty-geoip
 
 on:
   pull_request:
@@ -7,18 +7,47 @@ on:
     paths:
       - 'base-images/openresty-geoip.Dockerfile'
       - '.github/workflows/build-openresty-geoip-base-images.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'base-images/openresty-geoip.Dockerfile'
+      - '.github/workflows/build-openresty-geoip-base-images.yml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/base-openresty-geoip
 
 jobs:
-  build-openresty-geoip:
-    name: build openresty geoip image
-    uses: svc-design/actions/.github/workflows/build-images.yaml@main
-    with:
-      method: 'docker/node'
-      registry_addr: images.onwalk.net
-      dockerfile_path: 'base-images/openresty-geoip.Dockerfile'
-      image_name: 'public/base/openresty-geoip'
-      image_tag: 'latest'
-    secrets:
-      artifactory_sa: ${{ secrets.IMAGES_REPO_USER }}
-      artifactory_pw: ${{ secrets.IMAGES_REPO_PASSWORD }}
+  build:
+    name: Build openresty geoip image
+    runs-on: ${{ inputs.runner || 'self-runner' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          DOCKERFILE_PATH: base-images/openresty-geoip.Dockerfile
+          PUSH_IMAGE: ${{ github.event_name != 'pull_request' }}
+        run: bash .github/scripts/docker-build-push.sh
