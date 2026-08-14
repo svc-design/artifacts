@@ -1,26 +1,53 @@
-name: build images golint
+name: build image golint
 
 on:
   pull_request:
     branches:
       - main
     paths:
-      - 'oci/base/alpine-golint/Dockerfile'
-      - 'build-ci-image-eslint.yml/build-ci-image-golint.yml'
+      - 'oci/base/alpine-golint/**'
+      - '.github/workflows/build-ci-image-golint.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'oci/base/alpine-golint/**'
+      - '.github/workflows/build-ci-image-golint.yml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
+
+permissions:
+  contents: read
+  packages: write
+
 env:
-  IMAGE_REPO: "artifact.onwalk.net"
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/alpine-golint
 
 jobs:
-  eslint:
-    name: Build ESlint image
-    uses: svc-design/actions/.github/workflows/build-images.yaml@main
-    with:
-      method: 'docker/node'
-      registry_addr: "harbor.onwalk.net"
-      dockerfile_path: 'oci/base/alpine-golint'
-      image_name: 'public/base/alpine-golint'
-      image_tag: 'latest'
-    secrets:
-      artifactory_sa: ${{ secrets.REPO_USER }}
-      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+  build:
+    name: Build alpine golint image
+    runs-on: ${{ inputs.runner || 'self-runner' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          DOCKERFILE_PATH: oci/base/alpine-golint
+          PUSH_IMAGE: ${{ github.event_name != 'pull_request' }}
+        run: bash .github/scripts/docker-build-push.sh

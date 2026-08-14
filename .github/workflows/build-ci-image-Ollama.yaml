@@ -5,23 +5,49 @@ on:
     branches:
       - main
     paths:
-      - 'oci/base/cuda/Ollama/Dockerfile'
+      - 'oci/base/cuda/Ollama/**'
+      - '.github/workflows/build-ci-image-Ollama.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'oci/base/cuda/Ollama/**'
       - '.github/workflows/build-ci-image-Ollama.yaml'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner to execute on
+        required: true
+        default: self-runner
+        type: choice
+        options:
+          - self-runner
+          - ubuntu-latest
+
+permissions:
+  contents: read
+  packages: write
 
 env:
-  IMAGE_REPO: "artifact.svc.plus"
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/cuda-ollama
 
 jobs:
-  build-ollama:
-    name: Build Ollama image
-    uses: svc-design/actions/.github/workflows/build-images.yaml@main
-    with:
-      method: 'docker'
-      registry_addr: "harbor.onwalk.net"
-      dockerfile_path: 'oci/base/cuda/Ollama'
-      image_name: 'public/base/cuda/ollama'
-      image_tag: 'latest'
-    secrets:
-      artifactory_sa: ${{ secrets.REPO_USER }}
-      artifactory_pw: ${{ secrets.HELM_REPO_PASSWORD }}
+  build:
+    name: Build cuda ollama image
+    runs-on: ${{ inputs.runner || 'self-runner' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+          DOCKERFILE_PATH: oci/base/cuda/Ollama
+          PUSH_IMAGE: ${{ github.event_name != 'pull_request' }}
+        run: bash .github/scripts/docker-build-push.sh
