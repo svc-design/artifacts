@@ -4,6 +4,10 @@ packer {
       version = "~> 1.0"
       source  = "github.com/hashicorp/qemu"
     }
+    vultr = {
+      version = ">= 2.3.2"
+      source  = "github.com/vultr/vultr"
+    }
   }
 }
 
@@ -15,6 +19,32 @@ variable "iso_url" {
 variable "iso_checksum" {
   type    = string
   default = "none"
+}
+
+variable "vultr_api_key" {
+  type      = string
+  sensitive = true
+  default   = env("VULTR_API_KEY")
+}
+
+variable "vultr_os_id" {
+  type    = number
+  default = 0
+}
+
+variable "vultr_region_id" {
+  type    = string
+  default = "ewr"
+}
+
+variable "vultr_plan_id" {
+  type    = string
+  default = "vc2-2c-4gb"
+}
+
+variable "vultr_snapshot_description" {
+  type    = string
+  default = "ubuntu2604-systemd-agent-proxy-golden"
 }
 
 source "qemu" "ubuntu2604_systemd_agent_proxy" {
@@ -42,6 +72,30 @@ source "qemu" "ubuntu2604_systemd_agent_proxy" {
 
 build {
   sources = ["source.qemu.ubuntu2604_systemd_agent_proxy"]
+
+  provisioner "shell" {
+    script = "scripts/setup-agent-proxy-runtime.sh"
+  }
+
+  provisioner "shell" {
+    script = "scripts/cleanup-golden-image.sh"
+  }
+}
+
+source "vultr" "ubuntu2604_systemd_agent_proxy" {
+  api_key              = var.vultr_api_key
+  os_id                = var.vultr_os_id
+  plan_id              = var.vultr_plan_id
+  region_id            = var.vultr_region_id
+  instance_label       = "packer-ubuntu2604-systemd-agent-proxy"
+  snapshot_description = var.vultr_snapshot_description
+  state_timeout        = "30m"
+  ssh_username         = "root"
+  ssh_timeout          = "20m"
+}
+
+build {
+  sources = ["source.vultr.ubuntu2604_systemd_agent_proxy"]
 
   provisioner "shell" {
     script = "scripts/setup-agent-proxy-runtime.sh"

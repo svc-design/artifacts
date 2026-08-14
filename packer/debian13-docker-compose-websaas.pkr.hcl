@@ -4,6 +4,10 @@ packer {
       version = "~> 1.0"
       source  = "github.com/hashicorp/qemu"
     }
+    vultr = {
+      version = ">= 2.3.2"
+      source  = "github.com/vultr/vultr"
+    }
   }
 }
 
@@ -15,6 +19,32 @@ variable "iso_url" {
 variable "iso_checksum" {
   type    = string
   default = "none"
+}
+
+variable "vultr_api_key" {
+  type      = string
+  sensitive = true
+  default   = env("VULTR_API_KEY")
+}
+
+variable "vultr_os_id" {
+  type    = number
+  default = 0
+}
+
+variable "vultr_region_id" {
+  type    = string
+  default = "ewr"
+}
+
+variable "vultr_plan_id" {
+  type    = string
+  default = "vc2-2c-4gb"
+}
+
+variable "vultr_snapshot_description" {
+  type    = string
+  default = "debian13-docker-compose-websaas-golden"
 }
 
 source "qemu" "debian13_docker_compose_websaas" {
@@ -55,6 +85,30 @@ source "qemu" "debian13_docker_compose_websaas" {
 
 build {
   sources = ["source.qemu.debian13_docker_compose_websaas"]
+
+  provisioner "shell" {
+    script = "scripts/setup-websaas-runtime.sh"
+  }
+
+  provisioner "shell" {
+    script = "scripts/cleanup-golden-image.sh"
+  }
+}
+
+source "vultr" "debian13_docker_compose_websaas" {
+  api_key              = var.vultr_api_key
+  os_id                = var.vultr_os_id
+  plan_id              = var.vultr_plan_id
+  region_id            = var.vultr_region_id
+  instance_label       = "packer-debian13-docker-compose-websaas"
+  snapshot_description = var.vultr_snapshot_description
+  state_timeout        = "30m"
+  ssh_username         = "root"
+  ssh_timeout          = "20m"
+}
+
+build {
+  sources = ["source.vultr.debian13_docker_compose_websaas"]
 
   provisioner "shell" {
     script = "scripts/setup-websaas-runtime.sh"

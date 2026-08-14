@@ -1,0 +1,51 @@
+name: Publish Debian 13 Agent Proxy Golden Image to Vultr
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packer/debian13-systemd-agent-proxy.pkr.hcl
+      - packer/scripts/setup-agent-proxy-runtime.sh
+      - packer/scripts/cleanup-golden-image.sh
+      - .github/scripts/**
+      - .github/workflows/packer-vultr-debian13-systemd-agent-proxy.yml
+      - .github/workflows/packer-vultr-publish-reusable.yml
+  workflow_dispatch:
+    inputs:
+      region_id:
+        description: Vultr region used for the temporary builder VPS
+        required: true
+        default: ewr
+        type: string
+      plan_id:
+        description: Vultr plan used for the temporary builder VPS
+        required: true
+        default: vc2-2c-4gb
+        type: string
+      os_id:
+        description: Optional Vultr OS ID override; blank resolves Debian 13 x64
+        required: false
+        default: ''
+        type: string
+      runner:
+        description: GitHub runner
+        required: true
+        default: ubuntu-latest
+        type: choice
+        options: [ubuntu-latest, self-runner]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    uses: ./.github/workflows/packer-vultr-publish-reusable.yml
+    with:
+      template: packer/debian13-systemd-agent-proxy.pkr.hcl
+      source_name: debian13_systemd_agent_proxy
+      os_regex: '^Debian 13'
+      region_id: ${{ inputs.region_id || 'ewr' }}
+      plan_id: ${{ inputs.plan_id || 'vc2-2c-4gb' }}
+      os_id: ${{ inputs.os_id || '' }}
+      runner: ${{ inputs.runner || 'ubuntu-latest' }}
