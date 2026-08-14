@@ -1,0 +1,51 @@
+name: Publish Ubuntu 26.04 Web SaaS Golden Image to Vultr
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packer/ubuntu2604-docker-compose-websaas.pkr.hcl
+      - packer/scripts/setup-websaas-runtime.sh
+      - packer/scripts/cleanup-golden-image.sh
+      - .github/scripts/**
+      - .github/workflows/packer-vultr-ubuntu2604-docker-compose-websaas.yml
+      - .github/workflows/packer-vultr-publish-reusable.yml
+  workflow_dispatch:
+    inputs:
+      region_id:
+        description: Vultr region used for the temporary builder VPS
+        required: true
+        default: ewr
+        type: string
+      plan_id:
+        description: Vultr plan used for the temporary builder VPS
+        required: true
+        default: vc2-2c-4gb
+        type: string
+      os_id:
+        description: Optional Vultr OS ID override; blank resolves Ubuntu 26.04 x64
+        required: false
+        default: ''
+        type: string
+      runner:
+        description: GitHub runner
+        required: true
+        default: ubuntu-latest
+        type: choice
+        options: [ubuntu-latest, self-runner]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    uses: ./.github/workflows/packer-vultr-publish-reusable.yml
+    with:
+      template: packer/ubuntu2604-docker-compose-websaas.pkr.hcl
+      source_name: ubuntu2604_docker_compose_websaas
+      os_regex: '^Ubuntu 26\.04'
+      region_id: ${{ inputs.region_id || 'ewr' }}
+      plan_id: ${{ inputs.plan_id || 'vc2-2c-4gb' }}
+      os_id: ${{ inputs.os_id || '' }}
+      runner: ${{ inputs.runner || 'ubuntu-latest' }}

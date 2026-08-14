@@ -1,0 +1,82 @@
+name: Reusable Vultr Golden Image Publisher
+
+on:
+  workflow_call:
+    inputs:
+      template:
+        required: true
+        type: string
+      source_name:
+        required: true
+        type: string
+      os_regex:
+        required: true
+        type: string
+      region_id:
+        required: false
+        default: ewr
+        type: string
+      plan_id:
+        required: false
+        default: vc2-2c-4gb
+        type: string
+      os_id:
+        required: false
+        default: ''
+        type: string
+      runner:
+        required: false
+        default: ubuntu-latest
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: vultr-golden-image-${{ inputs.source_name }}-uat
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish ${{ inputs.source_name }} to Vultr (uat)
+    runs-on: ${{ inputs.runner }}
+    environment: uat
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Packer
+        uses: hashicorp/setup-packer@v3
+
+      - name: Load Vultr API key from Vault
+        id: vault
+        uses: hashicorp/vault-action@v3
+        with:
+          url: ${{ vars.VAULT_ADDR || 'https://vault.svc.plus' }}
+          method: jwt
+          path: jwt
+          role: github-actions-artifacts-uat
+          secrets: |
+            kv/data/CICD/uat VULTR_API_KEY | VULTR_API_KEY
+
+      - name: Build and publish Vultr snapshot
+        id: packer
+        env:
+          TEMPLATE: ${{ inputs.template }}
+          SOURCE_NAME: ${{ inputs.source_name }}
+          VULTR_API_KEY: ${{ steps.vault.outputs.VULTR_API_KEY }}
+          VULTR_REGION_ID: ${{ inputs.region_id }}
+          VULTR_PLAN_ID: ${{ inputs.plan_id }}
+          VULTR_OS_ID: ${{ inputs.os_id }}
+          VULTR_OS_REGEX: ${{ inputs.os_regex }}
+          PACKER_LOG: packer-${{ inputs.source_name }}.log
+        run: bash .github/scripts/packer-vultr-build.sh
+
+      - name: Upload Packer log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packer-${{ inputs.source_name }}-${{ github.run_id }}
+          path: packer-${{ inputs.source_name }}.log
+          if-no-files-found: ignore
