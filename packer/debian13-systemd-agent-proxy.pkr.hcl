@@ -52,7 +52,7 @@ source "qemu" "debian13_systemd_agent_proxy" {
   iso_checksum     = var.iso_checksum
   output_directory = "output-debian13-systemd-agent-proxy"
   shutdown_command = "echo 'packer' | sudo -S shutdown -P now"
-  disk_size        = "20G"
+  disk_size        = "10G"
   format           = "qcow2"
   accelerator      = "kvm"
   ssh_username     = "packer"
