@@ -1,0 +1,9 @@
+Install the open K3s profile with:
+
+  helm upgrade --install <release> . \
+    --namespace web-saas --create-namespace \
+    -f values-open.yaml
+
+Before the install, create the PostgreSQL password Secret and configure the
+runtime Secret/Vault integration. Replace every `daily-build-REPLACE_ME` image
+tag with an immutable image tag produced by the relevant service repository.

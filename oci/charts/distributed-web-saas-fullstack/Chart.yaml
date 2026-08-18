@@ -1,0 +1,15 @@
+apiVersion: v2
+name: distributed-web-saas-fullstack
+description: Open, self-hostable distributed Web SaaS full-stack for K3s and Kubernetes
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - distributed
+  - self-hosted
+  - k3s
+  - kubernetes
+  - web-saas
+home: https://github.com/ai-workspace-infra/artifacts
+maintainers:
+  - name: AI Workspace Infrastructure
