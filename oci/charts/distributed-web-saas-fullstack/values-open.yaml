@@ -1,0 +1,162 @@
+# K3s / single-node open self-hosted profile.
+#
+# Before install, create the PostgreSQL password Secret and replace every
+# application image with an immutable daily-build-* or v* image tag:
+#   kubectl -n web-saas create secret generic distributed-web-saas-postgresql \
+#     --from-literal=password='<generated-password>'
+#
+# Application secrets (JWT, service tokens and DB URI) are not stored here.
+# Mount them through the named Kubernetes Secret, Vault CSI, or External
+# Secrets controller used by the target cluster.
+global:
+  imagePullSecrets: []
+  podLabels:
+    app.kubernetes.io/part-of: distributed-web-saas-fullstack
+
+ingress:
+  enabled: true
+  # K3s ships Traefik by default. Set this to `caddy` only when a Caddy
+  # ingress controller is installed in the cluster.
+  className: traefik
+  consoleHost: console.localhost
+  accountsHost: accounts.localhost
+  annotations: {}
+  tls: []
+
+database:
+  mode: postgresql
+  postgresql:
+    enabled: true
+    # Built and published by ai-workspace-services/postgresql.svc.plus.
+    image: ghcr.io/ai-workspace-infra/postgresql:17
+    existingSecret: distributed-web-saas-postgresql
+    secretKey: password
+    username: app
+    database: app
+    storageClass: local-path
+    size: 10Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+components:
+  frontend-router:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/frontend-router:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+    env:
+      STATIC_ORIGIN: http://RELEASE_NAME-static-assets
+      SSR_AUTH_ORIGIN: http://RELEASE_NAME-ssr-auth
+      SSR_CONTENT_ORIGIN: http://RELEASE_NAME-ssr-content
+      SSR_CONSOLE_ORIGIN: http://RELEASE_NAME-ssr-console
+      SSR_WORKSPACE_ORIGIN: http://RELEASE_NAME-ssr-workspace
+      SSR_PUBLIC_ORIGIN: http://RELEASE_NAME-ssr-public
+      API_ORIGIN: http://RELEASE_NAME-edge-gateway-router
+    secretRefs:
+      - distributed-web-saas-runtime
+
+  static-assets:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/portal:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+
+  ssr-auth:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/portal-ssr-auth:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+  ssr-content:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/portal-ssr-content:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+  ssr-console:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/portal-ssr-console:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+  ssr-workspace:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/portal-ssr-workspace:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+  ssr-public:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/portal-ssr-public:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+
+  # Cloudflare performs this path matching through Worker Routes. K3s needs
+  # an explicit internal router; this Caddy instance keeps the three Gateway
+  # shards private ClusterIP services.
+  edge-gateway-router:
+    enabled: true
+    image: caddy:2.8.4-alpine
+    port: 8080
+    healthPath: /healthz
+    configMap: edge-gateway-router
+
+  edge-gateway-auth:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/edge-gateway:daily-build-REPLACE_ME
+    command: [node, dist/workers/auth.js]
+    port: 8080
+    healthPath: /healthz
+    env:
+      RUNTIME_MODE: selfhost
+      PRIMARY_UPSTREAM: http://RELEASE_NAME-accounts
+    secretRefs:
+      - distributed-web-saas-runtime
+  edge-gateway-admin:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/edge-gateway:daily-build-REPLACE_ME
+    command: [node, dist/workers/admin.js]
+    port: 8080
+    healthPath: /healthz
+    env:
+      RUNTIME_MODE: selfhost
+      PRIMARY_UPSTREAM: http://RELEASE_NAME-accounts
+    secretRefs:
+      - distributed-web-saas-runtime
+  edge-gateway-core:
+    enabled: true
+    displayName: Edge Gateway Router Core
+    image: ghcr.io/ai-workspace-services/edge-gateway:daily-build-REPLACE_ME
+    command: [node, dist/workers/core.js]
+    port: 8080
+    healthPath: /healthz
+    env:
+      RUNTIME_MODE: selfhost
+      PRIMARY_UPSTREAM: http://RELEASE_NAME-accounts
+      CONTENT_UPSTREAM: http://RELEASE_NAME-content
+      BILLING_UPSTREAM: http://RELEASE_NAME-billing
+    secretRefs:
+      - distributed-web-saas-runtime
+
+  accounts:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/accounts:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+    secretRefs:
+      - distributed-web-saas-runtime
+  content:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/content-service:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+    secretRefs:
+      - distributed-web-saas-runtime
+  billing:
+    enabled: true
+    image: ghcr.io/ai-workspace-services/billing-service:daily-build-REPLACE_ME
+    port: 8080
+    healthPath: /healthz
+    secretRefs:
+      - distributed-web-saas-runtime

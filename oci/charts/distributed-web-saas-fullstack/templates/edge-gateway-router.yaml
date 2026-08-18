@@ -1,0 +1,29 @@
+{{- $root := . -}}
+{{- $router := index .Values.components "edge-gateway-router" -}}
+{{- if and $router $router.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "distributed-web-saas-fullstack.componentName" (dict "root" . "name" "edge-gateway-router") }}
+  labels:
+    {{- include "distributed-web-saas-fullstack.labels" (dict "root" . "name" "edge-gateway-router") | nindent 4 }}
+data:
+  Caddyfile: |
+    :8080 {
+      respond /healthz 200
+
+      @auth path /api/auth/* /api/v1/auth/*
+      handle @auth {
+        reverse_proxy {{ include "distributed-web-saas-fullstack.componentName" (dict "root" $root "name" "edge-gateway-auth") }}:80
+      }
+
+      @admin path /api/admin/*
+      handle @admin {
+        reverse_proxy {{ include "distributed-web-saas-fullstack.componentName" (dict "root" $root "name" "edge-gateway-admin") }}:80
+      }
+
+      handle {
+        reverse_proxy {{ include "distributed-web-saas-fullstack.componentName" (dict "root" $root "name" "edge-gateway-core") }}:80
+      }
+    }
+{{- end }}
